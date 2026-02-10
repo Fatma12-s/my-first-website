@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>قالب موقع بسيط</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- شريط التنقل -->
+  <header class="site-header">
+    <div class="container nav">
+      <a href="#" class="brand">موقعي</a>
+      <nav class="nav-links" id="navLinks">
+        <a href="#home">الرئيسية</a>
+        <a href="#features">المزايا</a>
+        <a href="#testimonials">الآراء</a>
+        <a href="#contact">التواصل</a>
+      </nav>
+      <button class="burger" id="burger" aria-label="فتح القائمة">
+        ☰
+      </button>
+    </div>
+  </header>
+
+  <!-- بطل الصفحة / الترحيب -->
+  <section id="home" class="hero">
+    <div class="container hero-inner">
+      <div class="hero-text">
+        <h1>ابني حضورك الرقمي بسهولة</h1>
+        <p>موقع حديث، سريع الاستجابة، مصمم باحتراف — ويمكن تخصيصه بالكامل لاحتياجاتك.</p>
+        <div class="hero-actions">
+          <a href="#features" class="btn primary">استكشفي المزايا</a>
+          <a href="#contact" class="btn ghost">تواصلي معنا</a>
+        </div>
+      </div>
+      <div class="hero-visual" aria-hidden="true">
+        <!-- عنصر زخرفي بسيط -->
+        <div class="blob"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- المزايا -->
+  <section id="features" class="section">
+    <div class="container">
+      <h2 class="section-title">مزايا القالب</h2>
+      <div class="grid cards">
+        <article class="card">
+          <h3>متجاوب</h3>
+          <p>يعمل بسلاسة على الجوال واللوح والحاسوب، بفضل شبكة CSS مرنة.</p>
+        </article>
+        <article class="card">
+          <h3>سهل التخصيص</h3>
+          <p>ألوان وخطوط ومكونات يمكنك تغييرها بسرعة دون تعقيد.</p>
+        </article>
+        <article class="card">
+          <h3>منظم</h3>
+          <p>هيكل ملفات بسيط (HTML/CSS/JS) مع تعليقات توضيحية.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- الآراء / الشهادات -->
+  <section id="testimonials" class="section alt">
+    <div class="container">
+      <h2 class="section-title">ماذا يقول المستخدمون؟</h2>
+      <div class="grid testimonials">
+        <figure class="t-card">
+          <blockquote>قالب أنقذ وقتنا—بدأنا خلال ساعة!</blockquote>
+          <figcaption>— سارة</figcaption>
+        </figure>
+        <figure class="t-card">
+          <blockquote>تصميم نظيف، وسهل التعديل حتى للمبتدئين.</blockquote>
+          <figcaption>— أحمد</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- تواصل -->
+  <section id="contact" class="section">
+    <div class="container">
+      <h2 class="section-title">تواصلي معنا</h2>
+      <form id="contactForm" class="form">
+        <div class="form-row">
+          <label for="name">الاسم</label>
+          <input id="name" name="name" type="text" placeholder="اسمك الكامل" required>
+        </div>
+        <div class="form-row">
+          <label for="email">البريد الإلكتروني</label>
+          <input id="email" name="email" type="email" placeholder="name@example.com" required>
+        </div>
+        <div class="form-row">
+          <label for="message">الرسالة</label>
+          <textarea id="message" name="message" rows="5" placeholder="كيف نساعدك؟" required></textarea>
+        </div>
+        <button type="submit" class="btn primary">إرسال</button>
+        <p id="formStatus" class="status" role="status" aria-live="polite"></p>
+      </form>
+    </div>
+  </section>
+
+  <!-- التذييل -->
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <p>© <span id="year"></span> موقعي — كل الحقوق محفوظة.</p>
+      <a href="#home" class="back-to-top">الرجوع للأعلى ↑</a>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
