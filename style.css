@@ -1,68 +1,56 @@
-/* ====== تنسيق الهيدر الجديد ====== */
+.hero {
+  padding: 48px 0;
+  background: #fafafa;          /* خلفية خفيفة */
+}
 
-/* حاوية الهيدر */
-.site-header {
-  width: 100%;
-  padding: 20px 0;
-  display: flex;
-  justify-content: center;  /* وضع المحتوى في المنتصف */
+.hero-inner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;  /* نص + مرئي */
+  gap: 24px;
   align-items: center;
-  background-color: white;
-  border-bottom: 2px solid #e5e5e5;
 }
 
-/* داخل الشعار */
-.brand {
+.hero-text p {
+  font-size: 1.1rem;
+  color: #333;
+}
+
+.hero-actions {
+  margin-top: 16px;
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  gap: 12px;
+}
+
+.btn.primary {
+  background: #4F46E5;
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 8px;
   text-decoration: none;
-  color: #000;
 }
-
-/* الشعار */
-.brand-logo {
-  width: 130px; /* يمكنك تكبير أو تصغير */
-  height: auto;
-  margin-bottom: 10px;
-}
-
-/* نص العنوان */
-.brand-text {
-  text-align: center;
-  font-size: 22px;
-  font-weight: bold;
-  line-height: 1.4;
-}
-
-.brand-text small {
-  display: block;
-  font-size: 16px;
-  font-weight: normal;
-  margin-top: 5px;
-}
-
-
-/* ====== القائمة ====== */
-.nav-links {
-  display: flex;
-  gap: 20px;
-  margin-top: 20px;   /* بحيث تظهر القائمة تحت الشعار */
-  justify-content: center;
-}
-
-.nav-links a {
-  text-decoration: none;
+.btn.ghost {
+  border: 1px solid #4F46E5;
   color: #4F46E5;
-  font-weight: bold;
-  font-size: 16px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  text-decoration: none;
+  background: #fff;
 }
 
-.nav-links a:hover {
-  text-decoration: underline;
+/* الشكل البنفسجي إن كنتِ تستخدمينه */
+.blob {
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  background: radial-gradient(60% 60% at 50% 50%, #6D5DF6 0%, #EAE7FF 100%);
+  margin-inline: auto;          /* يتوسّط في العمود */
 }
 
-/* زر القائمة للجوال */
-.burger {
-  display: none;   /* إخفاء الزر الآن لأن عندك هيدر مركزي */
+/* استجابة للجوال */
+@media (max-width: 768px) {
+  .hero-inner {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+  .hero-actions { justify-content: center; }
 }
