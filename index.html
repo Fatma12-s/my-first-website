@@ -1,45 +1,120 @@
-<!-- شريط التنقل (هيدر مبسّط: شعار + عنوان واحد) -->
-<header class="site-header" role="banner">
-  <div class="container nav header-center">
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- العلامة: الشعار + العنوان الوحيد -->
-    <a href="#home" class="brand" aria-label="دائرة التدريب والتطوير المهني المستمر">
-      <img src="assets/logo.png" class="brand-logo" alt="شعار الدائرة">
-      <span class="brand-text">دائرة التدريب والتطوير المهني المستمر</span>
-    </a>
+  <title>دائرة التدريب والتطوير المهني المستمر</title>
 
-    <!-- روابط القائمة -->
-    <nav class="nav-links" id="navLinks" aria-label="main navigation">
-      <a href="#home">الرئيسية</a>
-      <a href="#programs">البرامج التدريبية</a>
-      <a href="#about">عن الدائرة</a>
-      <a href="#contact">تواصل معنا</a>
-    </nav>
+  <link rel="stylesheet" href="style.css">
+</head>
 
-    <!-- زر القائمة للجوال (اختياري) -->
-    <button class="burger" id="burger" aria-label="فتح وإغلاق القائمة">☰</button>
-  </div>
-</header>
-<!-- البطل / الترحيب -->
-<section id="home" class="hero" aria-labelledby="heroTitle">
-  <div class="container hero-inner">
+<body>
 
-    <div class="hero-text">
-      <h1 id="heroTitle" class="visually-hidden">منصة الدائرة</h1>
+  <!-- ====================== الهيدر ====================== -->
+  <header class="site-header" role="banner">
+    <div class="container nav header-center">
 
-      <p>
-        منصة رسمية لتخطيط وتنفيذ البرامج التدريبية ورفع كفاءة الكوادر الصحية داخليًا.
-      </p>
+      <!-- الشعار + عنوان واحد -->
+      #home
+        assets/logo.png" class="brand-logo" alt="">
+        <span class="brand-text">دائرة التدريب والتطوير المهني المستمر</span>
+      </a>
 
-      <div class="hero-actions">
-        <a href="#programs" class="btn primary">استكشف البرامج</a>
-<a href="#contact" class="btn ghost">تواصل معنا</a>
+      <!-- روابط -->
+      <nav class="nav-links" id="navLinks">
+        #homeالرئيسية</a>
+        #programsالبرامج التدريبية</a>
+        #aboutعن الدائرة</a>
+        #contactتواصل معنا</a>
+      </nav>
+
+    </div>
+  </header>
+
+  <!-- ====================== قسم الهيرو ====================== -->
+  <section id="home" class="hero">
+    <div class="container hero-inner">
+
+      <div class="hero-text">
+        <h1 class="visually-hidden">منصة الدائرة</h1>
+        <p>
+          منصة رسمية لتخطيط وتنفيذ البرامج التدريبية ورفع كفاءة الكوادر الصحية داخليًا.
+        </p>
+
+        <!-- أزرار -->
+        <div class="hero-actions">
+          #programsاستكشف البرامج</a>
+          #contactتواصل معنا</a>
+        </div>
+      </div>
+
+      <div class="hero-visual">
+        <div class="blob"></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ====================== البرامج التدريبية ====================== -->
+  <section id="programs" class="section">
+    <div class="container">
+      <h2 class="section-title">البرامج التدريبية</h2>
+
+      <div class="grid cards">
+        <article class="card">
+          <h3>تدريب الطلاب الخريجين</h3>
+          <p>برامج تأهيلية عملية للطلاب الخريجين للاستعداد للممارسة العملية.</p>
+        </article>
+
+        <article class="card">
+          <h3>البرامج الداخلية الإلزامية</h3>
+          <p>برامج إلزامية تستهدف رفع الكفاءة التشغيلية داخل المؤسسة الصحية.</p>
+        </article>
+
+        <article class="card">
+          <h3>البرامج التدريبية الداخلية</h3>
+          <p>دورات وورش تخصصية داخلية لرفع مهارات الوحدات المختلفة.</p>
+        </article>
       </div>
     </div>
+  </section>
 
-    <div class="hero-visual" aria-hidden="true">
-      <div class="blob"></div>
+  <!-- ====================== عن الدائرة ====================== -->
+  <section id="about" class="section">
+    <div class="container">
+      <h2 class="section-title">عن الدائرة</h2>
+      <p>
+        تعمل دائرة التدريب والتطوير المهني المستمر على تنفيذ برامج تطويرية تهدف إلى رفع كفاءة الكوادر الصحية، وتعزيز جودة الخدمات المقدمة داخل المدينة الطبية الجامعية.
+      </p>
     </div>
+  </section>
 
-  </div>
-</section>
+  <!-- ====================== تواصل معنا ====================== -->
+  <section id="contact" class="section">
+    <div class="container">
+      <h2 class="section-title">تواصل معنا</h2>
+
+      <form id="contactForm" class="form">
+        <div class="form-row">
+          <label>الاسم</label>
+          <input type="text" required>
+        </div>
+
+        <div class="form-row">
+          <label>البريد الإلكتروني</label>
+          <input type="email" required>
+        </div>
+
+        <div class="form-row">
+          <label>الرسالة</label>
+          <textarea rows="5" required></textarea>
+        </div>
+
+        <button class="btn primary">إرسال</button>
+      </form>
+    </div>
+  </section>
+
+</body>
+</html>
