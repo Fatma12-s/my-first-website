@@ -1,37 +1,85 @@
 /* =========================
-   تكبير الشعار + توسيطه
+   تحسين الهيدر بشكل احترافي
 ========================= */
-.header-center {
+
+/* حاوية الهيدر */
+.header {
+  padding: 25px 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding-top: 20px;
-  gap: 12px;
+  gap: 18px;
+  background: #fff;
 }
 
-/* تكبير الشعار */
-.brand-logo {
-  width: 140px;   /* كَبّريه أكثر لو تبين: 160 أو 180 */
+/* الشعار */
+.header img {
+  width: 150px;
   height: auto;
-  display: block;
-  margin: 0 auto;
-  filter: drop-shadow(0 3px 8px rgba(0,0,0,.15));
+  filter: drop-shadow(0 3px 6px rgba(0,0,0,0.15));
+  transition: transform 0.25s ease;
 }
 
-/* توسيط العنوان تحت الشعار */
-.brand-text {
-  text-align: center;
-  font-size: 1.3rem;
+.header img:hover {
+  transform: scale(1.04);
+}
+
+/* النص تحت الشعار */
+.header .logo-text {
+  font-size: 1.4rem;
   font-weight: 800;
-  margin-top: 6px;
   color: #222;
+  text-align: center;
+  margin-top: 4px;
+  letter-spacing: 0.5px;
 }
 
-/* توسيط القائمة */
-.nav-links {
+/* القائمة */
+nav ul {
   display: flex;
   justify-content: center;
-  gap: 28px;
-  margin-top: 8px;
+  gap: 26px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+nav ul li a {
+  text-decoration: none;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #222;
+  padding: 8px 14px;
+  border-radius: 10px;
+  transition: 0.25s ease;
+}
+
+/* تأثير اللمس */
+nav ul li a:hover {
+  color: #0066cc;
+  background: rgba(0, 102, 204, 0.12);
+  transform: translateY(-2px);
+}
+
+nav ul li a.active {
+  color: #0066cc;
+  background: rgba(0, 102, 204, 0.18);
+}
+
+/* =========================
+   تجاوب الجوال
+========================= */
+@media (max-width: 600px) {
+  .header img {
+    width: 120px;
+  }
+
+  nav ul {
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  nav ul li a {
+    padding: 10px 12px;
+  }
 }
