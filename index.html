@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
   <title>دائرة التدريب والتطوير المهني المستمر</title>
 
-  <link rel="stylesheet" href="style.css">
+  <!-- ربط ورقة الأنماط -->
+  <link rel="stylesheet" href="style.css" />
 </head>
-
 <body>
 
   <!-- ====================== الهيدر ====================== -->
@@ -16,40 +16,40 @@
     <div class="container nav header-center">
 
       <!-- الشعار + عنوان واحد -->
-      #home
-        assets/logo.png" class="brand-logo" alt="">
+      <a href="#home" class="brand" aria-label="دائرة التدريب والتطوير المهني المستمر">
+        <img src="assets/logo.png" class="brand-logo" alt="شعار الدائرة" />
         <span class="brand-text">دائرة التدريب والتطوير المهني المستمر</span>
       </a>
 
-      <!-- روابط -->
-      <nav class="nav-links" id="navLinks">
-        #homeالرئيسية</a>
-        #programsالبرامج التدريبية</a>
-        #aboutعن الدائرة</a>
-        #contactتواصل معنا</a>
+      <!-- روابط القائمة -->
+      <nav class="nav-links" id="navLinks" aria-label="main navigation">
+        <a href="#home">الرئيسية</a>
+        <a href="#programs">البرامج التدريبية</a>
+        <a href="#about">عن الدائرة</a>
+        <a href="#contact">تواصل معنا</a>
       </nav>
 
     </div>
   </header>
 
   <!-- ====================== قسم الهيرو ====================== -->
-  <section id="home" class="hero">
+  <section id="home" class="hero" aria-labelledby="heroTitle">
     <div class="container hero-inner">
 
       <div class="hero-text">
-        <h1 class="visually-hidden">منصة الدائرة</h1>
+        <h1 id="heroTitle" class="visually-hidden">منصة الدائرة</h1>
         <p>
           منصة رسمية لتخطيط وتنفيذ البرامج التدريبية ورفع كفاءة الكوادر الصحية داخليًا.
         </p>
 
         <!-- أزرار -->
         <div class="hero-actions">
-          #programsاستكشف البرامج</a>
-          #contactتواصل معنا</a>
+          <a href="#programs" class="btn primary">استكشف البرامج</a>
+          <a href="#contact" class="btn ghost">تواصل معنا</a>
         </div>
       </div>
 
-      <div class="hero-visual">
+      <div class="hero-visual" aria-hidden="true">
         <div class="blob"></div>
       </div>
 
@@ -57,9 +57,9 @@
   </section>
 
   <!-- ====================== البرامج التدريبية ====================== -->
-  <section id="programs" class="section">
+  <section id="programs" class="section" aria-labelledby="programsTitle">
     <div class="container">
-      <h2 class="section-title">البرامج التدريبية</h2>
+      <h2 class="section-title" id="programsTitle">البرامج التدريبية</h2>
 
       <div class="grid cards">
         <article class="card">
@@ -81,9 +81,9 @@
   </section>
 
   <!-- ====================== عن الدائرة ====================== -->
-  <section id="about" class="section">
+  <section id="about" class="section" aria-labelledby="aboutTitle">
     <div class="container">
-      <h2 class="section-title">عن الدائرة</h2>
+      <h2 class="section-title" id="aboutTitle">عن الدائرة</h2>
       <p>
         تعمل دائرة التدريب والتطوير المهني المستمر على تنفيذ برامج تطويرية تهدف إلى رفع كفاءة الكوادر الصحية، وتعزيز جودة الخدمات المقدمة داخل المدينة الطبية الجامعية.
       </p>
@@ -91,27 +91,27 @@
   </section>
 
   <!-- ====================== تواصل معنا ====================== -->
-  <section id="contact" class="section">
+  <section id="contact" class="section" aria-labelledby="contactTitle">
     <div class="container">
-      <h2 class="section-title">تواصل معنا</h2>
+      <h2 class="section-title" id="contactTitle">تواصل معنا</h2>
 
-      <form id="contactForm" class="form">
+      <form id="contactForm" class="form" novalidate>
         <div class="form-row">
-          <label>الاسم</label>
-          <input type="text" required>
+          <label for="name">الاسم</label>
+          <input id="name" type="text" required />
         </div>
 
         <div class="form-row">
-          <label>البريد الإلكتروني</label>
-          <input type="email" required>
+          <label for="email">البريد الإلكتروني</label>
+          <input id="email" type="email" required />
         </div>
 
         <div class="form-row">
-          <label>الرسالة</label>
-          <textarea rows="5" required></textarea>
+          <label for="message">الرسالة</label>
+          <textarea id="message" rows="5" required></textarea>
         </div>
 
-        <button class="btn primary">إرسال</button>
+        <button type="submit" class="btn primary">إرسال</button>
       </form>
     </div>
   </section>
