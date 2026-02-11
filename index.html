@@ -3,114 +3,177 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>قالب موقع بسيط</title>
+
+  <title>المدينة الطبية الجامعية | دائرة التدريب والتطوير المهني المستمر</title>
+
+  <meta name="description"
+        content="المنصة الرسمية للمدينة الطبية الجامعية، دائرة التدريب والتطوير المهني المستمر. تقديم برامج تدريب وتطوير مهني متقدمة للكوادر الصحية.">
+
+  <meta name="keywords"
+        content="المدينة الطبية الجامعية, التدريب, التطوير المهني, التعليم المستمر, برامج تدريبية, كوادر صحية">
+
+  <meta name="theme-color" content="#4F46E5" />
+
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
   <!-- شريط التنقل -->
-  <header class="site-header">
+  <header class="site-header" role="banner">
     <div class="container nav">
-      <a href="#" class="brand">موقعي</a>
-      <nav class="nav-links" id="navLinks">
+
+      <a href="#home" class="brand">المدينة الطبية الجامعية</a>
+
+      <nav class="nav-links" id="navLinks" aria-label="القائمة الرئيسية">
         <a href="#home">الرئيسية</a>
-        <a href="#features">المزايا</a>
-        <a href="#testimonials">الآراء</a>
-        <a href="#contact">التواصل</a>
+        <a href="#programs">البرامج التدريبية</a>
+        <a href="#about">عن الدائرة</a>
+        <a href="#contact">تواصل معنا</a>
       </nav>
-      <button class="burger" id="burger" aria-label="فتح القائمة">
+
+      <button class="burger" id="burger" aria-label="فتح وإغلاق القائمة">
         ☰
       </button>
     </div>
   </header>
 
-  <!-- بطل الصفحة / الترحيب -->
-  <section id="home" class="hero">
+  <!-- البطل / الترحيب -->
+  <section id="home" class="hero" aria-labelledby="heroTitle">
     <div class="container hero-inner">
+
       <div class="hero-text">
-        <h1>ابني حضورك الرقمي بسهولة</h1>
-        <p>موقع حديث، سريع الاستجابة، مصمم باحتراف — ويمكن تخصيصه بالكامل لاحتياجاتك.</p>
+        <h1 id="heroTitle">المدينة الطبية الجامعية</h1>
+
+        <p>
+          دائرة التدريب والتطوير المهني المستمر — منصة تهدف إلى تطوير كفاءة
+          ومهارات الكوادر الصحية عبر برامج تدريبية متقدمة ومعتمدة.
+        </p>
+
         <div class="hero-actions">
-          <a href="#features" class="btn primary">استكشفي المزايا</a>
-          <a href="#contact" class="btn ghost">تواصلي معنا</a>
+          <a href="#programs" class="btn primary">استكشف البرامج</a>
+          <a href="#contact" class="btn ghost">تواصل معنا</a>
         </div>
       </div>
+
       <div class="hero-visual" aria-hidden="true">
-        <!-- عنصر زخرفي بسيط -->
         <div class="blob"></div>
       </div>
+
     </div>
   </section>
 
-  <!-- المزايا -->
-  <section id="features" class="section">
+  <!-- البرامج التدريبية -->
+  <section id="programs" class="section" aria-labelledby="programsTitle">
     <div class="container">
-      <h2 class="section-title">مزايا القالب</h2>
+      <h2 class="section-title" id="programsTitle">البرامج التدريبية</h2>
+
       <div class="grid cards">
+
         <article class="card">
-          <h3>متجاوب</h3>
-          <p>يعمل بسلاسة على الجوال واللوح والحاسوب، بفضل شبكة CSS مرنة.</p>
+          <h3>أساسيات الإنعاش القلبي الرئوي (BLS)</h3>
+          <p>تدريب مكثف ومعتمد يركّز على المهارات الأساسية لإنقاذ الحياة.</p>
         </article>
+
         <article class="card">
-          <h3>سهل التخصيص</h3>
-          <p>ألوان وخطوط ومكونات يمكنك تغييرها بسرعة دون تعقيد.</p>
+          <h3>سلامة المرضى وإدارة المخاطر</h3>
+          <p>برنامج متخصص لتعزيز ثقافة السلامة وتقليل الأخطاء الطبية.</p>
         </article>
+
         <article class="card">
-          <h3>منظم</h3>
-          <p>هيكل ملفات بسيط (HTML/CSS/JS) مع تعليقات توضيحية.</p>
+          <h3>مهارات البحث للكادر الصحي</h3>
+          <p>منهجيات البحث العلمية، التحليل، وصياغة التقارير المهنية.</p>
         </article>
+
       </div>
     </div>
   </section>
 
-  <!-- الآراء / الشهادات -->
-  <section id="testimonials" class="section alt">
+  <!-- لماذا برامجنا؟ -->
+  <section id="features" class="section alt" aria-labelledby="featuresTitle">
     <div class="container">
-      <h2 class="section-title">ماذا يقول المستخدمون؟</h2>
-      <div class="grid testimonials">
-        <figure class="t-card">
-          <blockquote>قالب أنقذ وقتنا—بدأنا خلال ساعة!</blockquote>
-          <figcaption>— سارة</figcaption>
-        </figure>
-        <figure class="t-card">
-          <blockquote>تصميم نظيف، وسهل التعديل حتى للمبتدئين.</blockquote>
-          <figcaption>— أحمد</figcaption>
-        </figure>
+      <h2 class="section-title" id="featuresTitle">لماذا برامجنا؟</h2>
+
+      <div class="grid cards">
+
+        <article class="card">
+          <h3>اعتماد وجودة</h3>
+          <p>برامج تدريبية مبنية على معايير عالمية وممارسات مهنية عالية الجودة.</p>
+        </article>
+
+        <article class="card">
+          <h3>مرونة وتنوع</h3>
+          <p>خيارات تدريب حضورية وافتراضية تناسب احتياجات الكوادر الصحية.</p>
+        </article>
+
+        <article class="card">
+          <h3>نتائج قابلة للقياس</h3>
+          <p>آليات تقييم دقيقة تساهم في قياس أثر التدريب على الأداء.</p>
+        </article>
+
       </div>
     </div>
   </section>
 
-  <!-- تواصل -->
-  <section id="contact" class="section">
+  <!-- عن الدائرة -->
+  <section id="about" class="section" aria-labelledby="aboutTitle">
     <div class="container">
-      <h2 class="section-title">تواصلي معنا</h2>
-      <form id="contactForm" class="form">
+      <h2 class="section-title" id="aboutTitle">عن الدائرة</h2>
+
+      <p>
+        تعمل دائرة التدريب والتطوير المهني المستمر في المدينة الطبية الجامعية
+        على تصميم وتنفيذ برامج تطويرية تهدف إلى رفع كفاءة الكوادر الصحية وتعزيز
+        جودة الخدمات المقدّمة، من خلال تبني أفضل الممارسات والأساليب التعليمية الحديثة.
+      </p>
+
+    </div>
+  </section>
+
+  <!-- تواصل معنا -->
+  <section id="contact" class="section" aria-labelledby="contactTitle">
+    <div class="container">
+      <h2 class="section-title" id="contactTitle">تواصل معنا</h2>
+
+      <form id="contactForm" class="form" novalidate>
+
         <div class="form-row">
           <label for="name">الاسم</label>
           <input id="name" name="name" type="text" placeholder="اسمك الكامل" required>
         </div>
+
         <div class="form-row">
           <label for="email">البريد الإلكتروني</label>
           <input id="email" name="email" type="email" placeholder="name@example.com" required>
         </div>
+
         <div class="form-row">
           <label for="message">الرسالة</label>
-          <textarea id="message" name="message" rows="5" placeholder="كيف نساعدك؟" required></textarea>
+          <textarea id="message" name="message" rows="5" placeholder="كيف يمكننا مساعدتك؟" required></textarea>
         </div>
+
         <button type="submit" class="btn primary">إرسال</button>
         <p id="formStatus" class="status" role="status" aria-live="polite"></p>
+
       </form>
+
     </div>
   </section>
 
   <!-- التذييل -->
-  <footer class="site-footer">
+  <footer class="site-footer" role="contentinfo">
     <div class="container footer-inner">
-      <p>© <span id="year"></span> موقعي — كل الحقوق محفوظة.</p>
+
+      <p>
+        © <span id="year"></span>
+        المدينة الطبية الجامعية — دائرة التدريب والتطوير المهني المستمر.
+        جميع الحقوق محفوظة.
+      </p>
+
       <a href="#home" class="back-to-top">الرجوع للأعلى ↑</a>
     </div>
   </footer>
 
   <script src="script.js"></script>
+
 </body>
 </html>
