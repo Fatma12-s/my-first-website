@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم - المشاركون والطلبات</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Cairo", sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-right: 4px solid #41726a;
+        }
+
+        h1 {
+            color: #41726a;
+            margin-bottom: 10px;
+        }
+
+        .header-info {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+
+        .stat-box {
+            flex: 1;
+            min-width: 150px;
+            background: #f9fffe;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #6dbfb1;
+            text-align: center;
+        }
+
+        .stat-box h3 {
+            color: #41726a;
+            font-size: 24px;
+            margin: 10px 0;
+        }
+
+        .stat-box p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .filters {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        select, input {
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-family: "Cairo", sans-serif;
+            font-size: 14px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: #41726a;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: "Cairo", sans-serif;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #2f5048;
+        }
+
+        .clear-btn {
+            background: #d9534f;
+        }
+
+        .clear-btn:hover {
+            background: #c9302c;
+        }
+
+        .submissions {
+            display: grid;
+            gap: 20px;
+        }
+
+        .submission-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-right: 4px solid #6dbfb1;
+        }
+
+        .submission-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .submission-title {
+            color: #41726a;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .submission-date {
+            color: #999;
+            font-size: 12px;
+        }
+
+        .submission-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .field {
+            background: #f9fffe;
+            padding: 12px;
+            border-radius: 6px;
+            border-left: 3px solid #6dbfb1;
+        }
+
+        .field-label {
+            color: #41726a;
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .field-value {
+            color: #333;
+            word-break: break-word;
+        }
+
+        .empty-state {
+            background: white;
+            padding: 40px;
+            text-align: center;
+            border-radius: 8px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .export-btn {
+            background: #6dbfb1;
+        }
+
+        .export-btn:hover {
+            background: #5aa39a;
+        }
+
+        @media (max-width: 768px) {
+            .header-info {
+                flex-direction: column;
+            }
+
+            .submission-content {
+                grid-template-columns: 1fr;
+            }
+
+            .filter-group {
+                flex-direction: column;
+            }
+
+            select, input, button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 لوحة التحكم - دائرة التدريب والتطوير المهني المستمر</h1>
+            <p>عرض وإدارة جميع طلبات المشاركين والمتدربين</p>
+            
+            <div class="header-info" id="stats">
+                <!-- سيتم ملؤها بـ JavaScript -->
+            </div>
+        </header>
+
+        <div class="filters">
+            <div class="filter-group">
+                <select id="formFilter">
+                    <option value="">📋 جميع الطلبات</option>
+                    <option value="graduates">👨‍🎓 تدريب الطلاب والخريجين</option>
+                    <option value="internal-employees">👔 البرامج الداخلية - الموظفين</option>
+                    <option value="internal-others">👥 البرامج الداخلية - الآخرين</option>
+                    <option value="training-employees">📚 البرامج التدريبية - الموظفين</option>
+                    <option value="training-others">📚 البرامج التدريبية - الآخرين</option>
+                    <option value="contact">💬 رسائل التواصل</option>
+                </select>
+
+                <input type="text" id="searchInput" placeholder="🔍 ابحث عن اسم أو بريد...">
+
+                <button onclick="exportToCSV()">📥 تصدير Excel</button>
+                <button class="clear-btn" onclick="clearAllData()">🗑️ حذف الكل</button>
+            </div>
+        </div>
+
+        <div id="submissionsContainer" class="submissions">
+            <!-- سيتم ملؤها بـ JavaScript -->
+        </div>
+    </div>
+
+    <script>
+        // ===== تحميل وعرض البيانات =====
+        function loadSubmissions() {
+            const allSubmissions = JSON.parse(localStorage.getItem('formSubmissions')) || {};
+            const container = document.getElementById('submissionsContainer');
+            const selectedForm = document.getElementById('formFilter').value;
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+
+            let filteredData = [];
+
+            // تجميع البيانات
+            Object.entries(allSubmissions).forEach(([formType, submissions]) => {
+                if (!selectedForm || formType === selectedForm) {
+                    submissions.forEach(submission => {
+                        submission.formType = formType;
+                        filteredData.push(submission);
+                    });
+                }
+            });
+
+            // البحث
+            if (searchTerm) {
+                filteredData = filteredData.filter(item => {
+                    const dataStr = JSON.stringify(item).toLowerCase();
+                    return dataStr.includes(searchTerm);
+                });
+            }
+
+            // ترتيب حسب التاريخ (الأحدث أولاً)
+            filteredData.sort((a, b) => b.id - a.id);
+
+            // العرض
+            if (filteredData.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📭</div>
+                        <h3>لا توجد طلبات</h3>
+                        <p>لم يتم تقديم أي طلبات حتى الآن</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filteredData.map(submission => {
+                const formTypeNames = {
+                    'graduates': '👨‍🎓 تدريب الطلاب والخريجين',
+                    'internal-employees': '👔 البرامج الداخلية - الموظفين',
+                    'internal-others': '👥 البرامج الداخلية - الآخرين',
+                    'training-employees': '📚 البرامج التدريبية - الموظفين',
+                    'training-others': '📚 البرامج التدريبية - الآخرين',
+                    'contact': '💬 رسائل التواصل'
+                };
+
+                return `
+                    <div class="submission-card">
+                        <div class="submission-header">
+                            <div>
+                                <div class="submission-title">${formTypeNames[submission.formType]}</div>
+                                <div class="submission-date">📅 ${submission.submittedAt || 'غير محدد'}</div>
+                            </div>
+                        </div>
+                        <div class="submission-content">
+                            ${Object.entries(submission)
+                                .filter(([key]) => key !== 'formType' && key !== 'id' && key !== 'submittedAt')
+                                .map(([key, value]) => `
+                                    <div class="field">
+                                        <div class="field-label">${key}</div>
+                                        <div class="field-value">${String(value)}</div>
+                                    </div>
+                                `).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            updateStats();
+        }
+
+        // ===== تحديث الإحصائيات =====
+        function updateStats() {
+            const allSubmissions = JSON.parse(localStorage.getItem('formSubmissions')) || {};
+            const total = Object.values(allSubmissions).reduce((sum, arr) => sum + arr.length, 0);
+
+            const stats = {
+                'graduates': '👨‍🎓 الطلاب والخريجين',
+                'internal-employees': '👔 الموظفين (برامج داخلية)',
+                'internal-others': '👥 الآخرين (برامج داخلية)',
+                'training-employees': '📚 الموظفين (برامج تدريبية)',
+                'training-others': '📚 الآخرين (برامج تدريبية)',
+                'contact': '💬 رسائل التواصل'
+            };
+
+            let statsHtml = `<div class="stat-box"><h3>${total}</h3><p>📊 إجمالي الطلبات</p></div>`;
+
+            Object.entries(stats).forEach(([key, label]) => {
+                const count = (allSubmissions[key] || []).length;
+                statsHtml += `<div class="stat-box"><h3>${count}</h3><p>${label}</p></div>`;
+            });
+
+            document.getElementById('stats').innerHTML = statsHtml;
+        }
+
+        // ===== تصدير إلى Excel =====
+        function exportToCSV() {
+            const allSubmissions = JSON.parse(localStorage.getItem('formSubmissions')) || {};
+            let csv = '\uFEFF'; // BOM for UTF-8
+            let allData = [];
+
+            Object.entries(allSubmissions).forEach(([formType, submissions]) => {
+                submissions.forEach(submission => {
+                    submission.formType = formType;
+                    allData.push(submission);
+                });
+            });
+
+            if (allData.length === 0) {
+                alert('لا توجد بيانات للتصدير');
+                return;
+            }
+
+            // الرؤوس
+            const headers = Object.keys(allData[0]);
+            csv += headers.join(',') + '\n';
+
+            // البيانات
+            allData.forEach(row => {
+                csv += headers.map(header => {
+                    let value = row[header] || '';
+                    value = String(value).replace(/"/g, '""');
+                    return `"${value}"`;
+                }).join(',') + '\n';
+            });
+
+            // تحميل الملف
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `طلبات-التدريب-${new Date().toLocaleDateString('ar-SA')}.csv`;
+            link.click();
+        }
+
+        // ===== حذف جميع البيانات =====
+        function clearAllData() {
+            if (confirm('⚠️ هل أنت متأكد من حذف جميع البيانات؟ لا يمكن التراجع عن هذا الإجراء!')) {
+                localStorage.removeItem('formSubmissions');
+                loadSubmissions();
+                alert('✅ تم حذف جميع البيانات');
+            }
+        }
+
+        // ===== الأحداث =====
+        document.getElementById('formFilter').addEventListener('change', loadSubmissions);
+        document.getElementById('searchInput').addEventListener('input', loadSubmissions);
+
+        // التحميل الأولي
+        loadSubmissions();
+    </script>
+</body>
+</html>
