@@ -546,7 +546,60 @@
                         <textarea id="train-emp-message" name="train-emp-message" rows="4"></textarea>
                     </div>
 
-                    <button type="submit" class="btn primary">تقديم الطلب</button>
+                    <hr style="border: none; border-top: 2px solid var(--brand-500); margin: 30px 0;">
+                    <h4 style="color: var(--brand-600); margin-bottom: 20px;">الموافقات المطلوبة</h4>
+
+                    <!-- الموافقة الأولى: رئيس القسم -->
+                    <div style="padding: 15px; background: #f0f8f7; border-radius: 8px; margin-bottom: 20px; border-right: 4px solid var(--brand-500);">
+                        <h5 style="color: var(--brand-600); margin-top: 0;">✓ موافقة رئيس القسم أو المسؤول المباشر</h5>
+                        
+                        <div>
+                            <label for="train-emp-direct-name">اسم رئيس القسم/المسؤول المباشر</label>
+                            <input type="text" id="train-emp-direct-name" name="train-emp-direct-name" required>
+                        </div>
+
+                        <div>
+                            <label for="train-emp-direct-email">البريد الإلكتروني</label>
+                            <input type="email" id="train-emp-direct-email" name="train-emp-direct-email" required>
+                        </div>
+
+                        <div>
+                            <label for="train-emp-direct-approve">الموافقة</label>
+                            <select id="train-emp-direct-approve" name="train-emp-direct-approve" required style="padding: 12px; border-radius: var(--radius); border: 1px solid #cfd8d6; font-family: var(--font); font-size: var(--fs-md); width: 100%;">
+                                <option value="">-- اختر --</option>
+                                <option value="موافق">✓ موافق</option>
+                                <option value="غير موافق">✗ غير موافق</option>
+                                <option value="بتحفز">بتحفز</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- الموافقة الثانية: رئيس قسم التدريب -->
+                    <div style="padding: 15px; background: #f0f8f7; border-radius: 8px; border-right: 4px solid var(--brand-500);">
+                        <h5 style="color: var(--brand-600); margin-top: 0;">✓ موافقة رئيس قسم التدريب</h5>
+                        
+                        <div>
+                            <label for="train-emp-training-name">اسم رئيس قسم التدريب</label>
+                            <input type="text" id="train-emp-training-name" name="train-emp-training-name" required>
+                        </div>
+
+                        <div>
+                            <label for="train-emp-training-email">البريد الإلكتروني</label>
+                            <input type="email" id="train-emp-training-email" name="train-emp-training-email" required>
+                        </div>
+
+                        <div>
+                            <label for="train-emp-training-approve">الموافقة</label>
+                            <select id="train-emp-training-approve" name="train-emp-training-approve" required style="padding: 12px; border-radius: var(--radius); border: 1px solid #cfd8d6; font-family: var(--font); font-size: var(--fs-md); width: 100%;">
+                                <option value="">-- اختر --</option>
+                                <option value="موافق">✓ موافق</option>
+                                <option value="غير موافق">✗ غير موافق</option>
+                                <option value="بتحفز">بتحفز</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <hr style="border: none; margin-top: 30px;">                    <button type="submit" class="btn primary">تقديم الطلب</button>
                 </form>
             </div>
 
