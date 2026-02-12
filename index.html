@@ -4,12 +4,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="دائرة التدريب والتطوير المهني المستمر - منصة رسمية لتخطيط وتنفيذ البرامج التدريبية">
+    <meta name="keywords" content="تدريب، تطوير مهني، كوادر صحية، برامج تدريبية">
+    <meta name="author" content="دائرة التدريب والتطوير المهني المستمر">
 
     <title>دائرة التدريب والتطوير المهني المستمر</title>
 
     <!-- خط عربي -->
-    https://fonts.gstatic.com
-    https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
 
     <style>
         :root {
@@ -83,11 +85,19 @@
             padding: 10px 14px;
             border-radius: var(--radius);
             font-weight: 700;
+            transition: all 0.3s ease;
+            display: inline-block;
         }
 
         nav a:hover {
             background: var(--brand-100);
             transform: translateY(-2px);
+            color: var(--brand-600);
+        }
+
+        nav a:active {
+            color: var(--brand-600);
+            font-weight: 800;
         }
 
         /* الهيرو */
@@ -113,6 +123,10 @@
             padding: 12px 18px;
             border-radius: var(--radius);
             font-weight: 800;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s ease;
+            font-size: var(--fs-md);
         }
 
         .btn.primary {
@@ -120,9 +134,21 @@
             color: #fff;
         }
 
+        .btn.primary:hover {
+            background: var(--brand-500);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(109, 191, 177, 0.3);
+        }
+
         .btn.ghost {
             border: 2px solid var(--brand-600);
             color: var(--brand-600);
+            background: transparent;
+        }
+
+        .btn.ghost:hover {
+            background: var(--brand-100);
+            transform: translateY(-2px);
         }
 
         /* الأقسام */
@@ -159,18 +185,70 @@
             gap: 18px;
         }
 
+        form div {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        label {
+            font-weight: 700;
+            color: var(--fg);
+        }
+
         input,
         textarea {
             padding: 12px;
             border-radius: var(--radius);
             border: 1px solid #cfd8d6;
+            font-family: var(--font);
+            font-size: var(--fs-md);
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        input:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--brand-500);
+            box-shadow: 0 0 0 3px rgba(109, 191, 177, 0.1);
         }
 
         footer {
             background: #f4fbfa;
-            padding: 20px 0;
+            padding: 30px 0;
             text-align: center;
-            margin-top: 40px;
+            margin-top: 60px;
+            border-top: 1px solid #e9efee;
+        }
+
+        footer small {
+            color: #666;
+            font-size: var(--fs-sm);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            nav ul {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .hero {
+                padding: 40px 0;
+            }
+
+            .section {
+                padding: 40px 0;
+            }
+
+            .hero-actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                text-align: center;
+            }
         }
     </style>
 </head>
@@ -179,18 +257,17 @@
 
     <header class="site-header">
         <div class="container header-center">
-
-            #home
-                ./assets/logo.png
+            <a href="#home">
+                <img src="./assets/logo.png" alt="شعار الدائرة" class="brand-logo">
                 <span class="brand-text">دائرة التدريب والتطوير المهني المستمر</span>
             </a>
 
             <nav>
                 <ul>
-                    <li>#homeالرئيسية</a></li>
-                    <li>#programsالبرامج التدريبية</a></li>
-                    <li>#aboutعن الدائرة</a></li>
-                    <li>#contactتواصل معنا</a></li>
+                    <li><a href="#home">الرئيسية</a></li>
+                    <li><a href="#programs">البرامج التدريبية</a></li>
+                    <li><a href="#about">عن الدائرة</a></li>
+                    <li><a href="#contact">تواصل معنا</a></li>
                 </ul>
             </nav>
 
@@ -202,8 +279,8 @@
             <p>منصة رسمية لتخطيط وتنفيذ البرامج التدريبية ورفع كفاءة الكوادر الصحية داخل المؤسسة.</p>
 
             <div class="hero-actions">
-                #programsاستكشف البرامج</a>
-                #contactتواصل معنا</a>
+                <a href="#programs" class="btn primary">استكشف البرامج</a>
+                <a href="#contact" class="btn ghost">تواصل معنا</a>
             </div>
         </div>
     </section>
@@ -242,21 +319,21 @@
 
             <form>
                 <div>
-                    <label>الاسم</label>
-                    <input type="text" required>
+                    <label for="name">الاسم</label>
+                    <input type="text" id="name" name="name" required>
                 </div>
 
                 <div>
-                    <label>البريد الإلكتروني</label>
-                    <input type="email" required>
+                    <label for="email">البريد الإلكتروني</label>
+                    <input type="email" id="email" name="email" required>
                 </div>
 
                 <div>
-                    <label>الرسالة</label>
-                    <textarea rows="5" required></textarea>
+                    <label for="message">الرسالة</label>
+                    <textarea id="message" name="message" rows="5" required></textarea>
                 </div>
 
-                <button class="btn primary">إرسال</button>
+                <button type="submit" class="btn primary">إرسال</button>
             </form>
         </div>
     </section>
