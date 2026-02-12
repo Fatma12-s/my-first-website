@@ -322,7 +322,7 @@
         <div class="container">
             <h2 class="section-title">تقديم الطلب - تدريب الطلاب والخريجين</h2>
             
-            <form id="graduates-form">
+            <form id="graduates-form" enctype="multipart/form-data">
                 <div>
                     <label for="grad-name">الاسم الكامل</label>
                     <input type="text" id="grad-name" name="grad-name" required>
@@ -356,6 +356,25 @@
                 <div>
                     <label for="grad-message">ملاحظات إضافية</label>
                     <textarea id="grad-message" name="grad-message" rows="4"></textarea>
+                </div>
+
+                <hr style="border: none; border-top: 2px solid var(--brand-500); margin: 30px 0;">
+                <h4 style="color: var(--brand-600); margin-bottom: 20px;">📎 المرفقات المطلوبة</h4>
+
+                <div>
+                    <label for="grad-certificate" style="display: flex; flex-direction: column; gap: 8px;">
+                        📄 نسخة من الشهادة الجامعية (للخريجين) أو رسالة من المؤسسة التعليمية (للطلاب)
+                    </label>
+                    <input type="file" id="grad-certificate" name="grad-certificate" accept=".pdf,.jpg,.jpeg,.png" required style="padding: 8px; border: 1px solid #cfd8d6; border-radius: var(--radius); cursor: pointer;">
+                    <small style="color: #666;">أنواع الملفات المقبولة: PDF, JPG, PNG</small>
+                </div>
+
+                <div>
+                    <label for="grad-id" style="display: flex; flex-direction: column; gap: 8px;">
+                        🪪 نسخة من البطاقة الشخصية
+                    </label>
+                    <input type="file" id="grad-id" name="grad-id" accept=".pdf,.jpg,.jpeg,.png" required style="padding: 8px; border: 1px solid #cfd8d6; border-radius: var(--radius); cursor: pointer;">
+                    <small style="color: #666;">أنواع الملفات المقبولة: PDF, JPG, PNG</small>
                 </div>
 
                 <button type="submit" class="btn primary">تقديم الطلب</button>
