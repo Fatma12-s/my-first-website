@@ -1,162 +1,270 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>دائرة التدريب والتطوير المهني المستمر</title>
-  <meta name="description" content="منصة الدائرة لتنظيم البرامج التدريبية ورفع كفاءة الكوادر الصحية." />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- خط عربي (اختياري) -->
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
+    <title>دائرة التدريب والتطوير المهني المستمر</title>
 
-  <style>
-    :root{
-      --brand-500:#6dbfb1; --brand-600:#41726a; --brand-100:#8acbc0;
-      --fg:#1f2328; --bg:#ffffff; --radius:12px; --shadow:0 6px 18px rgba(0,0,0,.10);
-      --fs-sm:clamp(.9rem,.8rem + .3vw,1rem);
-      --fs-md:clamp(1rem,.9rem + .6vw,1.2rem);
-      --fs-lg:clamp(1.4rem,1.2rem + 1vw,2rem);
-      --font:"Cairo", ui-sans-serif, system-ui, "Noto Sans Arabic", "Segoe UI", Tahoma, Arial, sans-serif;
-    }
-    *{box-sizing:border-box}
-    html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
-    body{margin:0;font-family:var(--font);background:var(--bg);color:var(--fg);line-height:1.7}
+    <!-- خط عربي -->
+    https://fonts.gstatic.com
+    https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap
 
-    .container{max-width:1200px;margin-inline:auto;padding-inline:20px}
+    <style>
+        :root {
+            --brand-500: #6dbfb1;
+            --brand-600: #41726a;
+            --brand-100: #8acbc0;
+            --fg: #1f2328;
+            --bg: #ffffff;
+            --radius: 12px;
+            --shadow: 0 6px 18px rgba(0, 0, 0, .10);
+            --fs-sm: clamp(.9rem, .8rem + .3vw, 1rem);
+            --fs-md: clamp(1rem, .9rem + .6vw, 1.2rem);
+            --fs-lg: clamp(1.4rem, 1.2rem + 1vw, 2rem);
+            --font: "Cairo", ui-sans-serif, system-ui, "Noto Sans Arabic", "Segoe UI", Tahoma, Arial, sans-serif;
+        }
 
-    /* الهيدر */
-    .site-header{background:var(--bg);padding:24px 0;box-shadow:var(--shadow);position:sticky;top:0;z-index:999}
-    .header-center{display:grid;row-gap:16px;justify-items:center}
-    .brand{display:inline-flex;flex-direction:column;align-items:center;text-decoration:none}
-    .brand-logo{width:160px;height:auto;filter:drop-shadow(0 3px 10px rgba(0,0,0,.14))}
-    .brand-text{font-size:var(--fs-lg);font-weight:800;margin-top:8px;color:var(--fg);text-align:center}
+        body {
+            margin: 0;
+            font-family: var(--font);
+            color: var(--fg);
+            background: var(--bg);
+        }
 
-    nav ul{list-style:none;display:flex;gap:24px;justify-content:center;margin:0;padding:0;flex-wrap:wrap}
-    nav a{padding:10px 14px;border-radius:var(--radius);font-weight:700;transition:.25s}
-    nav a:hover{background:var(--brand-100);color:#0b3b35;transform:translateY(-2px)}
-    nav a[aria-current="page"]{background:var(--brand-100);color:#0b3b35}
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
 
-    /* هيرو */
-    .hero{padding:80px 0;background:linear-gradient(to left,#ffffff,#eff9f8)}
-    .hero p{max-width:700px;font-size:var(--fs-md)}
-    .hero-actions{margin-top:20px;display:flex;gap:12px;flex-wrap:wrap}
+        .container {
+            max-width: 1200px;
+            padding: 0 20px;
+            margin: auto;
+        }
 
-    /* أزرار */
-    .btn{display:inline-block;padding:12px 18px;border-radius:var(--radius);font-weight:800;border:2px solid transparent;transition:.25s;font-size:var(--fs-sm)}
-    .btn.primary{background:var(--brand-600);color:#fff}
-    .btn.primary:hover{background:#356058}
-    .btn.ghost{border-color:var(--brand-600);color:var(--brand-600)}
-    .btn.ghost:hover{background:var(--brand-100);color:#0b3b35}
+        /* الهيدر */
+        .site-header {
+            padding: 24px 0;
+            background: var(--bg);
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 99;
+        }
 
-    /* أقسام وبطاقات */
-    .section{padding:60px 0}
-    .section-title{font-size:var(--fs-lg);margin-bottom:30px;border-right:8px solid var(--brand-500);padding-right:12px;color:#0b3b35}
-    .grid{display:grid;gap:20px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
-    .card{padding:20px;background:#fff;border-radius:16px;border:1px solid #e9efee;box-shadow:0 3px 10px rgba(0,0,0,.06);transition:.2s}
-    .card:hover{border-color:var(--brand-100);transform:translateY(-3px)}
+        .header-center {
+            text-align: center;
+        }
 
-    /* نموذج */
-    form{display:grid;gap:18px;max-width:600px}
-    input,textarea{padding:12px;font-size:1rem;border-radius:var(--radius);border:1px solid #cfd8d6;font-family:inherit}
-    input:focus,textarea:focus{outline:2px solid var(--brand-500);border-color:var(--brand-500)}
+        .brand-logo {
+            width: 160px;
+            height: auto;
+            filter: drop-shadow(0 3px 10px rgba(0, 0, 0, .15));
+        }
 
-    footer{background:#f4fbfa;padding:20px 0;text-align:center;margin-top:40px}
-  </style>
+        .brand-text {
+            font-size: var(--fs-lg);
+            font-weight: 800;
+            margin-top: 10px;
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            gap: 24px;
+            justify-content: center;
+            padding: 0;
+            margin-top: 20px;
+        }
+
+        nav a {
+            padding: 10px 14px;
+            border-radius: var(--radius);
+            font-weight: 700;
+        }
+
+        nav a:hover {
+            background: var(--brand-100);
+            transform: translateY(-2px);
+        }
+
+        /* الهيرو */
+        .hero {
+            padding: 80px 0;
+            background: linear-gradient(to left, #ffffff, #eff9f8);
+        }
+
+        .hero p {
+            font-size: var(--fs-md);
+            max-width: 650px;
+            margin: auto;
+        }
+
+        .hero-actions {
+            margin-top: 20px;
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 12px 18px;
+            border-radius: var(--radius);
+            font-weight: 800;
+        }
+
+        .btn.primary {
+            background: var(--brand-600);
+            color: #fff;
+        }
+
+        .btn.ghost {
+            border: 2px solid var(--brand-600);
+            color: var(--brand-600);
+        }
+
+        /* الأقسام */
+        .section {
+            padding: 60px 0;
+        }
+
+        .section-title {
+            font-size: var(--fs-lg);
+            border-right: 8px solid var(--brand-500);
+            padding-right: 12px;
+            color: #0b3b35;
+            margin-bottom: 25px;
+        }
+
+        .grid {
+            display: grid;
+            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid #e9efee;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, .08);
+        }
+
+        /* التواصل */
+        form {
+            max-width: 600px;
+            display: grid;
+            gap: 18px;
+        }
+
+        input,
+        textarea {
+            padding: 12px;
+            border-radius: var(--radius);
+            border: 1px solid #cfd8d6;
+        }
+
+        footer {
+            background: #f4fbfa;
+            padding: 20px 0;
+            text-align: center;
+            margin-top: 40px;
+        }
+    </style>
 </head>
+
 <body>
 
-  <!-- الهيدر -->
-  <header class="site-header" role="banner">
-    <div class="container header-center">
+    <header class="site-header">
+        <div class="container header-center">
 
-      <a href="#home" class="brand">
-        <img src="./assets/logo.png?v=3" alt="شعار الدائرة" class="brand-logo" loading="lazy">
-        <span class="brand-text">دائرة التدريب والتطوير المهني المستمر</span>
-      </a>
+            #home
+                ./assets/logo.png
+                <span class="brand-text">دائرة التدريب والتطوير المهني المستمر</span>
+            </a>
 
-      <nav aria-label="التنقل الرئيسي">
-        <ul>
-          <li><a href="#home" aria-current="page">الرئيسية</a></li>
-          <li><a href="#programs">البرامج التدريبية</a></li>
-          <li><a href="#about">عن الدائرة</a></li>
-          <li><a href="#contact">تواصل معنا</a></li>
-        </ul>
-      </nav>
+            <nav>
+                <ul>
+                    <li>#homeالرئيسية</a></li>
+                    <li>#programsالبرامج التدريبية</a></li>
+                    <li>#aboutعن الدائرة</a></li>
+                    <li>#contactتواصل معنا</a></li>
+                </ul>
+            </nav>
 
-    </div>
-  </header>
-
-  <!-- الهيرو -->
-  <section id="home" class="hero">
-    <div class="container">
-      <p>
-        منصة رسمية لتخطيط وتنفيذ البرامج التدريبية ورفع كفاءة الكوادر الصحية.
-      </p>
-      <div class="hero-actions">
-        <a class="btn primary" href="#programs">استكشف البرامج</a>
-        <a class="btn ghost" href="#contact">تواصل معنا</a>
-      </div>
-    </div>
-  </section>
-
-  <!-- البرامج -->
-  <section id="programs" class="section">
-    <div class="container">
-      <h2 class="section-title">البرامج التدريبية</h2>
-      <div class="grid">
-        <div class="card">
-          <h3>تدريب الطلاب الخريجين</h3>
-          <p>برامج عملية لتهيئة الطلاب الخريجين للممارسة المهنية.</p>
         </div>
-        <div class="card">
-          <h3>البرامج الداخلية الإلزامية</h3>
-          <p>برامج ترفع مستوى الكفاءة التشغيلية داخل المؤسسة الصحية.</p>
-        </div>
-        <div class="card">
-          <h3>البرامج التدريبية الداخلية</h3>
-          <p>ورش تخصصية ترفع مهارات الموظفين.</p>
-        </div>
-      </div>
-    </div>
-  </section>
+    </header>
 
-  <!-- عن الدائرة -->
-  <section id="about" class="section">
-    <div class="container">
-      <h2 class="section-title">عن الدائرة</h2>
-      <p>
-        تعمل دائرة التدريب والتطوير المهني المستمر على تقديم برامج تطويرية وورش تخصصية
-        ترفع من كفاءة الكوادر الصحية وتساهم في تحسين جودة الخدمات المقدمة.
-      </p>
-    </div>
-  </section>
+    <section id="home" class="hero">
+        <div class="container">
+            <p>منصة رسمية لتخطيط وتنفيذ البرامج التدريبية ورفع كفاءة الكوادر الصحية داخل المؤسسة.</p>
 
-  <!-- تواصل -->
-  <section id="contact" class="section">
-    <div class="container">
-      <h2 class="section-title">تواصل معنا</h2>
-      <form novalidate>
-        <div>
-          <label for="name">الاسم</label>
-          <input id="name" type="text" required>
+            <div class="hero-actions">
+                #programsاستكشف البرامج</a>
+                #contactتواصل معنا</a>
+            </div>
         </div>
-        <div>
-          <label for="email">البريد الإلكتروني</label>
-          <input id="email" type="email" required>
-        </div>
-        <div>
-          <label for="message">الرسالة</label>
-          <textarea id="message" rows="5" required></textarea>
-        </div>
-        <button class="btn primary" type="submit">إرسال</button>
-      </form>
-    </div>
-  </section>
+    </section>
 
-  <footer>
-    <small>© دائرة التدريب والتطوير المهني المستمر</small>
-  </footer>
+    <section id="programs" class="section">
+        <div class="container">
+            <h2 class="section-title">البرامج التدريبية</h2>
+
+            <div class="grid">
+                <div class="card">
+                    <h3>تدريب الطلاب الخريجين</h3>
+                    <p>برامج تأهيلية عملية للطلاب الخريجين.</p>
+                </div>
+                <div class="card">
+                    <h3>البرامج الداخلية الإلزامية</h3>
+                    <p>برامج تستهدف رفع الكفاءة التشغيلية.</p>
+                </div>
+                <div class="card">
+                    <h3>البرامج التدريبية الداخلية</h3>
+                    <p>ورش تخصصية لرفع مهارات الموظفين.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="about" class="section">
+        <div class="container">
+            <h2 class="section-title">عن الدائرة</h2>
+            <p>نعمل على تطوير الكوادر الصحية وتقديم برامج متخصصة وورش تدريبية ذات جودة عالية.</p>
+        </div>
+    </section>
+
+    <section id="contact" class="section">
+        <div class="container">
+            <h2 class="section-title">تواصل معنا</h2>
+
+            <form>
+                <div>
+                    <label>الاسم</label>
+                    <input type="text" required>
+                </div>
+
+                <div>
+                    <label>البريد الإلكتروني</label>
+                    <input type="email" required>
+                </div>
+
+                <div>
+                    <label>الرسالة</label>
+                    <textarea rows="5" required></textarea>
+                </div>
+
+                <button class="btn primary">إرسال</button>
+            </form>
+        </div>
+    </section>
+
+    <footer>
+        <small>© دائرة التدريب والتطوير المهني المستمر</small>
+    </footer>
 
 </body>
+
 </html>
