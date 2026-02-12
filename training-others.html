@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="تقديم طلب - البرامج التدريبية (غير الموظفين)">
+    <title>تقديم طلب - البرامج التدريبية (غير الموظفين)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root{--brand-500:#6dbfb1;--brand-600:#41726a;--radius:12px;--font:"Cairo",ui-sans-serif,system-ui,"Noto Sans Arabic",Segoe UI,Tahoma,Arial,sans-serif}
+        body{margin:0;font-family:var(--font);color:#1f2328;background:#fff}
+        .container{max-width:1000px;padding:0 20px;margin:auto}
+        header{padding:8px 0;text-align:center}
+        .brand-logo{width:200px;display:block;margin:0 auto}
+        form{max-width:720px;margin:30px auto;display:grid;gap:16px}
+        label{font-weight:700}
+        input,select,textarea{padding:10px;border:1px solid #cfd8d6;border-radius:var(--radius);font-family:var(--font)}
+        .btn{padding:12px;border-radius:var(--radius);background:var(--brand-600);color:#fff;border:none;font-weight:800;cursor:pointer}
+        .back-link{display:inline-block;margin:12px 0;color:var(--brand-600);text-decoration:underline}
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <a href="index.html">
+                <img src="./assets/logo.png" alt="شعار الدائرة" class="brand-logo">
+                <div style="font-weight:800;margin-top:6px;">البرامج التدريبية - تقديم غير الموظفين</div>
+            </a>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="index.html#programs" class="back-link">← العودة للبرامج</a>
+        <form id="training-others-form" enctype="multipart/form-data">
+            <div>
+                <label for="to-name">الاسم الكامل</label>
+                <input type="text" id="to-name" name="name" required>
+            </div>
+
+            <div>
+                <label for="to-email">البريد الإلكتروني</label>
+                <input type="email" id="to-email" name="email" required>
+            </div>
+
+            <div>
+                <label for="to-phone">رقم الهاتف</label>
+                <input type="tel" id="to-phone" name="phone" required>
+            </div>
+
+            <div>
+                <label for="to-org">جهة العمل / المؤسسة</label>
+                <input type="text" id="to-org" name="organization">
+            </div>
+
+            <div>
+                <label for="to-program">اختر البرنامج</label>
+                <select id="to-program" name="program" required>
+                    <option value="">-- اختر برنامج --</option>
+                    <option>البرنامج 1</option>
+                    <option>البرنامج 2</option>
+                    <option>البرنامج 3</option>
+                    <option>البرنامج 4</option>
+                    <option>البرنامج 5</option>
+                    <option>البرنامج 6</option>
+                    <option>البرنامج 7</option>
+                    <option>البرنامج 8</option>
+                    <option>البرنامج 9</option>
+                    <option>البرنامج 10</option>
+                    <option>البرنامج 11</option>
+                    <option>البرنامج 12</option>
+                    <option>البرنامج 13</option>
+                    <option>البرنامج 14</option>
+                    <option>البرنامج 15</option>
+                    <option>البرنامج 16</option>
+                    <option>البرنامج 17</option>
+                    <option>البرنامج 18</option>
+                    <option>البرنامج 19</option>
+                    <option>البرنامج 20</option>
+                    <option>البرنامج 21</option>
+                    <option>البرنامج 22</option>
+                    <option>البرنامج 23</option>
+                    <option>البرنامج 24</option>
+                    <option>البرنامج 25</option>
+                    <option>البرنامج 26</option>
+                    <option>البرنامج 27</option>
+                    <option>البرنامج 28</option>
+                    <option>البرنامج 29</option>
+                    <option>البرنامج 30</option>
+                </select>
+            </div>
+
+            <div>
+                <label for="to-receipt">إيصال الدفع</label>
+                <input type="file" id="to-receipt" name="receipt" accept=".pdf,.jpg,.png">
+            </div>
+
+            <div>
+                <label for="to-notes">ملاحظات إضافية</label>
+                <textarea id="to-notes" name="notes" rows="4"></textarea>
+            </div>
+
+            <button type="submit" class="btn">تقديم الطلب</button>
+        </form>
+
+        <footer style="text-align:center;margin:40px 0;color:#666">
+            <a href="admin.html" style="color:var(--brand-600);text-decoration:underline">عرض لوحة التحكم والطلبات</a>
+        </footer>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
