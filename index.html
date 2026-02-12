@@ -7,16 +7,6 @@
     <meta name="description" content="دائرة التدريب والتطوير المهني المستمر - منصة رسمية لتخطيط وتنفيذ البرامج التدريبية">
     <meta name="keywords" content="تدريب، تطوير مهني، كوادر صحية، برامج تدريبية">
     <meta name="author" content="دائرة التدريب والتطوير المهني المستمر">
-    
-    <!-- Open Graph Meta Tags -->
-    <meta property="og:title" content="دائرة التدريب والتطوير المهني المستمر">
-    <meta property="og:description" content="منصة رسمية لتخطيط وتنفيذ البرامج التدريبية ورفع كفاءة الكوادر الصحية">
-    <meta property="og:image" content="./assets/logo.png">
-    <meta property="og:type" content="website">
-    
-    <!-- Favicon -->
-    <link rel="icon" href="./assets/logo.png" type="image/png">
-    <link rel="shortcut icon" href="./assets/logo.png" type="image/png">
 
     <title>دائرة التدريب والتطوير المهني المستمر</title>
 
@@ -71,7 +61,7 @@
         }
 
         .brand-logo {
-            width: 240px;
+            width: 320px;
             height: auto;
             filter: drop-shadow(0 3px 10px rgba(0, 0, 0, .15));
             display: block;
@@ -305,6 +295,7 @@
                 <div class="card">
                     <h3>تدريب الطلاب الخريجين</h3>
                     <p>برامج تأهيلية عملية للطلاب الخريجين.</p>
+                    <a href="#apply-graduates" class="btn primary" style="display: inline-block; margin-top: 15px; padding: 10px 16px; font-size: 0.95rem;">تقديم الطلب</a>
                 </div>
                 <div class="card">
                     <h3>البرامج الداخلية الإلزامية</h3>
@@ -322,6 +313,51 @@
         <div class="container">
             <h2 class="section-title">عن الدائرة</h2>
             <p>نعمل على تطوير الكوادر الصحية وتقديم برامج متخصصة وورش تدريبية ذات جودة عالية.</p>
+        </div>
+    </section>
+
+    <section id="apply-graduates" class="section">
+        <div class="container">
+            <h2 class="section-title">تقديم الطلب - تدريب الطلاب الخريجين</h2>
+            
+            <form id="graduates-form">
+                <div>
+                    <label for="grad-name">الاسم الكامل</label>
+                    <input type="text" id="grad-name" name="grad-name" required>
+                </div>
+
+                <div>
+                    <label for="grad-email">البريد الإلكتروني</label>
+                    <input type="email" id="grad-email" name="grad-email" required>
+                </div>
+
+                <div>
+                    <label for="grad-phone">رقم الهاتف</label>
+                    <input type="tel" id="grad-phone" name="grad-phone" required>
+                </div>
+
+                <div>
+                    <label for="grad-university">الجامعة/المعهد</label>
+                    <input type="text" id="grad-university" name="grad-university" required>
+                </div>
+
+                <div>
+                    <label for="grad-major">التخصص</label>
+                    <input type="text" id="grad-major" name="grad-major" required>
+                </div>
+
+                <div>
+                    <label for="grad-graduation">تاريخ التخرج</label>
+                    <input type="date" id="grad-graduation" name="grad-graduation" required>
+                </div>
+
+                <div>
+                    <label for="grad-message">ملاحظات إضافية</label>
+                    <textarea id="grad-message" name="grad-message" rows="4"></textarea>
+                </div>
+
+                <button type="submit" class="btn primary">تقديم الطلب</button>
+            </form>
         </div>
     </section>
 
