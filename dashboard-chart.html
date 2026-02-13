@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>التخطيط البياني - الطلبات والتدريب</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <style>
+        :root {
+            --brand-500: #6dbfb1;
+            --brand-600: #41726a;
+            --brand-100: #8acbc0;
+            --fg: #1f2328;
+            --bg: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Cairo", sans-serif;
+            background: #f5f5f5;
+            color: var(--fg);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-right: 4px solid var(--brand-600);
+            text-align: center;
+        }
+
+        h1 {
+            color: var(--brand-600);
+            margin-bottom: 10px;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 15px;
+            color: var(--brand-600);
+            text-decoration: underline;
+            font-weight: 600;
+        }
+
+        .back-link:hover {
+            color: var(--brand-500);
+        }
+
+        .charts-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .chart-wrapper {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .chart-wrapper h2 {
+            color: var(--brand-600);
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 18px;
+        }
+
+        canvas {
+            max-width: 100%;
+        }
+
+        .stats-box {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .stat-item {
+            padding: 15px;
+            margin: 10px 0;
+            background: #f9fffe;
+            border-right: 4px solid var(--brand-500);
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .stat-label {
+            text-align: right;
+            font-weight: 600;
+            color: var(--brand-600);
+        }
+
+        .stat-count {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--brand-500);
+        }
+
+        @media (max-width: 768px) {
+            .charts-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 التخطيط البياني - عدد الطلبات والمشاركين</h1>
+            <p>عرض إحصائي لتوزيع طلبات التسجيل حسب نوع البرنامج</p>
+            <a href="index.html" class="back-link">← العودة للصفحة الرئيسية</a>
+        </header>
+
+        <div class="charts-container">
+            <div class="chart-wrapper">
+                <h2>عدد الطلبات حسب نوع البرنامج (رسم بياني أعمدة)</h2>
+                <canvas id="barChart"></canvas>
+            </div>
+
+            <div class="chart-wrapper">
+                <h2>توزيع الطلبات (رسم بياني دائري)</h2>
+                <canvas id="pieChart"></canvas>
+            </div>
+        </div>
+
+        <div class="stats-box">
+            <h2 style="margin-bottom: 20px;">📋 الإحصائيات التفصيلية</h2>
+            <div id="statsContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        // سحب البيانات من localStorage
+        function loadData() {
+            const allSubmissions = JSON.parse(localStorage.getItem('formSubmissions')) || {};
+            
+            const labels = {
+                'graduates': '👨‍🎓 تدريب الطلاب والخريجين',
+                'internal-employees': '👔 برامج داخلية (موظفين)',
+                'internal-others': '👥 برامج داخلية (آخرين)',
+                'training-employees': '📚 برامج تدريبية (موظفين)',
+                'training-others': '📚 برامج تدريبية (آخرين)',
+                'contact': '💬 رسائل التواصل'
+            };
+
+            const data = {};
+            const colors = ['#6dbfb1', '#41726a', '#8acbc0', '#2f8f85', '#c0e4e0', '#d9534f'];
+
+            Object.entries(labels).forEach(([key, label]) => {
+                data[key] = {
+                    label: label,
+                    count: (allSubmissions[key] || []).length
+                };
+            });
+
+            return { data, colors };
+        }
+
+        // إنشاء الرسم البياني الأعمدة (Bar Chart)
+        function createBarChart(data, colors) {
+            const ctx = document.getElementById('barChart').getContext('2d');
+            const labels = Object.values(data).map(d => d.label);
+            const counts = Object.values(data).map(d => d.count);
+
+            return new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'عدد الطلبات',
+                        data: counts,
+                        backgroundColor: colors,
+                        borderColor: colors,
+                        borderWidth: 1,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: {
+                            display: true,
+                            labels: { font: { family: '"Cairo", sans-serif' } }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1 }
+                        }
+                    }
+                }
+            });
+        }
+
+        // إنشاء الرسم البياني الدائري (Pie Chart)
+        function createPieChart(data, colors) {
+            const ctx = document.getElementById('pieChart').getContext('2d');
+            const labels = Object.values(data).map(d => d.label);
+            const counts = Object.values(data).map(d => d.count);
+
+            return new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: counts,
+                        backgroundColor: colors,
+                        borderColor: '#fff',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { font: { family: '"Cairo", sans-serif' } }
+                        }
+                    }
+                }
+            });
+        }
+
+        // إنشاء الإحصائيات
+        function createStats(data) {
+            const container = document.getElementById('statsContainer');
+            const total = Object.values(data).reduce((sum, d) => sum + d.count, 0);
+
+            let html = `<div class="stat-item"><div class="stat-label">إجمالي الطلبات</div><div class="stat-count">${total}</div></div>`;
+
+            Object.entries(data).forEach(([key, d]) => {
+                html += `<div class="stat-item"><div class="stat-label">${d.label}</div><div class="stat-count">${d.count}</div></div>`;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // تحميل البيانات وإنشاء الرسوم البيانية
+        const { data, colors } = loadData();
+        createBarChart(data, colors);
+        createPieChart(data, colors);
+        createStats(data);
+
+        // تحديث الرسوم البيانية كل 3 ثواني
+        setInterval(() => {
+            location.reload();
+        }, 3000);
+    </script>
+</body>
+</html>
