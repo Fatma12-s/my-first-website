@@ -6,6 +6,13 @@
     <title>التخطيط البياني - الطلبات والتدريب</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script>
+        // فحص التوكن - إذا لم يكن موجوداً، أعد التوجيه إلى صفحة التسجيل
+        if (!sessionStorage.getItem('adminToken')) {
+            sessionStorage.setItem('redirectTo', 'dashboard-chart.html');
+            window.location.href = 'admin-login.html';
+        }
+    </script>
     <style>
         :root {
             --brand-500: #6dbfb1;
@@ -93,6 +100,24 @@
             text-align: center;
         }
 
+        .logout-btn {
+            background: #d9534f;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-family: "Cairo", sans-serif;
+            transition: background 0.3s ease;
+            display: inline-block;
+            margin-top: 15px;
+        }
+
+        .logout-btn:hover {
+            background: #c9302c;
+        }
+
         .stat-item {
             padding: 15px;
             margin: 10px 0;
@@ -129,6 +154,7 @@
             <h1>📊 التخطيط البياني - عدد الطلبات والمشاركين</h1>
             <p>عرض إحصائي لتوزيع طلبات التسجيل حسب نوع البرنامج</p>
             <a href="index.html" class="back-link">← العودة للصفحة الرئيسية</a>
+            <button class="logout-btn" onclick="logout()">🚪 تسجيل الخروج</button>
         </header>
 
         <div class="charts-container">
@@ -257,6 +283,14 @@
             });
 
             container.innerHTML = html;
+        }
+
+        // ===== تسجيل الخروج =====
+        function logout() {
+            if (confirm('هل أنت متأكد من رغبتك في تسجيل الخروج؟')) {
+                sessionStorage.removeItem('adminToken');
+                window.location.href = 'index.html';
+            }
         }
 
         // تحميل البيانات وإنشاء الرسوم البيانية

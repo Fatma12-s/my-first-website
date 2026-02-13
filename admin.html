@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>لوحة التحكم - المشاركون والطلبات</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
+    <script>
+        // فحص التوكن - إذا لم يكن موجوداً، أعد التوجيه إلى صفحة التسجيل
+        if (!sessionStorage.getItem('adminToken')) {
+            sessionStorage.setItem('redirectTo', 'admin.html');
+            window.location.href = 'admin-login.html';
+        }
+    </script>
     <style>
         * {
             margin: 0;
@@ -193,6 +200,15 @@
             background: #5aa39a;
         }
 
+        .logout-btn {
+            background: #d9534f;
+            margin-right: 10px;
+        }
+
+        .logout-btn:hover {
+            background: #c9302c;
+        }
+
         @media (max-width: 768px) {
             .header-info {
                 flex-direction: column;
@@ -239,6 +255,7 @@
 
                 <button onclick="exportToCSV()">📥 تصدير Excel</button>
                 <button class="clear-btn" onclick="clearAllData()">🗑️ حذف الكل</button>
+                <button class="logout-btn" onclick="logout()">🚪 تسجيل الخروج</button>
             </div>
         </div>
 
@@ -290,6 +307,20 @@
                 return;
             }
 
+            function formatFieldValue(value) {
+                if (!value && value !== 0) return '';
+                const s = String(value);
+                // متعددة مفصولة بفواصل منطقية
+                if (s.includes(';')) {
+                    return s.split(';').map(part => part.trim()).map(p => {
+                        if (/^https?:\/\//.test(p)) return `<a href="${p}" target="_blank">${p}</a>`;
+                        return `<span>${p}</span>`;
+                    }).join('<br>');
+                }
+                if (/^https?:\/\//.test(s)) return `<a href="${s}" target="_blank">${s}</a>`;
+                return `<span>${s}</span>`;
+            }
+
             container.innerHTML = filteredData.map(submission => {
                 const formTypeNames = {
                     'graduates': '👨‍🎓 تدريب الطلاب والخريجين',
@@ -314,7 +345,7 @@
                                 .map(([key, value]) => `
                                     <div class="field">
                                         <div class="field-label">${key}</div>
-                                        <div class="field-value">${String(value)}</div>
+                                        <div class="field-value">${formatFieldValue(value)}</div>
                                     </div>
                                 `).join('')}
                         </div>
@@ -397,6 +428,13 @@
             }
         }
 
+        // ===== تسجيل الخروج =====
+        function logout() {
+            if (confirm('هل أنت متأكد من رغبتك في تسجيل الخروج؟')) {
+                sessionStorage.removeItem('adminToken');
+                window.location.href = 'index.html';
+            }
+        }
         // ===== الأحداث =====
         document.getElementById('formFilter').addEventListener('change', loadSubmissions);
         document.getElementById('searchInput').addEventListener('input', loadSubmissions);
