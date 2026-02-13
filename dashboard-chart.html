@@ -11,11 +11,10 @@
         window.addEventListener('unload', function() {
             sessionStorage.removeItem('adminToken');
         });
-        // عرض اسم المستخدم (الرقم الوظيفي)
+        // لم يعد هناك حساب أو اسم مستخدم
         document.addEventListener('DOMContentLoaded', () => {
-            const adminToken = sessionStorage.getItem('adminToken');
             const nameElement = document.getElementById('adminName');
-            if (nameElement) nameElement.textContent = adminToken || 'غير مسجل';
+            if (nameElement) nameElement.textContent = 'لوحة المعلومات';
         });
     </script>
     <style>
