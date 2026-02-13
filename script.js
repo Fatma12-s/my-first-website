@@ -161,10 +161,18 @@ async function handleFormSubmit(formEl, formName) {
     }
   }
 
+  // إضافة حالة الطلب للطلاب والخريجين
+  if (formName === 'graduates') {
+    obj.status = 'في انتظار الموافقة';
+  }
   if (saveFormData(formName, obj)) {
-    alert('✅ تم تقديم الطلب بنجاح! يمكنك عرض طلبك من صفحة الإدارة.');
+    let statusMsg = '';
+    if (formName === 'graduates') {
+      statusMsg = '\n\nحالة الطلب: في انتظار الموافقة.';
+    }
+    alert('✅ تم تقديم الطلب بنجاح! يمكنك عرض طلبك من صفحة الإدارة.' + statusMsg);
     formEl.reset();
-    } else {
-      alert('❌ حدث خطأ أثناء حفظ الطلب. يرجى المحاولة مرة أخرى أو تحديث الصفحة.');
+  } else {
+    alert('❌ حدث خطأ أثناء حفظ الطلب. يرجى المحاولة مرة أخرى أو تحديث الصفحة.');
   }
 }
