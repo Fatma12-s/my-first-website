@@ -6,10 +6,7 @@
     <title>لوحة التحكم - المشاركون والطلبات</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
     <script>
-        // تسجيل الخروج تلقائياً عند إغلاق أو إعادة تشغيل الجهاز
-        window.addEventListener('unload', function() {
-            sessionStorage.removeItem('adminToken');
-        });
+        // لم يعد هناك أي منطق دخول أو رمز أو مربع حوار
         // لوحة التحكم متاحة للجميع بدون أي رمز أو مربع حوار
         document.addEventListener('DOMContentLoaded', () => {
             const nameElement = document.getElementById('adminName');
