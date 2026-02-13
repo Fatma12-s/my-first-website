@@ -10,7 +10,7 @@
         window.addEventListener('unload', function() {
             sessionStorage.removeItem('adminToken');
         });
-        // لم يعد هناك حساب أو اسم مستخدم
+        // لوحة التحكم متاحة للجميع بدون تسجيل دخول
         document.addEventListener('DOMContentLoaded', () => {
             const nameElement = document.getElementById('adminName');
             if (nameElement) nameElement.textContent = 'لوحة التحكم';
