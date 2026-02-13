@@ -164,10 +164,28 @@
         <div class="back-link">
             <a href="index.html">← العودة للصفحة الرئيسية</a>
         </div>
+
+        <div class="back-link">
+            <button class="btn" style="background:#f0ad4e;color:#222;font-size:14px;padding:8px 10px;margin-top:10px;" onclick="resetAdminAccount()">إعادة تعيين كلمة المرور</button>
+        </div>
+        </div>
     </div>
 
     <script>
         function handleLogin(event) {
+                    function resetAdminAccount() {
+                        const employeeId = prompt('أدخل الرقم الوظيفي الذي تريد إعادة تعيينه:');
+                        if (!employeeId) return;
+                        const admins = JSON.parse(localStorage.getItem('admins')) || {};
+                        if (!admins[employeeId]) {
+                            alert('لا يوجد حساب بهذا الرقم الوظيفي.');
+                            return;
+                        }
+                        if (!confirm('هل أنت متأكد أنك تريد حذف الحساب وإعادة تعيين كلمة المرور؟')) return;
+                        delete admins[employeeId];
+                        localStorage.setItem('admins', JSON.stringify(admins));
+                        alert('تم حذف الحساب. يمكنك الآن إنشاء كلمة مرور جديدة من صفحة التسجيل.');
+                    }
             event.preventDefault();
             const employeeId = document.getElementById('employeeId').value.trim();
             const password = document.getElementById('password').value;
