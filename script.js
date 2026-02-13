@@ -164,5 +164,7 @@ async function handleFormSubmit(formEl, formName) {
   if (saveFormData(formName, obj)) {
     alert('✅ تم تقديم الطلب بنجاح! يمكنك عرض طلبك من صفحة الإدارة.');
     formEl.reset();
+    } else {
+      alert('❌ حدث خطأ أثناء حفظ الطلب. يرجى المحاولة مرة أخرى أو تحديث الصفحة.');
   }
 }
