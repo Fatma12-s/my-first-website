@@ -137,24 +137,29 @@
 <body>
     <div class="login-container">
         <div class="login-header">
-            <h1>🔐 لوحة التحكم</h1>
-            <p>يرجى إدخال كلمة المرور للدخول</p>
-        </div>
-
-        <div class="info-box">
-            💡 اطلب كلمة المرور من مسؤول النظام
+            <h1>🔐 تسجيل الدخول</h1>
+            <p>أدخل بيانات حسابك</p>
         </div>
 
         <form id="loginForm" onsubmit="handleLogin(event)">
             <div class="form-group">
+                <label for="employeeId">الرقم الوظيفي (Employee ID)</label>
+                <input type="text" id="employeeId" name="employeeId" placeholder="مثال: EMP001" required autofocus>
+            </div>
+
+            <div class="form-group">
                 <label for="password">كلمة المرور</label>
-                <input type="password" id="password" name="password" required autofocus>
+                <input type="password" id="password" name="password" required>
             </div>
 
             <button type="submit" class="btn">دخول</button>
 
-            <div class="error" id="error">كلمة المرور غير صحيحة</div>
+            <div class="error" id="error"></div>
         </form>
+
+        <div class="login-link">
+            ليس لديك حساب؟ <a href="admin-register.html">إنشاء حساب جديد</a>
+        </div>
 
         <div class="back-link">
             <a href="index.html">← العودة للصفحة الرئيسية</a>
@@ -162,26 +167,41 @@
     </div>
 
     <script>
-        // كلمة المرور الصحيحة (يمكن تغييرها)
-        const ADMIN_PASSWORD = 'admin123';
-
         function handleLogin(event) {
             event.preventDefault();
+            const employeeId = document.getElementById('employeeId').value.trim();
             const password = document.getElementById('password').value;
             const errorMsg = document.getElementById('error');
 
-            if (password === ADMIN_PASSWORD) {
-                // حفظ التوكن في sessionStorage (ينتهي عند إغلاق المتصفح)
-                sessionStorage.setItem('adminToken', 'authenticated');
-                // الذهاب إلى الصفحة المطلوبة
-                const redirectTo = sessionStorage.getItem('redirectTo') || 'admin.html';
-                sessionStorage.removeItem('redirectTo');
-                window.location.href = redirectTo;
-            } else {
+            errorMsg.style.display = 'none';
+
+            // قراءة بيانات المستخدمين
+            const admins = JSON.parse(localStorage.getItem('admins')) || {};
+
+            if (!admins[employeeId]) {
+                errorMsg.textContent = 'الرقم الوظيفي غير موجود';
+                errorMsg.style.display = 'block';
+                document.getElementById('employeeId').focus();
+                return;
+            }
+
+            // التحقق من كلمة المرور
+            const storedPassword = admins[employeeId].password;
+            const encryptedInput = btoa(password);
+
+            if (encryptedInput !== storedPassword) {
+                errorMsg.textContent = 'كلمة المرور غير صحيحة';
                 errorMsg.style.display = 'block';
                 document.getElementById('password').value = '';
                 document.getElementById('password').focus();
+                return;
             }
+
+            // تسجيل الدخول الناجح
+            sessionStorage.setItem('adminToken', employeeId);
+            const redirectTo = sessionStorage.getItem('redirectTo') || 'admin.html';
+            sessionStorage.removeItem('redirectTo');
+            window.location.href = redirectTo;
         }
     </script>
 </body>

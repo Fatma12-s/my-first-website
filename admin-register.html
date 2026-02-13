@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إنشاء حساب Admin - لوحة التحكم</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --brand-500: #6dbfb1;
+            --brand-600: #41726a;
+            --radius: 12px;
+            --shadow: 0 6px 18px rgba(0, 0, 0, .10);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Cairo", sans-serif;
+            background: linear-gradient(135deg, var(--brand-600) 0%, var(--brand-500) 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .register-container {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .register-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .register-header h1 {
+            color: var(--brand-600);
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .register-header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: 700;
+            color: var(--brand-600);
+            margin-bottom: 8px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #cfd8d6;
+            border-radius: var(--radius);
+            font-family: "Cairo", sans-serif;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--brand-500);
+            box-shadow: 0 0 0 3px rgba(109, 191, 177, 0.1);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--brand-600);
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            font-weight: 800;
+            cursor: pointer;
+            font-size: 16px;
+            font-family: "Cairo", sans-serif;
+            transition: background 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            background: var(--brand-500);
+        }
+
+        .error {
+            color: #d9534f;
+            font-size: 14px;
+            margin-top: 10px;
+            text-align: center;
+            display: none;
+        }
+
+        .success {
+            color: #5cb85c;
+            font-size: 14px;
+            margin-top: 10px;
+            text-align: center;
+            display: none;
+        }
+
+        .login-link {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .login-link a {
+            color: var(--brand-600);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+
+        .back-link {
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        .back-link a {
+            color: var(--brand-600);
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+
+        .password-strength {
+            height: 4px;
+            background: #e0e0e0;
+            border-radius: 2px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+
+        .password-strength-bar {
+            height: 100%;
+            width: 0%;
+            background: #d9534f;
+            transition: width 0.3s ease, background 0.3s ease;
+        }
+
+        .info-box {
+            background: #e7f3ff;
+            border-right: 4px solid #2196F3;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <div class="register-header">
+            <h1>🔐 إنشاء حساب Admin</h1>
+            <p>أنشئ حسابك الجديد بالرقم الوظيفي وكلمة مرور</p>
+        </div>
+
+        <div class="info-box">
+            💡 الرقم الوظيفي هو اسم المستخدم الخاص بك
+        </div>
+
+        <form id="registerForm" onsubmit="handleRegister(event)">
+            <div class="form-group">
+                <label for="employeeId">الرقم الوظيفي (Employee ID)</label>
+                <input type="text" id="employeeId" name="employeeId" placeholder="مثال: EMP001" required>
+            </div>
+
+            <div class="form-group">
+                <label for="password">كلمة المرور</label>
+                <input type="password" id="password" name="password" placeholder="أدخل كلمة مرور قوية" required oninput="updatePasswordStrength()">
+                <div class="password-strength">
+                    <div class="password-strength-bar" id="strengthBar"></div>
+                </div>
+                <small style="color: #999; display: block; margin-top: 5px;" id="strengthText">ضعيفة</small>
+            </div>
+
+            <div class="form-group">
+                <label for="confirmPassword">تأكيد كلمة المرور</label>
+                <input type="password" id="confirmPassword" name="confirmPassword" placeholder="أعد إدخال كلمة المرور" required>
+            </div>
+
+            <button type="submit" class="btn">إنشاء الحساب</button>
+
+            <div class="error" id="error"></div>
+            <div class="success" id="success">✅ تم إنشاء الحساب بنجاح! جاري التوجيه لصفحة تسجيل الدخول...</div>
+        </form>
+
+        <div class="login-link">
+            هل لديك حساب بالفعل؟ <a href="admin-login.html">تسجيل الدخول</a>
+        </div>
+
+        <div class="back-link">
+            <a href="index.html">← العودة للصفحة الرئيسية</a>
+        </div>
+    </div>
+
+    <script>
+        function updatePasswordStrength() {
+            const password = document.getElementById('password').value;
+            const strengthBar = document.getElementById('strengthBar');
+            const strengthText = document.getElementById('strengthText');
+            let strength = 0;
+
+            if (password.length >= 8) strength += 25;
+            if (password.length >= 12) strength += 25;
+            if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength += 25;
+            if (/[0-9]/.test(password)) strength += 15;
+            if (/[^a-zA-Z0-9]/.test(password)) strength += 10;
+
+            strengthBar.style.width = strength + '%';
+
+            if (strength < 25) {
+                strengthBar.style.background = '#d9534f';
+                strengthText.textContent = 'ضعيفة جداً';
+            } else if (strength < 50) {
+                strengthBar.style.background = '#f0ad4e';
+                strengthText.textContent = 'ضعيفة';
+            } else if (strength < 75) {
+                strengthBar.style.background = '#5bc0de';
+                strengthText.textContent = 'متوسطة';
+            } else {
+                strengthBar.style.background = '#5cb85c';
+                strengthText.textContent = 'قوية';
+            }
+        }
+
+        function handleRegister(event) {
+            event.preventDefault();
+            const employeeId = document.getElementById('employeeId').value.trim();
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const errorMsg = document.getElementById('error');
+            const successMsg = document.getElementById('success');
+
+            errorMsg.style.display = 'none';
+            successMsg.style.display = 'none';
+
+            // التحقق من الصحة
+            if (!employeeId) {
+                errorMsg.textContent = 'الرقم الوظيفي مطلوب';
+                errorMsg.style.display = 'block';
+                return;
+            }
+
+            if (password.length < 8) {
+                errorMsg.textContent = 'كلمة المرور يجب أن تكون 8 أحرف على الأقل';
+                errorMsg.style.display = 'block';
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                errorMsg.textContent = 'كلمات المرور غير متطابقة';
+                errorMsg.style.display = 'block';
+                return;
+            }
+
+            // التحقق من عدم وجود حساب بنفس الرقم الوظيفي
+            const admins = JSON.parse(localStorage.getItem('admins')) || {};
+            if (admins[employeeId]) {
+                errorMsg.textContent = 'هذا الرقم الوظيفي مسجل بالفعل';
+                errorMsg.style.display = 'block';
+                return;
+            }
+
+            // حفظ البيانات
+            admins[employeeId] = {
+                password: btoa(password), // تشفير بسيط (Base64 - ليس آمناً تماماً)
+                createdAt: new Date().toLocaleString('ar-SA')
+            };
+            localStorage.setItem('admins', JSON.stringify(admins));
+
+            // رسالة النجاح
+            successMsg.style.display = 'block';
+            document.getElementById('registerForm').reset();
+
+            // إعادة التوجيه بعد ثانيتين
+            setTimeout(() => {
+                window.location.href = 'admin-login.html';
+            }, 2000);
+        }
+    </script>
+</body>
+</html>

@@ -8,10 +8,16 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <script>
         // فحص التوكن - إذا لم يكن موجوداً، أعد التوجيه إلى صفحة التسجيل
-        if (!sessionStorage.getItem('adminToken')) {
+        const adminToken = sessionStorage.getItem('adminToken');
+        if (!adminToken) {
             sessionStorage.setItem('redirectTo', 'dashboard-chart.html');
             window.location.href = 'admin-login.html';
         }
+        // عرض اسم المستخدم (الرقم الوظيفي)
+        document.addEventListener('DOMContentLoaded', () => {
+            const nameElement = document.getElementById('adminName');
+            if (nameElement) nameElement.textContent = adminToken;
+        });
     </script>
     <style>
         :root {
@@ -153,6 +159,7 @@
         <header>
             <h1>📊 التخطيط البياني - عدد الطلبات والمشاركين</h1>
             <p>عرض إحصائي لتوزيع طلبات التسجيل حسب نوع البرنامج</p>
+            <p style="font-size: 12px; color: #999; margin-top: 8px;">مرحباً بك: <strong id="adminName">Admin</strong></p>
             <a href="index.html" class="back-link">← العودة للصفحة الرئيسية</a>
             <button class="logout-btn" onclick="logout()">🚪 تسجيل الخروج</button>
         </header>
