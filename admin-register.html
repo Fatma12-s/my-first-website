@@ -178,49 +178,107 @@
     <div class="register-container">
         <div class="register-header">
             <h1>🔐 إنشاء حساب Admin</h1>
-            <p>أنشئ حسابك الجديد بالرقم الوظيفي وكلمة مرور</p>
+            <p>تحقق من الرقم الوظيفي ثم أنشئ كلمة السر</p>
         </div>
 
         <div class="info-box">
-            💡 الرقم الوظيفي هو اسم المستخدم الخاص بك
+            💡 أدخل الرقم الوظيفي المسموح به أولاً
         </div>
 
-        <form id="registerForm" onsubmit="handleRegister(event)">
-            <div class="form-group">
-                <label for="employeeId">الرقم الوظيفي (Employee ID)</label>
-                <input type="text" id="employeeId" name="employeeId" placeholder="مثال: EMP001" required>
-            </div>
-
-            <div class="form-group">
-                <label for="password">كلمة المرور</label>
-                <input type="password" id="password" name="password" placeholder="أدخل كلمة مرور قوية" required oninput="updatePasswordStrength()">
-                <div class="password-strength">
-                    <div class="password-strength-bar" id="strengthBar"></div>
+        <!-- المرحلة الأولى: التحقق من الرقم الوظيفي -->
+        <div id="verificationPhase">
+            <form id="verifyForm" onsubmit="handleVerifyEmployeeId(event)">
+                <div class="form-group">
+                    <label for="verifyEmployeeId">الرقم الوظيفي</label>
+                    <input type="text" id="verifyEmployeeId" name="verifyEmployeeId" placeholder="أدخل رقمك الوظيفي" required autofocus>
                 </div>
-                <small style="color: #999; display: block; margin-top: 5px;" id="strengthText">ضعيفة</small>
+
+                <button type="submit" class="btn">التحقق</button>
+
+                <div class="error" id="verifyError"></div>
+            </form>
+
+            <div class="back-link">
+                <a href="index.html">← العودة للصفحة الرئيسية</a>
             </div>
-
-            <div class="form-group">
-                <label for="confirmPassword">تأكيد كلمة المرور</label>
-                <input type="password" id="confirmPassword" name="confirmPassword" placeholder="أعد إدخال كلمة المرور" required>
-            </div>
-
-            <button type="submit" class="btn">إنشاء الحساب</button>
-
-            <div class="error" id="error"></div>
-            <div class="success" id="success">✅ تم إنشاء الحساب بنجاح! جاري التوجيه لصفحة تسجيل الدخول...</div>
-        </form>
-
-        <div class="login-link">
-            هل لديك حساب بالفعل؟ <a href="admin-login.html">تسجيل الدخول</a>
         </div>
 
-        <div class="back-link">
-            <a href="index.html">← العودة للصفحة الرئيسية</a>
+        <!-- المرحلة الثانية: إنشاء كلمة السر -->
+        <div id="passwordPhase" style="display: none;">
+            <form id="registerForm" onsubmit="handleRegister(event)">
+                <div style="background: #e8f5e9; border-right: 4px solid #4caf50; padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: 14px; color: #333;">
+                    ✅ تم التحقق من الرقم الوظيفي: <strong id="confirmedEmployeeId"></strong>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">كلمة المرور</label>
+                    <input type="password" id="password" name="password" placeholder="أدخل كلمة مرور قوية" required oninput="updatePasswordStrength()">
+                    <div class="password-strength">
+                        <div class="password-strength-bar" id="strengthBar"></div>
+                    </div>
+                    <small style="color: #999; display: block; margin-top: 5px;" id="strengthText">ضعيفة</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmPassword">تأكيد كلمة المرور</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" placeholder="أعد إدخال كلمة المرور" required>
+                </div>
+
+                <button type="submit" class="btn">إنشاء الحساب</button>
+
+                <div class="error" id="registerError"></div>
+                <div class="success" id="success">✅ تم إنشاء الحساب بنجاح! جاري التوجيه لصفحة تسجيل الدخول...</div>
+
+                <div style="margin-top: 15px;">
+                    <button type="button" class="btn" style="background: #6c757d;" onclick="goBackToVerify()">← رجوع</button>
+                </div>
+            </form>
         </div>
     </div>
 
     <script>
+        // الأرقام الوظيفية المسموحة فقط
+        const ALLOWED_EMPLOYEE_IDS = ['10843', 'H317080'];
+
+        function handleVerifyEmployeeId(event) {
+            event.preventDefault();
+            const employeeId = document.getElementById('verifyEmployeeId').value.trim();
+            const verifyError = document.getElementById('verifyError');
+
+            verifyError.style.display = 'none';
+
+            if (!ALLOWED_EMPLOYEE_IDS.includes(employeeId)) {
+                verifyError.textContent = '❌ هذا الرقم الوظيفي غير مسموح به';
+                verifyError.style.display = 'block';
+                document.getElementById('verifyEmployeeId').focus();
+                return;
+            }
+
+            // التحقق من عدم وجود حساب بنفس الرقم الوظيفي
+            const admins = JSON.parse(localStorage.getItem('admins')) || {};
+            if (admins[employeeId]) {
+                verifyError.textContent = '⚠️ هذا الرقم الوظيفي لديه حساب بالفعل';
+                verifyError.style.display = 'block';
+                document.getElementById('verifyEmployeeId').focus();
+                return;
+            }
+
+            // الانتقال إلى المرحلة الثانية
+            sessionStorage.setItem('verifiedEmployeeId', employeeId);
+            document.getElementById('verificationPhase').style.display = 'none';
+            document.getElementById('passwordPhase').style.display = 'block';
+            document.getElementById('confirmedEmployeeId').textContent = employeeId;
+            document.getElementById('password').focus();
+        }
+
+        function goBackToVerify() {
+            sessionStorage.removeItem('verifiedEmployeeId');
+            document.getElementById('verificationPhase').style.display = 'block';
+            document.getElementById('passwordPhase').style.display = 'none';
+            document.getElementById('verifyEmployeeId').value = '';
+            document.getElementById('verifyEmployeeId').focus();
+        }
+
         function updatePasswordStrength() {
             const password = document.getElementById('password').value;
             const strengthBar = document.getElementById('strengthBar');
@@ -252,45 +310,31 @@
 
         function handleRegister(event) {
             event.preventDefault();
-            const employeeId = document.getElementById('employeeId').value.trim();
+            const employeeId = sessionStorage.getItem('verifiedEmployeeId');
             const password = document.getElementById('password').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
-            const errorMsg = document.getElementById('error');
+            const registerError = document.getElementById('registerError');
             const successMsg = document.getElementById('success');
 
-            errorMsg.style.display = 'none';
+            registerError.style.display = 'none';
             successMsg.style.display = 'none';
 
-            // التحقق من الصحة
-            if (!employeeId) {
-                errorMsg.textContent = 'الرقم الوظيفي مطلوب';
-                errorMsg.style.display = 'block';
-                return;
-            }
-
             if (password.length < 8) {
-                errorMsg.textContent = 'كلمة المرور يجب أن تكون 8 أحرف على الأقل';
-                errorMsg.style.display = 'block';
+                registerError.textContent = '❌ كلمة المرور يجب أن تكون 8 أحرف على الأقل';
+                registerError.style.display = 'block';
                 return;
             }
 
             if (password !== confirmPassword) {
-                errorMsg.textContent = 'كلمات المرور غير متطابقة';
-                errorMsg.style.display = 'block';
-                return;
-            }
-
-            // التحقق من عدم وجود حساب بنفس الرقم الوظيفي
-            const admins = JSON.parse(localStorage.getItem('admins')) || {};
-            if (admins[employeeId]) {
-                errorMsg.textContent = 'هذا الرقم الوظيفي مسجل بالفعل';
-                errorMsg.style.display = 'block';
+                registerError.textContent = '❌ كلمات المرور غير متطابقة';
+                registerError.style.display = 'block';
                 return;
             }
 
             // حفظ البيانات
+            const admins = JSON.parse(localStorage.getItem('admins')) || {};
             admins[employeeId] = {
-                password: btoa(password), // تشفير بسيط (Base64 - ليس آمناً تماماً)
+                password: btoa(password),
                 createdAt: new Date().toLocaleString('ar-SA')
             };
             localStorage.setItem('admins', JSON.stringify(admins));
@@ -298,6 +342,7 @@
             // رسالة النجاح
             successMsg.style.display = 'block';
             document.getElementById('registerForm').reset();
+            sessionStorage.removeItem('verifiedEmployeeId');
 
             // إعادة التوجيه بعد ثانيتين
             setTimeout(() => {
