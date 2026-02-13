@@ -10,34 +10,8 @@
         window.addEventListener('unload', function() {
             sessionStorage.removeItem('adminToken');
         });
-        // منطق رمز الدخول للوحة التحكم
-        function askForAdminCode() {
-            let code = localStorage.getItem('adminPanelCode');
-            if (!code) {
-                code = prompt('أنشئ رمز دخول للوحة التحكم (4 أرقام أو أكثر):');
-                if (!code || code.length < 4) {
-                    alert('يجب إدخال رمز مكون من 4 أرقام أو أكثر.');
-                    window.location.href = 'index.html';
-                    return;
-                }
-                localStorage.setItem('adminPanelCode', code);
-                sessionStorage.setItem('adminPanelCode', code);
-                alert('تم إنشاء الرمز بنجاح! سيتم تحويلك للوحة التحكم مباشرة.');
-            } else {
-                // إذا لم يكن مسجل في الجلسة، اطلب الرمز
-                if (!sessionStorage.getItem('adminPanelCode')) {
-                    const inputCode = prompt('أدخل رمز لوحة التحكم:');
-                    if (inputCode !== code) {
-                        alert('رمز الدخول غير صحيح.');
-                        window.location.href = 'index.html';
-                        return;
-                    }
-                    sessionStorage.setItem('adminPanelCode', code);
-                }
-            }
-        }
+        // لوحة التحكم متاحة للجميع بدون أي رمز أو مربع حوار
         document.addEventListener('DOMContentLoaded', () => {
-            askForAdminCode();
             const nameElement = document.getElementById('adminName');
             if (nameElement) nameElement.textContent = 'لوحة التحكم';
         });
