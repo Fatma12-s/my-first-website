@@ -2,21 +2,23 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>البرامج التدريبية | دائرة التدريب والتطوير المهني المستمر</title>
+    <title>البرامج التدريبية - دائرة التدريب والتطوير المهني المستمر</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header class="site-header">
         <div class="container header-center">
-            <a href="home.html">
-                <img src="./assets/logo.png" alt="شعار الدائرة" class="brand-logo">
-                <span class="brand-text">دائرة التدريب والتطوير المهني المستمر</span>
-            </a>
+                <a href="#home" style="display: flex; flex-direction: column; align-items: center; gap: 0.2em; text-align: center;">
+                    <img src="./assets/logo.png" alt="شعار الدائرة" class="brand-logo" style="width: 180px; max-width: 90vw; margin-bottom: 0; display: block; margin-left: auto; margin-right: auto;">
+                    <span class="brand-text" style="font-size: 1.35em; font-weight: 900; color: var(--brand-600); line-height: 1.1; display: block; text-align: center; width: 100%;">
+                        دائرة التدريب<br>والتطوير المهني المستمر
+                    </span>
+                </a>
             <nav>
-                <ul id="mainTabs">
+                <ul>
                     <li><a href="home.html">الرئيسية</a></li>
-                    <li><a href="programs.html" class="active">البرامج التدريبية</a></li>
+                    <li><a href="programs.html">البرامج التدريبية</a></li>
                     <li><a href="about.html">عن الدائرة</a></li>
                     <li><a href="contact.html">تواصل معنا</a></li>
                     <li><a href="admin.html" style="background: #41726a; color: #fff; border-radius: 24px; padding: 10px 24px; font-size: 1.2em; font-weight: 800; box-shadow: 0 2px 8px #0001;">لوحة التحكم</a></li>
@@ -25,33 +27,34 @@
         </div>
     </header>
     <section class="section">
-    <main>
-        <section class="section">
-            <div class="container">
-                <h2 class="section-title">البرامج التدريبية</h2>
-                <p>هذه الصفحة تعرض تفاصيل البرامج التدريبية المتاحة، يمكنك التقديم على البرامج من خلال الروابط أدناه.</p>
-                <div class="grid">
-                    <div class="card">
-                        <h3>تدريب الطلاب والخريجين</h3>
-                        <p>برامج تأهيلية عملية للطلاب والخريجين مع تدريب عملي في بيئة عمل حقيقية.</p>
-                        <a href="graduates.html" class="btn primary" style="display: inline-block; margin-top: 15px; padding: 10px 16px; font-size: 0.95rem;">تقديم الطلب</a>
-                    </div>
-                    <div class="card">
-                        <h3>البرامج الداخلية الإلزامية</h3>
-                        <p>برامج إلزامية للموظفين تهدف إلى تطوير الأداء ورفع الكفاءة التشغيلية.</p>
-                        <a href="internal-employees.html" class="btn primary" style="display: inline-block; margin-top: 15px; padding: 10px 16px; font-size: 0.95rem;">تقديم طلب الموظفين</a>
-                        <a href="internal-others.html" class="btn ghost" style="display: inline-block; margin-top: 10px; padding: 8px 12px; font-size: 0.85rem; margin-right: 8px;">تقديم غير الموظفين</a>
-                    </div>
-                    <div class="card">
-                        <h3>البرامج التدريبية الداخلية</h3>
-                        <p>ورش عمل تخصصية لرفع مهارات الموظفين في مختلف التخصصات الصحية.</p>
-                        <a href="training-employees.html" class="btn primary" style="display: inline-block; margin-top: 15px; padding: 10px 16px; font-size: 0.95rem;">تقديم طلب الموظفين</a>
-                        <a href="training-others.html" class="btn ghost" style="display: inline-block; margin-top: 10px; padding: 8px 12px; font-size: 0.85rem; margin-right: 8px;">تقديم غير الموظفين</a>
-                    </div>
+        <div class="container">
+            <h2 class="section-title">البرامج التدريبية</h2>
+            <ul style="font-size:1.1em;line-height:2;">
+                <li>برامج تأهيلية عملية للطلاب والخريجين مع شهادات معتمدة.</li>
+                <li>برامج داخلية إلزامية لرفع الكفاءة التشغيلية للموظفين.</li>
+                <li>ورش تخصصية لرفع مهارات الموظفين في مختلف المجالات الصحية.</li>
+            </ul>
+            <div class="grid">
+                <div class="card">
+                    <h3>تدريب الطلاب والخريجين</h3>
+                    <p>برامج تأهيلية عملية للطلاب والخريجين مع تدريب عملي في بيئة عمل حقيقية.</p>
+                    <a href="graduates.html" class="btn primary" style="display: inline-block; margin-top: 15px; padding: 10px 16px; font-size: 0.95rem;">تقديم الطلب</a>
+                </div>
+                <div class="card">
+                    <h3>البرامج الداخلية الإلزامية</h3>
+                    <p>برامج إلزامية للموظفين تهدف إلى تطوير الأداء ورفع الكفاءة التشغيلية.</p>
+                    <a href="internal-employees.html" class="btn primary" style="display: inline-block; margin-top: 15px; padding: 10px 16px; font-size: 0.95rem;">تقديم طلب الموظفين</a>
+                    <a href="internal-others.html" class="btn ghost" style="display: inline-block; margin-top: 10px; padding: 8px 12px; font-size: 0.85rem; margin-right: 8px;">تقديم غير الموظفين</a>
+                </div>
+                <div class="card">
+                    <h3>البرامج التدريبية الداخلية</h3>
+                    <p>ورش عمل تخصصية لرفع مهارات الموظفين في مختلف التخصصات الصحية.</p>
+                    <a href="training-employees.html" class="btn primary" style="display: inline-block; margin-top: 15px; padding: 10px 16px; font-size: 0.95rem;">تقديم طلب الموظفين</a>
+                    <a href="training-others.html" class="btn ghost" style="display: inline-block; margin-top: 10px; padding: 8px 12px; font-size: 0.85rem; margin-right: 8px;">تقديم غير الموظفين</a>
                 </div>
             </div>
-        </section>
-    </main>
+        </div>
+    </section>
     <footer>
         <small>© دائرة التدريب والتطوير المهني المستمر</small>
     </footer>

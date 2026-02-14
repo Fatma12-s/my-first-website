@@ -2,52 +2,50 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>تواصل معنا | دائرة التدريب والتطوير المهني المستمر</title>
+    <title>تواصل معنا - دائرة التدريب والتطوير المهني المستمر</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header class="site-header">
         <div class="container header-center">
-            <a href="home.html">
-                <img src="./assets/logo.png" alt="شعار الدائرة" class="brand-logo">
-                <span class="brand-text">دائرة التدريب والتطوير المهني المستمر</span>
-            </a>
+                <a href="#home" style="display: flex; flex-direction: column; align-items: center; gap: 0.2em; text-align: center;">
+                    <img src="./assets/logo.png" alt="شعار الدائرة" class="brand-logo" style="width: 180px; max-width: 90vw; margin-bottom: 0; display: block; margin-left: auto; margin-right: auto;">
+                    <span class="brand-text" style="font-size: 1.35em; font-weight: 900; color: var(--brand-600); line-height: 1.1; display: block; text-align: center; width: 100%;">
+                        دائرة التدريب<br>والتطوير المهني المستمر
+                    </span>
+                </a>
             <nav>
-                <ul id="mainTabs">
+                <ul>
                     <li><a href="home.html">الرئيسية</a></li>
                     <li><a href="programs.html">البرامج التدريبية</a></li>
                     <li><a href="about.html">عن الدائرة</a></li>
-                    <li><a href="contact.html" class="active">تواصل معنا</a></li>
+                    <li><a href="contact.html">تواصل معنا</a></li>
                     <li><a href="admin.html" style="background: #41726a; color: #fff; border-radius: 24px; padding: 10px 24px; font-size: 1.2em; font-weight: 800; box-shadow: 0 2px 8px #0001;">لوحة التحكم</a></li>
                 </ul>
             </nav>
         </div>
     </header>
     <section class="section">
-    <main>
-        <section class="section">
-            <div class="container">
-                <h2 class="section-title">تواصل معنا</h2>
-                <p>يمكنك التواصل معنا عبر النموذج التالي أو عبر البريد الإلكتروني الرسمي.</p>
-                <form>
-                    <div>
-                        <label for="name">الاسم</label>
-                        <input type="text" id="name" name="name" required>
-                    </div>
-                    <div>
-                        <label for="email">البريد الإلكتروني</label>
-                        <input type="email" id="email" name="email" required>
-                    </div>
-                    <div>
-                        <label for="message">الرسالة</label>
-                        <textarea id="message" name="message" rows="5" required></textarea>
-                    </div>
-                    <button type="submit" class="btn primary">إرسال</button>
-                </form>
-            </div>
-        </section>
-    </main>
+        <div class="container">
+            <h2 class="section-title">تواصل معنا</h2>
+            <form>
+                <div>
+                    <label for="name">الاسم</label>
+                    <input type="text" id="name" name="name" required>
+                </div>
+                <div>
+                    <label for="email">البريد الإلكتروني</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                <div>
+                    <label for="message">الرسالة</label>
+                    <textarea id="message" name="message" rows="5" required></textarea>
+                </div>
+                <button type="submit" class="btn primary">إرسال</button>
+            </form>
+        </div>
+    </section>
     <footer>
         <small>© دائرة التدريب والتطوير المهني المستمر</small>
     </footer>
