@@ -265,183 +265,116 @@
         </div>
     </div>
 
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
     <script>
-        // ===== تحميل وعرض البيانات =====
-        function loadSubmissions() {
-            const allSubmissions = JSON.parse(localStorage.getItem('formSubmissions')) || {};
-            const container = document.getElementById('submissionsContainer');
-            const selectedForm = document.getElementById('formFilter').value;
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    // تهيئة Firebase
+    firebase.initializeApp(window.FIREBASE_CONFIG);
+    const db = firebase.firestore();
 
-            let filteredData = [];
-
-            // تجميع البيانات
-            Object.entries(allSubmissions).forEach(([formType, submissions]) => {
-                if (!selectedForm || formType === selectedForm) {
-                    submissions.forEach(submission => {
-                        submission.formType = formType;
-                        filteredData.push(submission);
-                    });
-                }
-            });
-
-            // البحث
-            if (searchTerm) {
-                filteredData = filteredData.filter(item => {
-                    const dataStr = JSON.stringify(item).toLowerCase();
-                    return dataStr.includes(searchTerm);
-                });
-            }
-
-            // ترتيب حسب التاريخ (الأحدث أولاً)
-            filteredData.sort((a, b) => b.id - a.id);
-
-            // العرض
-            if (filteredData.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">📭</div>
-                        <h3>لا توجد طلبات</h3>
-                        <p>لم يتم تقديم أي طلبات حتى الآن</p>
-                    </div>
-                `;
-                return;
-            }
-
-            function formatFieldValue(value) {
-                if (!value && value !== 0) return '';
-                const s = String(value);
-                // متعددة مفصولة بفواصل منطقية
-                if (s.includes(';')) {
-                    return s.split(';').map(part => part.trim()).map(p => {
-                        if (/^https?:\/\//.test(p)) return `<a href="${p}" target="_blank">${p}</a>`;
-                        return `<span>${p}</span>`;
-                    }).join('<br>');
-                }
-                if (/^https?:\/\//.test(s)) return `<a href="${s}" target="_blank">${s}</a>`;
-                return `<span>${s}</span>`;
-            }
-
-            container.innerHTML = filteredData.map(submission => {
-                const formTypeNames = {
-                    'graduates': '👨‍🎓 تدريب الطلاب والخريجين',
-                    'internal-employees': '👔 البرامج الداخلية - الموظفين',
-                    'internal-others': '👥 البرامج الداخلية - الآخرين',
-                    'training-employees': '📚 البرامج التدريبية - الموظفين',
-                    'training-others': '📚 البرامج التدريبية - الآخرين',
-                    'contact': '💬 رسائل التواصل'
-                };
-
-                return `
-                    <div class="submission-card">
-                        <div class="submission-header">
-                            <div>
-                                <div class="submission-title">${formTypeNames[submission.formType]}</div>
-                                <div class="submission-date">📅 ${submission.submittedAt || 'غير محدد'}</div>
-                            </div>
-                        </div>
-                        <div class="submission-content">
-                            ${Object.entries(submission)
-                                .filter(([key]) => key !== 'formType' && key !== 'id' && key !== 'submittedAt')
-                                .map(([key, value]) => `
-                                    <div class="field">
-                                        <div class="field-label">${key}</div>
-                                        <div class="field-value">${formatFieldValue(value)}</div>
-                                    </div>
-                                `).join('')}
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            updateStats();
+    // ===== تحميل وعرض البيانات من Firestore =====
+    async function loadSubmissions() {
+        const container = document.getElementById('submissionsContainer');
+        const selectedForm = document.getElementById('formFilter').value;
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        let filteredData = [];
+        // جلب جميع الطلبات من Firestore
+        let query = db.collection('formSubmissions');
+        if (selectedForm) {
+            query = query.where('formType', '==', selectedForm);
         }
-
-        // ===== تحديث الإحصائيات =====
-        function updateStats() {
-            const allSubmissions = JSON.parse(localStorage.getItem('formSubmissions')) || {};
-            const total = Object.values(allSubmissions).reduce((sum, arr) => sum + arr.length, 0);
-
-            const stats = {
-                'graduates': '👨‍🎓 الطلاب والخريجين',
-                'internal-employees': '👔 الموظفين (برامج داخلية)',
-                'internal-others': '👥 الآخرين (برامج داخلية)',
-                'training-employees': '📚 الموظفين (برامج تدريبية)',
-                'training-others': '📚 الآخرين (برامج تدريبية)',
+        const snapshot = await query.get();
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            data.id = doc.id;
+            filteredData.push(data);
+        });
+        // البحث
+        if (searchTerm) {
+            filteredData = filteredData.filter(item => {
+                const dataStr = JSON.stringify(item).toLowerCase();
+                return dataStr.includes(searchTerm);
+            });
+        }
+        // ترتيب حسب التاريخ (الأحدث أولاً)
+        filteredData.sort((a, b) => (b.submittedAt || 0) - (a.submittedAt || 0));
+        // العرض
+        if (filteredData.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">📭</div>
+                    <h3>لا توجد طلبات</h3>
+                    <p>لم يتم تقديم أي طلبات حتى الآن</p>
+                </div>
+            `;
+            return;
+        }
+        function formatFieldValue(value) {
+            if (!value && value !== 0) return '';
+            const s = String(value);
+            if (s.includes(';')) {
+                return s.split(';').map(part => part.trim()).map(p => {
+                    if (/^https?:\/\//.test(p)) return `<a href="${p}" target="_blank">${p}</a>`;
+                    return `<span>${p}</span>`;
+                }).join('<br>');
+            }
+            if (/^https?:\/\//.test(s)) return `<a href="${s}" target="_blank">${s}</a>`;
+            return `<span>${s}</span>`;
+        }
+        container.innerHTML = filteredData.map(submission => {
+            const formTypeNames = {
+                'graduates': '👨‍🎓 تدريب الطلاب والخريجين',
+                'internal-employees': '👔 البرامج الداخلية - الموظفين',
+                'internal-others': '👥 البرامج الداخلية - الآخرين',
+                'training-employees': '📚 البرامج التدريبية - الموظفين',
+                'training-others': '📚 البرامج التدريبية - الآخرين',
                 'contact': '💬 رسائل التواصل'
             };
-
-            let statsHtml = `<div class="stat-box"><h3>${total}</h3><p>📊 إجمالي الطلبات</p></div>`;
-
-            Object.entries(stats).forEach(([key, label]) => {
-                const count = (allSubmissions[key] || []).length;
-                statsHtml += `<div class="stat-box"><h3>${count}</h3><p>${label}</p></div>`;
-            });
-
-            document.getElementById('stats').innerHTML = statsHtml;
-        }
-
-        // ===== تصدير إلى Excel =====
-        function exportToCSV() {
-            const allSubmissions = JSON.parse(localStorage.getItem('formSubmissions')) || {};
-            let csv = '\uFEFF'; // BOM for UTF-8
-            let allData = [];
-
-            Object.entries(allSubmissions).forEach(([formType, submissions]) => {
-                submissions.forEach(submission => {
-                    submission.formType = formType;
-                    allData.push(submission);
-                });
-            });
-
-            if (allData.length === 0) {
-                alert('لا توجد بيانات للتصدير');
-                return;
-            }
-
-            // الرؤوس
-            const headers = Object.keys(allData[0]);
-            csv += headers.join(',') + '\n';
-
-            // البيانات
-            allData.forEach(row => {
-                csv += headers.map(header => {
-                    let value = row[header] || '';
-                    value = String(value).replace(/"/g, '""');
-                    return `"${value}"`;
-                }).join(',') + '\n';
-            });
-
-            // تحميل الملف
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `طلبات-التدريب-${new Date().toLocaleDateString('ar-SA')}.csv`;
-            link.click();
-        }
-
-        // ===== حذف جميع البيانات =====
-        function clearAllData() {
-            if (confirm('⚠️ هل أنت متأكد من حذف جميع البيانات؟ لا يمكن التراجع عن هذا الإجراء!')) {
-                localStorage.removeItem('formSubmissions');
-                loadSubmissions();
-                alert('✅ تم حذف جميع البيانات');
-            }
-        }
-
-        // ===== تسجيل الخروج =====
-        function logout() {
-            if (confirm('هل أنت متأكد من رغبتك في تسجيل الخروج؟')) {
-                sessionStorage.removeItem('adminToken');
-                window.location.href = 'index.html';
-            }
-        }
-        // ===== الأحداث =====
-        document.getElementById('formFilter').addEventListener('change', loadSubmissions);
-        document.getElementById('searchInput').addEventListener('input', loadSubmissions);
-
-        // التحميل الأولي
-        loadSubmissions();
+            return `
+                <div class="submission-card">
+                    <div class="submission-header">
+                        <div>
+                            <div class="submission-title">${formTypeNames[submission.formType]}</div>
+                            <div class="submission-date">📅 ${submission.submittedAt || 'غير محدد'}</div>
+                        </div>
+                    </div>
+                    <div class="submission-content">
+                        ${Object.entries(submission)
+                            .filter(([key]) => key !== 'formType' && key !== 'id' && key !== 'submittedAt')
+                            .map(([key, value]) => `
+                                <div class="field">
+                                    <div class="field-label">${key}</div>
+                                    <div class="field-value">${formatFieldValue(value)}</div>
+                                </div>
+                            `).join('')}
+                    </div>
+                </div>
+            `;
+        }).join('');
+        updateStats(filteredData);
+    }
+    // ===== تحديث الإحصائيات =====
+    function updateStats(filteredData) {
+        const total = filteredData.length;
+        const stats = {
+            'graduates': '👨‍🎓 الطلاب والخريجين',
+            'internal-employees': '👔 الموظفين (برامج داخلية)',
+            'internal-others': '👥 الآخرين (برامج داخلية)',
+            'training-employees': '📚 الموظفين (برامج تدريبية)',
+            'training-others': '📚 الآخرين (برامج تدريبية)',
+            'contact': '💬 رسائل التواصل'
+        };
+        let statsHtml = `<div class="stat-box"><h3>${total}</h3><p>📊 إجمالي الطلبات</p></div>`;
+        Object.entries(stats).forEach(([key, label]) => {
+            const count = filteredData.filter(sub => sub.formType === key).length;
+            statsHtml += `<div class="stat-box"><h3>${count}</h3><p>${label}</p></div>`;
+        });
+        document.getElementById('stats').innerHTML = statsHtml;
+    }
+    document.getElementById('formFilter').addEventListener('change', loadSubmissions);
+    document.getElementById('searchInput').addEventListener('input', loadSubmissions);
+    loadSubmissions();
     </script>
 </body>
 </html>
