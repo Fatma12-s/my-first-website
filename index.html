@@ -265,12 +265,12 @@
             </a>
 
             <nav>
-                <ul>
-                                        <li><a href="#home">الرئيسية</a></li>
-                                        <li><a href="#programs">البرامج التدريبية</a></li>
-                                        <li><a href="#about">عن الدائرة</a></li>
-                                        <li><a href="#contact">تواصل معنا</a></li>
-                                        <li><a href="admin.html" style="background: #41726a; color: #fff; border-radius: 24px; padding: 10px 24px; font-size: 1.2em; font-weight: 800; box-shadow: 0 2px 8px #0001;">لوحة التحكم</a></li>
+                <ul id="mainTabs">
+                    <li><a href="#" data-tab="home" class="tab-link active">الرئيسية</a></li>
+                    <li><a href="#" data-tab="programs" class="tab-link">البرامج التدريبية</a></li>
+                    <li><a href="#" data-tab="about" class="tab-link">عن الدائرة</a></li>
+                    <li><a href="#" data-tab="contact" class="tab-link">تواصل معنا</a></li>
+                    <li><a href="admin.html" style="background: #41726a; color: #fff; border-radius: 24px; padding: 10px 24px; font-size: 1.2em; font-weight: 800; box-shadow: 0 2px 8px #0001;">لوحة التحكم</a></li>
                     <!-- تم إلغاء زر التخطيط البياني (لوحة المعلومات) من الهيدر -->
                 </ul>
             </nav>
@@ -328,7 +328,7 @@
 
     </header>
 
-    <section id="home" class="hero">
+    <section id="home" class="hero tab-section">
         <div class="container">
             <h2 class="section-title">الرئيسية</h2>
             <div style="background: var(--brand-600); color: #fff; font-weight: bold; font-size: 1.4em; padding: 24px; border-radius: 16px; margin: 30px 0 0 0; text-align: center;">
@@ -337,7 +337,7 @@
         </div>
     </section>
 
-    <section id="programs" class="section">
+    <section id="programs" class="section tab-section" style="display:none;">
         <div class="container">
             <h2 class="section-title">البرامج التدريبية</h2>
             <ul style="font-size:1.1em;line-height:2;">
@@ -367,7 +367,7 @@
         </div>
     </section>
 
-    <section id="about" class="section">
+    <section id="about" class="section tab-section" style="display:none;">
         <div class="container">
             <h2 class="section-title">عن الدائرة</h2>
             <p>دائرة التدريب والتطوير المهني المستمر هي الجهة المسؤولة عن تطوير الكوادر الصحية في المؤسسة من خلال تقديم برامج تدريبية متخصصة وورش عمل عالية الجودة. رؤيتنا هي بناء مجتمع صحي متطور من خلال الاستثمار في رأس المال البشري.</p>
@@ -379,7 +379,7 @@
         </div>
     </section>
 
-    <section id="contact" class="section">
+    <section id="contact" class="section tab-section" style="display:none;">
         <div class="container">
             <h2 class="section-title">تواصل معنا</h2>
             <form>
@@ -410,27 +410,42 @@
 </body>
 
         <script>
-            // تحديث عداد لوحة التحكم
-            function updateDashboardBadge() {
-                const allSubmissions = JSON.parse(localStorage.getItem('formSubmissions')) || {};
-                const total = Object.values(allSubmissions).reduce((sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0), 0);
-                const badge = document.getElementById('dashboard-badge');
-                if (badge) badge.textContent = total;
-            }
-            updateDashboardBadge();
-            // تحديث العداد كل 2 ثانية للتحديث المباشر
-            setInterval(updateDashboardBadge, 2000);
-            
-            // تحميل firebase-config ثم script.js
-            (async function(){
-                try{
-                    const res = await fetch('firebase-config.js', {method: 'HEAD'});
-                    if (res.ok) {
-                        const s = document.createElement('script'); s.src = 'firebase-config.js'; document.head.appendChild(s);
-                    }
-                }catch(e){}
-                const s2 = document.createElement('script'); s2.src = 'script.js'; document.body.appendChild(s2);
-            })();
+        // تبويبات الأقسام الرئيسية
+        document.querySelectorAll('.tab-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                // إزالة التفعيل عن جميع الروابط
+                document.querySelectorAll('.tab-link').forEach(l => l.classList.remove('active'));
+                // تفعيل الرابط الحالي
+                this.classList.add('active');
+                // إخفاء جميع الأقسام
+                document.querySelectorAll('.tab-section').forEach(sec => sec.style.display = 'none');
+                // إظهار القسم المطلوب
+                const tab = this.getAttribute('data-tab');
+                document.getElementById(tab).style.display = '';
+            });
+        });
+
+        // تحديث عداد لوحة التحكم
+        function updateDashboardBadge() {
+            const allSubmissions = JSON.parse(localStorage.getItem('formSubmissions')) || {};
+            const total = Object.values(allSubmissions).reduce((sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0), 0);
+            const badge = document.getElementById('dashboard-badge');
+            if (badge) badge.textContent = total;
+        }
+        updateDashboardBadge();
+        setInterval(updateDashboardBadge, 2000);
+
+        // تحميل firebase-config ثم script.js
+        (async function(){
+            try{
+                const res = await fetch('firebase-config.js', {method: 'HEAD'});
+                if (res.ok) {
+                    const s = document.createElement('script'); s.src = 'firebase-config.js'; document.head.appendChild(s);
+                }
+            }catch(e){}
+            const s2 = document.createElement('script'); s2.src = 'script.js'; document.body.appendChild(s2);
+        })();
         </script>
 </html>
 </body>
