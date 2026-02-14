@@ -49,46 +49,55 @@
 
         /* الهيدر */
         .site-header {
-            padding: 8px 0 0 0;
-            background: rgba(255,255,255,0.92);
+            background: rgba(255,255,255,0.97);
             box-shadow: var(--shadow);
             position: sticky;
             top: 0;
             z-index: 99;
             backdrop-filter: blur(6px);
+            padding: 0;
         }
 
         .header-center {
-            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 18px 0 0 0;
         }
 
         .brand-logo {
-            width: 170px;
+            width: 140px;
             height: auto;
             filter: drop-shadow(0 3px 10px rgba(0, 0, 0, .10));
-            display: block;
-            margin: 0 auto 6px auto;
+            margin-bottom: 6px;
         }
 
         .brand-text {
             font-size: var(--fs-lg);
             font-weight: 900;
-            margin-top: 2px;
             color: var(--brand-600);
             letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
         }
 
+        nav {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
         nav ul {
             list-style: none;
             display: flex;
-            gap: 28px;
+            gap: 32px;
             justify-content: center;
             padding: 0;
-            margin-top: 10px;
+            margin: 0 0 18px 0;
         }
 
         nav a {
-            padding: 12px 20px;
+            padding: 12px 28px;
             border-radius: 30px;
             font-weight: 800;
             font-size: 1.08em;
@@ -110,17 +119,23 @@
 
         /* الهيرو */
         .hero {
-            padding: 90px 0 60px 0;
+            padding: 70px 0 40px 0;
             background: linear-gradient(120deg, #e6f7f4 0%, #fafdff 100%);
             border-radius: 0 0 36px 36px;
             box-shadow: 0 8px 32px #6dbfb11a;
             margin-bottom: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 320px;
         }
 
         .hero .section-title {
             color: var(--brand-600);
             font-size: 2.1em;
             margin-bottom: 18px;
+            text-align: center;
         }
 
         .hero p, .hero .hero-desc {
@@ -133,6 +148,7 @@
             border-radius: 18px;
             padding: 22px 18px;
             box-shadow: 0 2px 12px #6dbfb11a;
+            text-align: center;
         }
 
         .hero-actions {
@@ -178,6 +194,9 @@
         /* الأقسام */
         .section {
             padding: 60px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
         .section-title {
@@ -187,12 +206,14 @@
             color: var(--brand-600);
             margin-bottom: 25px;
             font-weight: 900;
+            text-align: center;
         }
 
         .grid {
             display: grid;
             gap: 28px;
             grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+            justify-content: center;
         }
 
         .card {
