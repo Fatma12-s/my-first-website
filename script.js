@@ -171,7 +171,9 @@ async function handleFormSubmit(formEl, formName) {
     }
   }
 
-  if (saveFormData(formName, obj)) {
+  // حفظ الطلب (يدعم Firebase أو localStorage)
+  const saved = await saveFormData(formName, obj);
+  if (saved) {
     let statusMsg = '';
     if (formName === 'graduates') {
       statusMsg = '\n\nحالة الطلب: في انتظار الموافقة.';
