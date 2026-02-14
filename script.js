@@ -8,8 +8,8 @@ burger?.addEventListener('click', () => {
   navLinks.classList.toggle('open');
 });
 
-// ===== حفظ البيانات في localStorage =====
-function saveFormData(formName, formData) {
+// ===== حفظ البيانات في localStorage أو Firestore =====
+async function saveFormData(formName, formData) {
   // استنسخ البيانات ونظف أي حقول ملفات إلى أسماء الملفات قبل التخزين
   const sanitize = (data) => {
     const out = {};
@@ -29,16 +29,26 @@ function saveFormData(formName, formData) {
     return out;
   };
 
-  let allSubmissions = JSON.parse(localStorage.getItem('formSubmissions')) || {};
-  if (!allSubmissions[formName]) allSubmissions[formName] = [];
-
   const cleaned = sanitize(formData);
   cleaned.submittedAt = new Date().toLocaleString('ar-SA');
   cleaned.id = Date.now();
+  cleaned.formType = formName;
 
+  // إذا كان Firebase متاحاً، احفظ في Firestore
+  if (window.FIREBASE_CONFIG && window.firebase && window.firebase.firestore) {
+    try {
+      await window.firebase.firestore().collection('formSubmissions').add(cleaned);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // إذا لم يوجد Firebase، احفظ محلياً
+  let allSubmissions = JSON.parse(localStorage.getItem('formSubmissions')) || {};
+  if (!allSubmissions[formName]) allSubmissions[formName] = [];
   allSubmissions[formName].push(cleaned);
   localStorage.setItem('formSubmissions', JSON.stringify(allSubmissions));
-
   return true;
 }
 
@@ -161,10 +171,6 @@ async function handleFormSubmit(formEl, formName) {
     }
   }
 
-  // إضافة حالة الطلب للطلاب والخريجين
-  if (formName === 'graduates') {
-    obj.status = 'في انتظار الموافقة';
-  }
   if (saveFormData(formName, obj)) {
     let statusMsg = '';
     if (formName === 'graduates') {
