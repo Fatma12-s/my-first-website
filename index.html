@@ -59,97 +59,116 @@
         }
 
         .header-center {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            padding: 18px 0 0 0;
-        }
-
-        .brand-logo {
-            width: 140px;
-            height: auto;
-            filter: drop-shadow(0 3px 10px rgba(0, 0, 0, .10));
-            margin-bottom: 6px;
-        }
-
-        .brand-text {
-            font-size: var(--fs-lg);
-            font-weight: 900;
-            color: var(--brand-600);
-            letter-spacing: 0.5px;
-            margin-bottom: 0.5rem;
-        }
-
-        nav {
-            width: 100%;
-            display: flex;
-            justify-content: center;
-        }
-        nav ul {
-            list-style: none;
-            display: flex;
-            gap: 32px;
-            justify-content: center;
-            padding: 0;
-            margin: 0 0 18px 0;
-        }
-
-        nav a {
-            padding: 12px 28px;
-            border-radius: 30px;
-            font-weight: 800;
-            font-size: 1.08em;
-            transition: all 0.25s cubic-bezier(.4,1.3,.6,1);
-            display: inline-block;
-        }
-
-        nav a:hover, nav a.active {
-            background: var(--brand-100);
-            color: var(--brand-600);
-            box-shadow: 0 2px 8px #6dbfb133;
-            transform: translateY(-2px) scale(1.04);
-        }
-
-        nav a:active {
-            color: var(--brand-600);
-            font-weight: 900;
-        }
-
-        /* الهيرو */
-        .hero {
-            padding: 70px 0 40px 0;
-            background: linear-gradient(120deg, #e6f7f4 0%, #fafdff 100%);
-            border-radius: 0 0 36px 36px;
-            box-shadow: 0 8px 32px #6dbfb11a;
-            margin-bottom: 30px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 320px;
-        }
-
-        .hero .section-title {
-            color: var(--brand-600);
-            font-size: 2.1em;
-            margin-bottom: 18px;
-            text-align: center;
-        }
-
-        .hero p, .hero .hero-desc {
-            font-size: var(--fs-md);
-            max-width: 700px;
-            margin: 0 auto 18px auto;
-            color: #2a3d3a;
-            font-weight: 600;
-            background: #e6f7f4;
-            border-radius: 18px;
-            padding: 22px 18px;
-            box-shadow: 0 2px 12px #6dbfb11a;
-            text-align: center;
-        }
+            <style>
+                :root {
+                    --brand-600: #295c4a; /* أخضر داكن رسمي */
+                    --brand-500: #6dbfb1; /* أخضر متوسط */
+                    --brand-100: #e6f7f4; /* أخضر فاتح مساعد */
+                    --gray-100: #f4fbfa;
+                    --gray-300: #e9efee;
+                    --gray-700: #6b7a7a;
+                    --fg: #1f2328;
+                    --bg: #ffffff;
+                    --radius: 18px;
+                    --shadow: 0 8px 32px rgba(41, 92, 74, 0.10);
+                    --fs-sm: clamp(.95rem, .8rem + .3vw, 1.05rem);
+                    --fs-md: clamp(1.1rem, .9rem + .6vw, 1.25rem);
+                    --fs-lg: clamp(1.7rem, 1.2rem + 1vw, 2.2rem);
+                    --font: "Cairo", ui-sans-serif, system-ui, "Noto Sans Arabic", "Segoe UI", Tahoma, Arial, sans-serif;
+                }
+                body {
+                    margin: 0;
+                    font-family: var(--font);
+                    color: var(--fg);
+                    background: linear-gradient(135deg, var(--gray-100) 0%, #ffffff 100%);
+                    min-height: 100vh;
+                }
+                a {
+                    text-decoration: none;
+                    color: inherit;
+                }
+                .container {
+                    max-width: 1200px;
+                    padding: 0 20px;
+                    margin: auto;
+                }
+                .site-header {
+                    background: rgba(255,255,255,0.97);
+                    box-shadow: var(--shadow);
+                    position: sticky;
+                    top: 0;
+                    z-index: 99;
+                    backdrop-filter: blur(6px);
+                    padding: 0;
+                }
+                .header-center {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 0.5rem;
+                    padding: 18px 0 0 0;
+                }
+                .brand-logo {
+                    width: 140px;
+                    height: auto;
+                    filter: drop-shadow(0 3px 10px rgba(0, 0, 0, .10));
+                    margin-bottom: 6px;
+                }
+                .brand-text {
+                    font-size: var(--fs-lg);
+                    font-weight: 900;
+                    color: var(--brand-600);
+                    letter-spacing: 0.5px;
+                    margin-bottom: 0.5rem;
+                }
+                nav {
+                    width: 100%;
+                    display: flex;
+                    justify-content: center;
+                }
+                nav ul {
+                    list-style: none;
+                    display: flex;
+                    gap: 32px;
+                    justify-content: center;
+                    padding: 0;
+                    margin: 0 0 18px 0;
+                }
+                nav a {
+                    padding: 12px 28px;
+                    border-radius: 30px;
+                    font-weight: 800;
+                    font-size: 1.08em;
+                    transition: all 0.25s cubic-bezier(.4,1.3,.6,1);
+                    display: inline-block;
+                    position: relative;
+                }
+                nav a.active, nav a:focus {
+                    background: var(--brand-100);
+                    color: var(--brand-600);
+                    box-shadow: 0 2px 8px #295c4a22;
+                }
+                nav a:hover {
+                    background: var(--brand-500);
+                    color: #fff;
+                    box-shadow: 0 2px 8px #295c4a22;
+                }
+                nav a:active {
+                    color: var(--brand-600);
+                    font-weight: 900;
+                }
+                /* تظليل العنصر النشط */
+                nav a.active::after {
+                    content: '';
+                    display: block;
+                    margin: 0 auto;
+                    width: 60%;
+                    height: 4px;
+                    background: var(--brand-600);
+                    border-radius: 2px;
+                    margin-top: 4px;
+                }
 
         .hero-actions {
             margin-top: 24px;
