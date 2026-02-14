@@ -328,70 +328,53 @@
 
     <header class="site-header">
         <div class="container header-center">
-            <a href="#home">
-                <img src="./assets/logo.png" alt="شعار الدائرة" class="brand-logo">
-                <span class="brand-text">دائرة التدريب والتطوير المهني المستمر</span>
+            <a href="#home" style="display: flex; flex-direction: column; align-items: center; gap: 0.2em; text-align: center;">
+                <img src="./assets/logo.png" alt="شعار الدائرة" class="brand-logo" style="width: 110px; margin-bottom: 0;">
+                <span class="brand-text" style="font-size: 1.25em; font-weight: 900; color: var(--brand-600); line-height: 1.1;">
+                    دائرة التدريب<br>والتطوير المهني المستمر
+                </span>
             </a>
-
             <nav>
-                <ul>
-                                        <li><a href="home.html" class="tab-link">الرئيسية</a></li>
+                <button id="mobileMenuBtn" aria-label="القائمة" style="display:none; background:var(--brand-600); color:#fff; border:none; border-radius:50%; width:44px; height:44px; font-size:1.5em; align-items:center; justify-content:center; position:absolute; left:18px; top:18px; z-index:100; cursor:pointer;">
+                    <span style="font-size:1.5em;">☰</span>
+                </button>
+                <ul id="mainNav" style="transition: max-height 0.3s;">
+                    <li><a href="home.html" class="tab-link">الرئيسية</a></li>
                     <li><a href="programs.html" class="tab-link">البرامج التدريبية</a></li>
                     <li><a href="about.html" class="tab-link">عن الدائرة</a></li>
                     <li><a href="contact.html" class="tab-link">تواصل معنا</a></li>
-                    <li><a href="admin.html" style="background: #41726a; color: #fff; border-radius: 24px; padding: 10px 24px; font-size: 1.2em; font-weight: 800; box-shadow: 0 2px 8px #0001;">لوحة التحكم</a></li>
+                    <li><a href="admin.html" class="btn primary" style="font-size:1.08em; padding:10px 24px;">لوحة التحكم</a></li>
                 </ul>
             </nav>
-
         </div>
         <script>
-        // منطق قائمة المستخدم
-        const userMenuBtn = document.getElementById('userMenuBtn');
-        const userDropdown = document.getElementById('userDropdown');
-        const loginMenuLink = document.getElementById('loginMenuLink');
-        const profileMenuLink = document.getElementById('profileMenuLink');
-        const logoutMenuLink = document.getElementById('logoutMenuLink');
-        const userProfileBox = document.getElementById('userProfileBox');
-
-        function updateUserMenu() {
-            const adminToken = sessionStorage.getItem('adminToken');
-            if (adminToken) {
-                // مستخدم مسجل
-                loginMenuLink.style.display = 'none';
-                profileMenuLink.style.display = 'block';
-                logoutMenuLink.style.display = 'block';
-                userProfileBox.style.display = 'block';
-                userProfileBox.innerHTML = `<b>الاسم:</b> Admin<br><b>الرقم الوظيفي:</b> ${adminToken}`;
+        // منطق قائمة الجوال (dropdown)
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const mainNav = document.getElementById('mainNav');
+        function handleResize() {
+            if (window.innerWidth <= 900) {
+                mobileMenuBtn.style.display = 'flex';
+                mainNav.style.flexDirection = 'column';
+                mainNav.style.gap = '12px';
+                mainNav.style.maxHeight = '0';
+                mainNav.style.overflow = 'hidden';
             } else {
-                loginMenuLink.style.display = 'block';
-                profileMenuLink.style.display = 'none';
-                logoutMenuLink.style.display = 'none';
-                userProfileBox.style.display = 'none';
+                mobileMenuBtn.style.display = 'none';
+                mainNav.style.flexDirection = 'row';
+                mainNav.style.gap = '32px';
+                mainNav.style.maxHeight = 'none';
+                mainNav.style.overflow = 'visible';
             }
         }
-        userMenuBtn.onclick = function(e) {
-            e.preventDefault();
-            userDropdown.style.display = userDropdown.style.display === 'block' ? 'none' : 'block';
-            updateUserMenu();
-        };
-        document.addEventListener('click', function(e) {
-            if (!userMenuBtn.contains(e.target) && !userDropdown.contains(e.target)) {
-                userDropdown.style.display = 'none';
+        mobileMenuBtn.addEventListener('click', function() {
+            if (mainNav.style.maxHeight === '0px' || mainNav.style.maxHeight === '0') {
+                mainNav.style.maxHeight = '400px';
+            } else {
+                mainNav.style.maxHeight = '0';
             }
         });
-        logoutMenuLink.onclick = function(e) {
-            e.preventDefault();
-            sessionStorage.removeItem('adminToken');
-            updateUserMenu();
-            userDropdown.style.display = 'none';
-            alert('تم تسجيل الخروج بنجاح');
-        };
-        profileMenuLink.onclick = function(e) {
-            e.preventDefault();
-            window.location.href = 'profile.html';
-        };
-        // تحديث القائمة عند تحميل الصفحة
-        updateUserMenu();
+        window.addEventListener('resize', handleResize);
+        window.addEventListener('DOMContentLoaded', handleResize);
         </script>
 
     </header>
