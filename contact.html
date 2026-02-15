@@ -8,41 +8,43 @@
 </head>
 <body>
     <header class="site-header">
-        <div class="container header-center">
-                <a href="#home" style="display: flex; flex-direction: column; align-items: center; gap: 0.2em; text-align: center;">
-                    <img src="./assets/logo.png" alt="شعار الدائرة" class="brand-logo" style="width: 260px; max-width: 98vw; margin-bottom: 0; display: block; margin-left: auto; margin-right: auto; filter: drop-shadow(0 6px 24px #41726a33);">
-                    <span class="brand-text" style="font-size: 1.08em; font-weight: 800; color: var(--brand-600); line-height: 1.1; display: block; text-align: center; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                        دائرة التدريب والتطوير المهني المستمر
-                    </span>
-                </a>
+        <div class="container header-center" style="padding-top: 32px; padding-bottom: 18px;">
+            <a href="#home" style="display: flex; flex-direction: column; align-items: center; gap: 0.2em; text-align: center;">
+                <img src="./assets/logo.png" alt="شعار الدائرة" class="brand-logo" style="width: 64px; height: 64px; max-width: 100%; margin-bottom: 8px; display: block; margin-left: auto; margin-right: auto; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.10));">
+                <span class="brand-text" style="font-size: 1.35rem; font-weight: 800; color: #295c4a; letter-spacing: 0.5px; margin-bottom: 0.2rem; text-align: center; line-height: 1.3;">دائرة التدريب والتطوير المهني المستمر</span>
+                <span class="brand-desc" style="font-size: 1.1rem; font-weight: 600; color: #6b7a7a; margin-bottom: 0.7rem; text-align: center;">منصة رسمية لتخطيط وتنفيذ البرامج التدريبية الصحية</span>
+            </a>
             <nav>
                 <ul>
                     <li><a href="home.html">الرئيسية</a></li>
                     <li><a href="programs.html">البرامج التدريبية</a></li>
                     <li><a href="about.html">عن الدائرة</a></li>
-                    <li><a href="contact.html">تواصل معنا</a></li>
-                    <li><a href="admin.html" style="background: #41726a; color: #fff; border-radius: 24px; padding: 10px 24px; font-size: 1.2em; font-weight: 800; box-shadow: 0 2px 8px #0001;">لوحة التحكم</a></li>
+                    <li><a href="contact.html" class="active">تواصل معنا</a></li>
+                    <li><a href="admin.html" class="btn primary" style="font-size:1.08em; padding:10px 24px;">لوحة التحكم</a></li>
                 </ul>
             </nav>
         </div>
     </header>
     <section class="section">
         <div class="container">
-            <h2 class="section-title">تواصل معنا</h2>
-            <form>
+            <section class="hero" style="padding: 64px 0 56px 0; background: linear-gradient(120deg, #e6f7f4 0%, #fafdff 100%); border-radius: 0 0 36px 36px; margin-bottom: 30px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 320px;">
+                <h2 class="section-title" style="color: #295c4a; font-size: 2.1em; margin-bottom: 18px; text-align: center; font-weight: 800;">تواصل معنا</h2>
+                <p class="hero-desc" style="font-size: 1.15rem; max-width: 700px; margin: 0 auto 18px auto; color: #2a3d3a; font-weight: 600; background: #e6f7f4; border-radius: 18px; padding: 22px 18px; text-align: center;">لأي استفسار أو تواصل مع دائرة التدريب والتطوير المهني المستمر يرجى تعبئة النموذج أدناه وسيتم الرد عليك في أقرب وقت.</p>
+            </section>
+            <form style="max-width: 600px; display: grid; gap: 18px; margin: 0 auto; background: #fff; border-radius: 18px; box-shadow: 0 4px 18px #295c4a11; padding: 32px 18px;">
                 <div>
-                    <label for="name">الاسم</label>
-                    <input type="text" id="name" name="name" required>
+                    <label for="name" style="font-weight: 800; color: #1f2328;">الاسم</label>
+                    <input type="text" id="name" name="name" required style="padding: 14px; border-radius: 18px; border: 1px solid #cfd8d6; font-family: 'Cairo',sans-serif; font-size: 1.1rem;">
                 </div>
                 <div>
-                    <label for="email">البريد الإلكتروني</label>
-                    <input type="email" id="email" name="email" required>
+                    <label for="email" style="font-weight: 800; color: #1f2328;">البريد الإلكتروني</label>
+                    <input type="email" id="email" name="email" required style="padding: 14px; border-radius: 18px; border: 1px solid #cfd8d6; font-family: 'Cairo',sans-serif; font-size: 1.1rem;">
                 </div>
                 <div>
-                    <label for="message">الرسالة</label>
-                    <textarea id="message" name="message" rows="5" required></textarea>
+                    <label for="message" style="font-weight: 800; color: #1f2328;">الرسالة</label>
+                    <textarea id="message" name="message" rows="5" required style="padding: 14px; border-radius: 18px; border: 1px solid #cfd8d6; font-family: 'Cairo',sans-serif; font-size: 1.1rem;"></textarea>
                 </div>
-                <button type="submit" class="btn primary">إرسال</button>
+                <button type="submit" class="btn primary" style="width: 100%; font-size: 1.15rem;">إرسال</button>
             </form>
         </div>
     </section>
