@@ -110,10 +110,23 @@
                     padding: 18px 0 0 0;
                 }
                 .brand-logo {
-                    width: 140px;
+                    width: 300px;
                     height: auto;
                     filter: drop-shadow(0 3px 10px rgba(0, 0, 0, .10));
                     margin-bottom: 6px;
+                    display: block;
+                    margin-left: auto;
+                    margin-right: auto;
+                }
+                @media (max-width: 768px) {
+                    .brand-logo {
+                        width: 200px;
+                    }
+                }
+                @media (max-width: 480px) {
+                    .brand-logo {
+                        width: 150px;
+                    }
                 }
                 .brand-text {
                     font-size: var(--fs-lg);
@@ -329,7 +342,7 @@
     <header class="site-header">
         <div class="container header-center">
             <a href="#home" style="display: flex; flex-direction: column; align-items: center; gap: 0.2em; text-align: center;">
-                <img src="./assets/logo.png" alt="شعار الدائرة" class="brand-logo" style="width: 110px; margin-bottom: 0;">
+                <img src="./assets/logo.png" alt="شعار الدائرة" class="brand-logo">
                 <span class="brand-text" style="font-size: 1.25em; font-weight: 900; color: var(--brand-600); line-height: 1.1;">
                     دائرة التدريب<br>والتطوير المهني المستمر
                 </span>
