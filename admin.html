@@ -269,26 +269,56 @@
     <script src="firebase-config.js"></script>
     <script>
     // تهيئة Firebase
-    firebase.initializeApp(window.FIREBASE_CONFIG);
-    const db = firebase.firestore();
+    let db = null;
+    try {
+        if (window.FIREBASE_CONFIG && window.FIREBASE_CONFIG.projectId && 
+            !window.FIREBASE_CONFIG.projectId.includes('YOUR_')) {
+            firebase.initializeApp(window.FIREBASE_CONFIG);
+            db = firebase.firestore();
+        }
+    } catch (err) {
+        console.log('Firebase غير متاح، سيتم استخدام localStorage');
+    }
 
-    // ===== تحميل وعرض البيانات من Firestore =====
+    // ===== تحميل وعرض البيانات من Firestore أو localStorage =====
     async function loadSubmissions() {
         const container = document.getElementById('submissionsContainer');
         const selectedForm = document.getElementById('formFilter').value;
         const searchTerm = document.getElementById('searchInput').value.toLowerCase();
         let filteredData = [];
-        // جلب جميع الطلبات من Firestore
-        let query = db.collection('formSubmissions');
-        if (selectedForm) {
-            query = query.where('formType', '==', selectedForm);
+        
+        // محاولة الجلب من Firestore أولاً
+        if (db) {
+            try {
+                let query = db.collection('formSubmissions');
+                if (selectedForm) {
+                    query = query.where('formType', '==', selectedForm);
+                }
+                const snapshot = await query.get();
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    data.id = doc.id;
+                    filteredData.push(data);
+                });
+            } catch (err) {
+                console.log('خطأ في Firestore، سيتم استخدام localStorage:', err);
+                filteredData = [];
+            }
         }
-        const snapshot = await query.get();
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            data.id = doc.id;
-            filteredData.push(data);
-        });
+        
+        // إذا لم نجد بيانات في Firestore، أو Firebase غير متاح، استخدم localStorage
+        if (filteredData.length === 0) {
+            const localData = JSON.parse(localStorage.getItem('formSubmissions')) || {};
+            Object.entries(localData).forEach(([formType, submissions]) => {
+                if (Array.isArray(submissions)) {
+                    submissions.forEach(sub => {
+                        if (!selectedForm || formType === selectedForm) {
+                            filteredData.push({...sub, formType});
+                        }
+                    });
+                }
+            });
+        }
         // البحث
         if (searchTerm) {
             filteredData = filteredData.filter(item => {
