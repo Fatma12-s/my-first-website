@@ -195,10 +195,10 @@ nav a.active::after {
   margin-top: var(--space-2xs);
 }
 .hero {
-  padding: var(--space-3xl) 0 var(--space-2xl) 0;
+  padding: var(--space-2xl) 0 var(--space-xl) 0;
   background: linear-gradient(120deg, var(--brand-light) 0%, #fafdff 100%);
   border-radius: 0 0 36px 36px;
-  margin-bottom: var(--space-lg);
+  margin-bottom: var(--space-md);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -209,7 +209,7 @@ nav a.active::after {
 .hero .section-title {
   color: var(--brand-main);
   font-size: 2.1em;
-  margin-bottom: var(--space-lg);
+  margin-bottom: var(--space-md);
   text-align: center;
   font-weight: 800;
 }
@@ -217,12 +217,12 @@ nav a.active::after {
 .hero p, .hero .hero-desc {
   font-size: 1.15rem;
   max-width: 700px;
-  margin: 0 auto var(--space-lg) auto;
+  margin: 0 auto 0 auto;
   color: #2a3d3a;
   font-weight: 600;
   background: var(--brand-light);
   border-radius: var(--radius);
-  padding: var(--space-lg) var(--space-md);
+  padding: var(--space-md) var(--space-sm);
   text-align: center;
 }
 .btn {
@@ -261,7 +261,7 @@ nav a.active::after {
 /* Card Component */
 .card {
   background: #fff;
-  padding: var(--space-lg) var(--space-md);
+  padding: var(--space-md) var(--space-sm);
   border-radius: 22px;
   border: 1px solid var(--gray-300);
   box-shadow: var(--shadow-md);
@@ -276,7 +276,8 @@ nav a.active::after {
   font-size: 1.25rem;
   font-weight: 800;
   color: var(--brand-main);
-  margin-bottom: var(--space-sm);
+  margin-bottom: var(--space-2xs);
+  margin-top: 0;
 }
 
 .card p {
@@ -289,14 +290,14 @@ nav a.active::after {
 /* Grid Layout */
 .grid {
   display: grid;
-  gap: var(--space-lg);
+  gap: var(--space-md);
   grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
   justify-content: center;
 }
 
 /* Section */
 .section {
-  padding: var(--space-2xl) 0;
+  padding: var(--space-xl) 0;
 }
 
 .section-title {
