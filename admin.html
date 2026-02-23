@@ -506,8 +506,58 @@
         });
         document.getElementById('stats').innerHTML = statsHtml;
     }
-    document.getElementById('formFilter').addEventListener('change', loadSubmissions);
+
+    function updateDeleteButtonLabel() {
+        const selectedForm = document.getElementById('formFilter').value;
+        const clearBtn = document.querySelector('.clear-btn');
+        if (!clearBtn) return;
+        clearBtn.textContent = selectedForm ? '🗑️ حذف النوع المحدد' : '🗑️ حذف الكل';
+    }
+
+    async function clearAllData() {
+        const selectedForm = document.getElementById('formFilter').value;
+        const isSpecific = !!selectedForm;
+        const confirmationMsg = isSpecific
+            ? 'هل أنت متأكد من حذف الطلبات المعروضة لهذا النوع فقط؟'
+            : 'هل أنت متأكد من حذف جميع الطلبات؟';
+
+        if (!confirm(confirmationMsg)) return;
+
+        if (db) {
+            try {
+                let query = db.collection('formSubmissions');
+                if (isSpecific) {
+                    query = query.where('formType', '==', selectedForm);
+                }
+                const snapshot = await query.get();
+                const batch = db.batch();
+                snapshot.forEach(doc => batch.delete(doc.ref));
+                if (!snapshot.empty) {
+                    await batch.commit();
+                }
+            } catch (err) {
+                console.log('تعذر حذف البيانات من Firestore:', err);
+            }
+        }
+
+        const localData = JSON.parse(localStorage.getItem('formSubmissions')) || {};
+        if (isSpecific) {
+            delete localData[selectedForm];
+        } else {
+            Object.keys(localData).forEach(key => delete localData[key]);
+        }
+        localStorage.setItem('formSubmissions', JSON.stringify(localData));
+
+        await loadSubmissions();
+        alert(isSpecific ? '✅ تم حذف الطلبات المعروضة لهذا النوع.' : '✅ تم حذف جميع الطلبات.');
+    }
+
+    document.getElementById('formFilter').addEventListener('change', () => {
+        updateDeleteButtonLabel();
+        loadSubmissions();
+    });
     document.getElementById('searchInput').addEventListener('input', loadSubmissions);
+    updateDeleteButtonLabel();
     loadSubmissions();
     </script>
     <footer style="text-align:center; margin: 40px 0 10px; color:#666;">
