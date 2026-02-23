@@ -345,11 +345,11 @@
             const s = String(value);
             if (s.includes(';')) {
                 return s.split(';').map(part => part.trim()).map(p => {
-                    if (/^https?:\/\//.test(p)) return `<a href="${p}" target="_blank">${p}</a>`;
+                    if (/^https?:\/\//.test(p)) return `<a href="${p}" target="_blank" rel="noopener noreferrer">📎 ${p.split('/').pop() || 'ملف'}</a>`;
                     return `<span>${p}</span>`;
                 }).join('<br>');
             }
-            if (/^https?:\/\//.test(s)) return `<a href="${s}" target="_blank">${s}</a>`;
+            if (/^https?:\/\//.test(s)) return `<a href="${s}" target="_blank" rel="noopener noreferrer">📎 ${s.split('/').pop() || 'ملف'}</a>`;
             return `<span>${s}</span>`;
         }
         container.innerHTML = filteredData.map(submission => {
@@ -361,17 +361,33 @@
                 'training-others': '📚 البرامج التدريبية - الآخرين',
                 'contact': '💬 رسائل التواصل'
             };
+            
+            // عد عدد الملفات المرفوعة
+            let filesCount = 0;
+            let fileFields = [];
+            Object.entries(submission).forEach(([key, value]) => {
+                const s = String(value);
+                if (/^https?:\/\//.test(s) || s.includes('.pdf') || s.includes('.jpg') || s.includes('.png')) {
+                    filesCount += s.includes(';') ? s.split(';').length : 1;
+                    fileFields.push(key);
+                }
+            });
+            
             return `
                 <div class="submission-card">
                     <div class="submission-header">
                         <div>
                             <div class="submission-title">${formTypeNames[submission.formType]}</div>
                             <div class="submission-date">📅 ${submission.submittedAt || 'غير محدد'}</div>
+                            <div class="submission-date" style="font-size: 11px; color: #bbb; margin-top: 4px;">
+                                🆔 ID: ${submission.id}
+                                ${filesCount > 0 ? ` | 📎 ${filesCount} ملف${filesCount > 1 ? 'ات' : ''}` : ''}
+                            </div>
                         </div>
                     </div>
                     <div class="submission-content">
                         ${Object.entries(submission)
-                            .filter(([key]) => key !== 'formType' && key !== 'id' && key !== 'submittedAt')
+                            .filter(([key]) => key !== 'formType' && key !== 'id' && key !== 'submittedAt' && key !== 'submittedAtISO' && key !== 'firestoreId')
                             .map(([key, value]) => `
                                 <div class="field">
                                     <div class="field-label">${key}</div>

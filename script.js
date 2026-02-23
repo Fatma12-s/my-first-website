@@ -1,5 +1,44 @@
-// سنة العام الحالية في التذييل
-document.getElementById('year')?.textContent = new Date().getFullYear();
+// ===== إضافة مؤشرات البدء لحقول الملفات =====
+document.addEventListener('DOMContentLoaded', () => {
+  // البحث عن جميع حقول الملفات وإضافة عرض للملف المختار
+  document.querySelectorAll('input[type="file"]').forEach(fileInput => {
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const validation = validateFile(file);
+        const container = fileInput.closest('.form-group') || fileInput.parentElement;
+        
+        // احذف أي رسالة سابقة
+        const existingMsg = container.querySelector('.file-status');
+        if (existingMsg) existingMsg.remove();
+        
+        // أضف رسالة جديدة
+        const msg = document.createElement('div');
+        msg.className = 'file-status';
+        msg.style.cssText = `
+          margin-top: 8px;
+          padding: 8px 12px;
+          border-radius: 6px;
+          font-size: 13px;
+          ${validation.valid 
+            ? 'background: #e8f5e9; color: #2e7d32;' 
+            : 'background: #ffebee; color: #d32f2f;'}
+        `;
+        
+        if (validation.valid) {
+          const sizeKB = (file.size / 1024).toFixed(1);
+          msg.textContent = `✅ تم تحديد الملف: ${file.name} (${sizeKB} KB)`;
+        } else {
+          msg.textContent = `❌ ${validation.message}`;
+          // امسح الملف إذا كان غير صالح
+          fileInput.value = '';
+        }
+        
+        container.appendChild(msg);
+      }
+    });
+  });
+});
 
 // قائمة الجوال (زر ☰)
 const burger = document.getElementById('burger');
@@ -31,25 +70,28 @@ async function saveFormData(formName, formData) {
 
   const cleaned = sanitize(formData);
   cleaned.submittedAt = new Date().toLocaleString('ar-SA');
+  cleaned.submittedAtISO = new Date().toISOString();
   cleaned.id = Date.now();
   cleaned.formType = formName;
 
   // إذا كان Firebase متاحاً، احفظ في Firestore
   if (window.FIREBASE_CONFIG && window.firebase && window.firebase.firestore) {
     try {
-      await window.firebase.firestore().collection('formSubmissions').add(cleaned);
-      return true;
+      const result = await window.firebase.firestore().collection('formSubmissions').add(cleaned);
+      cleaned.firestoreId = result.id;
+      return { success: true, data: cleaned };
     } catch (e) {
-      return false;
+      console.error('Firebase Error:', e);
+      // المتابعة مع localStorage كبديل
     }
   }
 
-  // إذا لم يوجد Firebase، احفظ محلياً
+  // احفظ محلياً (Firebase متعطل أو غير متوفر)
   let allSubmissions = JSON.parse(localStorage.getItem('formSubmissions')) || {};
   if (!allSubmissions[formName]) allSubmissions[formName] = [];
   allSubmissions[formName].push(cleaned);
   localStorage.setItem('formSubmissions', JSON.stringify(allSubmissions));
-  return true;
+  return { success: true, data: cleaned, local: true };
 }
 
 // ===== استمارة تدريب الطلاب والخريجين =====
@@ -139,48 +181,270 @@ async function ensureFirebase() {
 
 async function uploadFileToFirebase(file, remotePath) {
   if (!file || !file.name) return null;
-  const ok = await ensureFirebase();
-  if (!ok) return null;
-  const storageRef = window.firebase.storage().ref();
-  const ref = storageRef.child(remotePath);
-  const snapshot = await ref.put(file);
-  const url = await snapshot.ref.getDownloadURL();
-  return url;
+  
+  try {
+    const ok = await ensureFirebase();
+    if (!ok) {
+      console.warn('Firebase Storage not available');
+      return null;
+    }
+    
+    if (!window.firebase || !window.firebase.storage) {
+      console.warn('Firebase Storage SDK not loaded');
+      return null;
+    }
+
+    const storageRef = window.firebase.storage().ref();
+    const ref = storageRef.child(remotePath);
+    
+    // رفع الملف مع مراقبة التقدم
+    const snapshot = await ref.put(file);
+    
+    // احصل على رابط التحميل
+    const url = await snapshot.ref.getDownloadURL();
+    console.log(`✅ File uploaded: ${remotePath}`);
+    return url;
+  } catch (error) {
+    console.error(`Failed to upload file to Firebase:`, error);
+    // إذا فشل Firebase، سيعود handleFormSubmit إلى حفظ اسم الملف فقط
+    return null;
+  }
 }
 
 async function handleFormSubmit(formEl, formName) {
-  const fd = new FormData(formEl);
-  const obj = {};
-  const useFirebase = !!window.FIREBASE_CONFIG;
+  const submitBtn = formEl.querySelector('button[type="submit"]');
+  const originalBtnText = submitBtn?.textContent || 'إرسال';
+  
+  // ظهر حالة التحميل
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = '⏳ جاري الإرسال...';
+  }
 
-  for (const [k, v] of fd.entries()) {
-    if (v instanceof File && v.name) {
-      if (useFirebase) {
-        const remotePath = `${formName}/${Date.now()}_${v.name}`;
-        try {
-          const url = await uploadFileToFirebase(v, remotePath);
-          obj[k] = url || v.name;
-        } catch (err) {
+  try {
+    const fd = new FormData(formEl);
+    const obj = {};
+    const useFirebase = !!window.FIREBASE_CONFIG;
+    
+    // تحقق من الملفات أولاً
+    for (const [k, v] of fd.entries()) {
+      if (v instanceof File && v.name) {
+        const validation = validateFile(v);
+        if (!validation.valid) {
+          throw new Error(validation.message);
+        }
+      }
+    }
+
+    // رفع الملفات أو احفظ البيانات
+    for (const [k, v] of fd.entries()) {
+      if (v instanceof File && v.name) {
+        if (useFirebase) {
+          const remotePath = `${formName}/${Date.now()}_${v.name}`;
+          try {
+            const url = await uploadFileToFirebase(v, remotePath);
+            obj[k] = url || v.name;
+          } catch (err) {
+            console.warn(`Failed to upload ${v.name}:`, err);
+            obj[k] = v.name; // احفظ اسم الملف إذا فشل الرفع
+          }
+        } else {
           obj[k] = v.name;
         }
       } else {
-        obj[k] = v.name;
+        obj[k] = v;
       }
-    } else {
-      obj[k] = v;
     }
+
+    // حفظ الطلب
+    const result = await saveFormData(formName, obj);
+    if (result.success) {
+      showSuccessMessage(formName, result.data, result.local);
+      formEl.reset();
+    } else {
+      throw new Error('فشل حفظ البيانات');
+    }
+  } catch (error) {
+    showErrorMessage(error.message || 'حدث خطأ غير متوقع');
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalBtnText;
+    }
+  }
+}
+
+// ===== التحقق من صحة الملفات =====
+function validateFile(file) {
+  const maxSize = 5 * 1024 * 1024; // 5MB
+  const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+  
+  if (!file.size) return { valid: false, message: 'الملف فارغ' };
+  if (file.size > maxSize) return { valid: false, message: 'حجم الملف يتجاوز 5MB' };
+  if (!allowedTypes.includes(file.type)) {
+    return { valid: false, message: `نوع الملف غير مدعوم: ${file.type}` };
+  }
+  return { valid: true };
+}
+
+// ===== عرض رسالة النجاح =====
+function showSuccessMessage(formName, data, isLocal) {
+  const container = document.body;
+  const modal = document.createElement('div');
+  modal.className = 'success-modal';
+  modal.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 32px;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    z-index: 10000;
+    max-width: 500px;
+    text-align: center;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    direction: rtl;
+    animation: slideIn 0.3s ease-out;
+  `;
+
+  const content = document.createElement('div');
+  let message = `✅ تم تقديم طلبك بنجاح!\n\n`;
+  message += `رقم الطلب: ${data.id}\n`;
+  message += `التاريخ: ${data.submittedAt}\n`;
+  
+  if (formName === 'graduates') {
+    message += `\nحالة الطلب: في انتظار الموافقة\nسيتم التواصل معك قريباً`;
+  }
+  
+  if (isLocal) {
+    message += `\n\n⚠️ نُباه: تم حفظ طلبك محلياً`;
   }
 
-  // حفظ الطلب (يدعم Firebase أو localStorage)
-  const saved = await saveFormData(formName, obj);
-  if (saved) {
-    let statusMsg = '';
-    if (formName === 'graduates') {
-      statusMsg = '\n\nحالة الطلب: في انتظار الموافقة.';
+  content.textContent = message;
+  content.style.cssText = 'white-space: pre-line; line-height: 1.6; margin-bottom: 20px;';
+  
+  const button = document.createElement('button');
+  button.textContent = 'إغلاق';
+  button.style.cssText = `
+    padding: 10px 24px;
+    background: #295c4a;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: opacity 0.2s;
+  `;
+  button.onmouseover = () => button.style.opacity = '0.9';
+  button.onmouseout = () => button.style.opacity = '1';
+  button.onclick = () => {
+    modal.remove();
+    overlay.remove();
+  };
+
+  modal.appendChild(content);
+  modal.appendChild(button);
+  
+  const overlay = document.createElement('div');
+  overlay.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 9999;
+  `;
+  overlay.onclick = () => {
+    modal.remove();
+    overlay.remove();
+  };
+
+  container.appendChild(overlay);
+  container.appendChild(modal);
+  
+  // أضف CSS animation
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes slideIn {
+      from {
+        transform: translate(-50%, -60%);
+        opacity: 0;
+      }
+      to {
+        transform: translate(-50%, -50%);
+        opacity: 1;
+      }
     }
-    alert('✅ تم تقديم الطلب بنجاح! يمكنك عرض طلبك من صفحة الإدارة.' + statusMsg);
-    formEl.reset();
-  } else {
-    alert('❌ حدث خطأ أثناء حفظ الطلب. يرجى المحاولة مرة أخرى أو تحديث الصفحة.');
-  }
+  `;
+  document.head.appendChild(style);
+}
+
+// ===== عرض رسالة الخطأ =====
+function showErrorMessage(message) {
+  const container = document.body;
+  const modal = document.createElement('div');
+  modal.className = 'error-modal';
+  modal.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 32px;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    z-index: 10000;
+    max-width: 500px;
+    text-align: center;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    direction: rtl;
+    animation: slideIn 0.3s ease-out;
+  `;
+
+  const content = document.createElement('div');
+  content.innerHTML = `❌ حدث خطأ<br><br>${message}`;
+  content.style.cssText = 'line-height: 1.6; margin-bottom: 20px; color: #d32f2f;';
+  
+  const button = document.createElement('button');
+  button.textContent = 'حسناً';
+  button.style.cssText = `
+    padding: 10px 24px;
+    background: #d32f2f;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: opacity 0.2s;
+  `;
+  button.onmouseover = () => button.style.opacity = '0.9';
+  button.onmouseout = () => button.style.opacity = '1';
+  button.onclick = () => {
+    modal.remove();
+    overlay.remove();
+  };
+
+  modal.appendChild(content);
+  modal.appendChild(button);
+  
+  const overlay = document.createElement('div');
+  overlay.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 9999;
+  `;
+  overlay.onclick = () => {
+    modal.remove();
+    overlay.remove();
+  };
+
+  container.appendChild(overlay);
+  container.appendChild(modal);
 }
