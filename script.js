@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('input[type="file"]').forEach(fileInput => {
     fileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
-      if (file) {
+      if (file && file.size > 0) { // تجاهل الملفات الفارغة
         const validation = validateFile(file);
         const container = fileInput.closest('.form-group') || fileInput.parentElement;
         
@@ -226,9 +226,9 @@ async function handleFormSubmit(formEl, formName) {
     const obj = {};
     const useFirebase = !!window.FIREBASE_CONFIG;
     
-    // تحقق من الملفات أولاً
+    // تحقق من الملفات أولاً (تجاهل الملفات الفارغة والاختيارية)
     for (const [k, v] of fd.entries()) {
-      if (v instanceof File && v.name) {
+      if (v instanceof File && v.name && v.size > 0) {
         const validation = validateFile(v);
         if (!validation.valid) {
           throw new Error(validation.message);
@@ -236,9 +236,9 @@ async function handleFormSubmit(formEl, formName) {
       }
     }
 
-    // رفع الملفات أو احفظ البيانات
+    // رفع الملفات أو احفظ البيانات (تجاهل الملفات الفارغة)
     for (const [k, v] of fd.entries()) {
-      if (v instanceof File && v.name) {
+      if (v instanceof File && v.name && v.size > 0) {
         if (useFirebase) {
           const remotePath = `${formName}/${Date.now()}_${v.name}`;
           try {
@@ -251,7 +251,7 @@ async function handleFormSubmit(formEl, formName) {
         } else {
           obj[k] = v.name;
         }
-      } else {
+      } else if (!(v instanceof File)) {
         obj[k] = v;
       }
     }
@@ -279,7 +279,11 @@ function validateFile(file) {
   const maxSize = 5 * 1024 * 1024; // 5MB
   const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
   
-  if (!file.size) return { valid: false, message: 'الملف فارغ' };
+  // تجاهل الملفات الفارغة (الاختيارية)
+  if (!file || !file.size) {
+    return { valid: true }; // ملف فارغ = لا توجد مشكلة (اختياري)
+  }
+  
   if (file.size > maxSize) return { valid: false, message: 'حجم الملف يتجاوز 5MB' };
   if (!allowedTypes.includes(file.type)) {
     return { valid: false, message: `نوع الملف غير مدعوم: ${file.type}` };
