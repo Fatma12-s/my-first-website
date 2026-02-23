@@ -181,6 +181,46 @@
             word-break: break-word;
         }
 
+        .attachments-box {
+            margin-top: var(--space-md);
+            background: #f9fffe;
+            border-radius: 8px;
+            border: 1px solid #e3f0ee;
+            padding: var(--space-md);
+        }
+
+        .attachments-title {
+            color: #41726a;
+            font-weight: 700;
+            margin-bottom: var(--space-sm);
+        }
+
+        .attachments-list {
+            display: grid;
+            gap: var(--space-sm);
+        }
+
+        .attachment-item {
+            display: grid;
+            gap: var(--space-xs);
+            padding: var(--space-sm);
+            background: #fff;
+            border-radius: 6px;
+            border-right: 3px solid #6dbfb1;
+        }
+
+        .attachment-label {
+            color: #41726a;
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .attachment-value {
+            color: #333;
+            word-break: break-word;
+        }
+
         .empty-state {
             background: white;
             padding: var(--space-2xl);
@@ -352,6 +392,19 @@
             if (/^https?:\/\//.test(s)) return `<a href="${s}" target="_blank" rel="noopener noreferrer">📎 ${s.split('/').pop() || 'ملف'}</a>`;
             return `<span>${s}</span>`;
         }
+
+        function isAttachmentValue(value) {
+            if (!value && value !== 0) return false;
+            const tokens = String(value).split(';').map(part => part.trim()).filter(Boolean);
+            return tokens.some(token => /^https?:\/\//i.test(token) || /\.(pdf|jpe?g|png)$/i.test(token));
+        }
+
+        function getAttachmentCount(value) {
+            if (!value && value !== 0) return 0;
+            const tokens = String(value).split(';').map(part => part.trim()).filter(Boolean);
+            return tokens.filter(token => /^https?:\/\//i.test(token) || /\.(pdf|jpe?g|png)$/i.test(token)).length;
+        }
+
         container.innerHTML = filteredData.map(submission => {
             const formTypeNames = {
                 'graduates': '👨‍🎓 تدريب الطلاب والخريجين',
@@ -361,16 +414,17 @@
                 'training-others': '📚 البرامج التدريبية - الآخرين',
                 'contact': '💬 رسائل التواصل'
             };
+
+            const allEntries = Object.entries(submission)
+                .filter(([key]) => key !== 'formType' && key !== 'id' && key !== 'submittedAt' && key !== 'submittedAtISO' && key !== 'firestoreId');
+
+            const attachmentEntries = allEntries.filter(([, value]) => isAttachmentValue(value));
+            const nonAttachmentEntries = allEntries.filter(([, value]) => !isAttachmentValue(value));
             
             // عد عدد الملفات المرفوعة
             let filesCount = 0;
-            let fileFields = [];
-            Object.entries(submission).forEach(([key, value]) => {
-                const s = String(value);
-                if (/^https?:\/\//.test(s) || s.includes('.pdf') || s.includes('.jpg') || s.includes('.png')) {
-                    filesCount += s.includes(';') ? s.split(';').length : 1;
-                    fileFields.push(key);
-                }
+            attachmentEntries.forEach(([, value]) => {
+                filesCount += getAttachmentCount(value);
             });
             
             return `
@@ -386,8 +440,7 @@
                         </div>
                     </div>
                     <div class="submission-content">
-                        ${Object.entries(submission)
-                            .filter(([key]) => key !== 'formType' && key !== 'id' && key !== 'submittedAt' && key !== 'submittedAtISO' && key !== 'firestoreId')
+                        ${nonAttachmentEntries
                             .map(([key, value]) => `
                                 <div class="field">
                                     <div class="field-label">${key}</div>
@@ -395,6 +448,19 @@
                                 </div>
                             `).join('')}
                     </div>
+                    ${attachmentEntries.length > 0 ? `
+                        <div class="attachments-box">
+                            <div class="attachments-title">📎 المرفقات</div>
+                            <div class="attachments-list">
+                                ${attachmentEntries.map(([key, value]) => `
+                                    <div class="attachment-item">
+                                        <div class="attachment-label">${key}</div>
+                                        <div class="attachment-value">${formatFieldValue(value)}</div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
                 </div>
             `;
         }).join('');
