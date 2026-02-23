@@ -382,6 +382,18 @@
         }
         function formatFieldValue(value) {
             if (!value && value !== 0) return '';
+
+            if (typeof value === 'object') {
+                const fileName = value.name || 'ملف';
+                if (value.url) {
+                    return `<a href="${value.url}" target="_blank" rel="noopener noreferrer">📎 ${fileName}</a>`;
+                }
+                if (value.dataUrl) {
+                    return `<a href="${value.dataUrl}" download="${fileName}" target="_blank" rel="noopener noreferrer">📎 ${fileName}</a>`;
+                }
+                return `<span>📎 ${fileName} (لا يوجد رابط مباشر)</span>`;
+            }
+
             const s = String(value);
             if (s.includes(';')) {
                 return s.split(';').map(part => part.trim()).map(p => {
@@ -395,12 +407,22 @@
 
         function isAttachmentValue(value) {
             if (!value && value !== 0) return false;
+
+            if (typeof value === 'object') {
+                return !!(value.url || value.dataUrl || value.name);
+            }
+
             const tokens = String(value).split(';').map(part => part.trim()).filter(Boolean);
             return tokens.some(token => /^https?:\/\//i.test(token) || /\.(pdf|jpe?g|png)$/i.test(token));
         }
 
         function getAttachmentCount(value) {
             if (!value && value !== 0) return 0;
+
+            if (typeof value === 'object') {
+                return (value.url || value.dataUrl || value.name) ? 1 : 0;
+            }
+
             const tokens = String(value).split(';').map(part => part.trim()).filter(Boolean);
             return tokens.filter(token => /^https?:\/\//i.test(token) || /\.(pdf|jpe?g|png)$/i.test(token)).length;
         }

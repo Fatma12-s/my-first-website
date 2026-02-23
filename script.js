@@ -211,6 +211,48 @@ async function uploadFileToFirebase(file, remotePath) {
   }
 }
 
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error('تعذر قراءة الملف محلياً'));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function buildAttachmentValue(file, formName, useFirebase) {
+  const fallbackMeta = {
+    name: file.name,
+    type: file.type || 'application/octet-stream',
+    size: file.size,
+    source: 'local-name'
+  };
+
+  if (useFirebase) {
+    const remotePath = `${formName}/${Date.now()}_${file.name}`;
+    const url = await uploadFileToFirebase(file, remotePath);
+    if (url) {
+      return {
+        ...fallbackMeta,
+        source: 'firebase',
+        url
+      };
+    }
+  }
+
+  try {
+    const dataUrl = await fileToDataUrl(file);
+    return {
+      ...fallbackMeta,
+      source: 'local-dataurl',
+      dataUrl
+    };
+  } catch (error) {
+    console.warn('تعذر حفظ الملف كرابط محلي، سيتم حفظ الاسم فقط:', error);
+    return fallbackMeta;
+  }
+}
+
 async function handleFormSubmit(formEl, formName) {
   const submitBtn = formEl.querySelector('button[type="submit"]');
   const originalBtnText = submitBtn?.textContent || 'إرسال';
@@ -236,21 +278,10 @@ async function handleFormSubmit(formEl, formName) {
       }
     }
 
-    // رفع الملفات أو احفظ البيانات (تجاهل الملفات الفارغة)
+    // رفع الملفات أو احفظها محلياً كروابط قابلة للفتح (تجاهل الملفات الفارغة)
     for (const [k, v] of fd.entries()) {
       if (v instanceof File && v.name && v.size > 0) {
-        if (useFirebase) {
-          const remotePath = `${formName}/${Date.now()}_${v.name}`;
-          try {
-            const url = await uploadFileToFirebase(v, remotePath);
-            obj[k] = url || v.name;
-          } catch (err) {
-            console.warn(`Failed to upload ${v.name}:`, err);
-            obj[k] = v.name; // احفظ اسم الملف إذا فشل الرفع
-          }
-        } else {
-          obj[k] = v.name;
-        }
+        obj[k] = await buildAttachmentValue(v, formName, useFirebase);
       } else if (!(v instanceof File)) {
         obj[k] = v;
       }
