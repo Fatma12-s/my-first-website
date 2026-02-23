@@ -8,7 +8,7 @@
 </head>
 <body>
     <header class="site-header">
-        <div class="container header-center" style="padding-top: 32px; padding-bottom: 18px;">
+        <div class="container header-center">
             <a href="index.html" style="display: flex; flex-direction: column; align-items: center; gap: 0.2em; text-align: center;">
                 <img src="./assets/logo.png" alt="شعار الدائرة" class="brand-logo">
             </a>
@@ -17,42 +17,42 @@
                     <li><a href="index.html">الرئيسية</a></li>
                     <li><a href="programs.html" class="active">البرامج التدريبية</a></li>
                     <li><a href="contact.html">تواصل معنا</a></li>
-                    <li><a href="admin.html" class="btn primary" style="font-size:1.08em; padding:10px 24px;">لوحة التحكم</a></li>
+                    <li><a href="admin.html" class="btn primary" style="font-size:1.08em; padding:var(--space-sm) var(--space-lg);">لوحة التحكم</a></li>
                 </ul>
             </nav>
         </div>
     </header>
     <section class="section">
         <div class="container">
-            <section class="hero" style="padding: 64px 0 56px 0; background: linear-gradient(120deg, #e6f7f4 0%, #fafdff 100%); border-radius: 0 0 36px 36px; margin-bottom: 30px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 320px;">
-                <h2 class="section-title" style="color: #295c4a; font-size: 2.1em; margin-bottom: 18px; text-align: center; font-weight: 800;">البرامج التدريبية</h2>
-                <p class="hero-desc" style="font-size: 1.15rem; max-width: 700px; margin: 0 auto 18px auto; color: #2a3d3a; font-weight: 600; background: #e6f7f4; border-radius: 18px; padding: 22px 18px; text-align: center;">برامج تأهيلية عملية للطلاب والخريجين، برامج داخلية إلزامية، وورش تخصصية لرفع مهارات الكوادر الصحية.</p>
+            <section class="hero">
+                <h2 class="section-title">البرامج التدريبية</h2>
+                <p class="hero-desc">برامج تأهيلية عملية للطلاب والخريجين، برامج داخلية إلزامية، وورش تخصصية لرفع مهارات الكوادر الصحية.</p>
             </section>
-            <div class="grid" style="display: grid; gap: 28px; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); justify-content: center;">
-                <div class="card" style="background: #fff; padding: 28px 22px; border-radius: 22px; border: 1px solid #e9efee; box-shadow: 0 4px 18px #295c4a11; transition: box-shadow 0.25s;">
-                    <h3 style="font-size: 1.25rem; font-weight: 800; color: #295c4a;">تدريب الطلاب والخريجين</h3>
-                    <p style="font-size: 1.1rem; font-weight: 600; color: #1f2328;">برامج تأهيلية عملية للطلاب والخريجين مع تدريب عملي في بيئة عمل حقيقية.</p>
-                    <a href="graduates.html" class="btn primary" style="display: inline-block; margin-top: 15px;">تقديم الطلب</a>
+            <div class="grid">
+                <div class="card">
+                    <h3>تدريب الطلاب والخريجين</h3>
+                    <p>برامج تأهيلية عملية للطلاب والخريجين مع تدريب عملي في بيئة عمل حقيقية.</p>
+                    <a href="graduates.html" class="btn primary" style="display: inline-block; margin-top: var(--space-md);">تقديم الطلب</a>
                 </div>
-                <div class="card" style="background: #fff; padding: 28px 22px; border-radius: 22px; border: 1px solid #e9efee; box-shadow: 0 4px 18px #295c4a11; transition: box-shadow 0.25s;">
-                    <h3 style="font-size: 1.25rem; font-weight: 800; color: #295c4a;">البرامج الداخلية الإلزامية</h3>
-                    <p style="font-size: 1.1rem; font-weight: 600; color: #1f2328;">برامج إلزامية للموظفين تهدف إلى تطوير الأداء ورفع الكفاءة التشغيلية.</p>
-                    <a href="internal-employees.html" class="btn primary" style="display: inline-block; margin-top: 15px;">تقديم طلب الموظفين</a>
-                    <a href="internal-others.html" class="btn ghost" style="display: inline-block; margin-top: 10px; margin-right: 8px;">تقديم غير الموظفين</a>
+                <div class="card">
+                    <h3>البرامج الداخلية الإلزامية</h3>
+                    <p>برامج إلزامية للموظفين تهدف إلى تطوير الأداء ورفع الكفاءة التشغيلية.</p>
+                    <a href="internal-employees.html" class="btn primary" style="display: inline-block; margin-top: var(--space-md);">تقديم طلب الموظفين</a>
+                    <a href="internal-others.html" class="btn ghost" style="display: inline-block; margin-top: var(--space-sm); margin-right: var(--space-xs);">تقديم غير الموظفين</a>
                 </div>
-                <div class="card" style="background: #fff; padding: 28px 22px; border-radius: 22px; border: 1px solid #e9efee; box-shadow: 0 4px 18px #295c4a11; transition: box-shadow 0.25s;">
-                    <h3 style="font-size: 1.25rem; font-weight: 800; color: #295c4a;">البرامج التدريبية الداخلية</h3>
-                    <p style="font-size: 1.1rem; font-weight: 600; color: #1f2328;">ورش عمل تخصصية لرفع مهارات الموظفين في مختلف التخصصات الصحية.</p>
-                    <a href="training-employees.html" class="btn primary" style="display: inline-block; margin-top: 15px;">تقديم طلب الموظفين</a>
-                    <a href="training-others.html" class="btn ghost" style="display: inline-block; margin-top: 10px; margin-right: 8px;">تقديم غير الموظفين</a>
+                <div class="card">
+                    <h3>البرامج التدريبية الداخلية</h3>
+                    <p>ورش عمل تخصصية لرفع مهارات الموظفين في مختلف التخصصات الصحية.</p>
+                    <a href="training-employees.html" class="btn primary" style="display: inline-block; margin-top: var(--space-md);">تقديم طلب الموظفين</a>
+                    <a href="training-others.html" class="btn ghost" style="display: inline-block; margin-top: var(--space-sm); margin-right: var(--space-xs);">تقديم غير الموظفين</a>
                 </div>
             </div>
         </div>
     </section>
     <footer>
         <small>© دائرة التدريب والتطوير المهني المستمر</small>
-        <div style="width: 100%; margin-top: 12px; background: linear-gradient(120deg, #e6f7f4 0%, #fafdff 100%); padding: 10px 0;">
-            <img src="./assets/logo2.png.png" alt="الشعار الثاني" style="width: 100%; height: auto; display: block; margin: 0 auto; max-width: 100%;">
+        <div style="width: 100%; margin-top: var(--space-sm); background: linear-gradient(120deg, var(--brand-light) 0%, #fafdff 100%); padding: var(--space-sm) 0;">
+            <img src="./assets/logo2.png.png" alt="الشعار الثاني">
         </div>
     </footer>
 </body>

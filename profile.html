@@ -5,15 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>البروفايل الشخصي</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
     <style>
-        body { font-family: "Cairo", sans-serif; background: #f7f7f7; margin: 0; }
-        .profile-container { max-width: 400px; margin: 40px auto; background: #fff; border-radius: 16px; box-shadow: 0 6px 18px #0001; padding: 32px 24px; }
-        .profile-header { text-align: center; margin-bottom: 24px; }
-        .profile-header h1 { color: #41726a; font-size: 2rem; margin-bottom: 8px; }
-        .profile-info { background: #e7f3ff; border-right: 4px solid #2196F3; border-radius: 8px; padding: 18px 14px; margin-bottom: 18px; font-size: 1.1rem; color: #222; }
+        body { background: #f7f7f7; margin: 0; }
+        .profile-container { max-width: 400px; margin: var(--space-2xl) auto; background: #fff; border-radius: 16px; box-shadow: 0 6px 18px #0001; padding: var(--space-xl) var(--space-lg); }
+        .profile-header { text-align: center; margin-bottom: var(--space-lg); }
+        .profile-header h1 { color: #41726a; font-size: 2rem; margin-bottom: var(--space-xs); }
+        .profile-info { background: #e7f3ff; border-right: 4px solid #2196F3; border-radius: 8px; padding: var(--space-md) var(--space-sm); margin-bottom: var(--space-lg); font-size: 1.1rem; color: #222; }
         .profile-info b { color: #41726a; }
-        .profile-actions { display: flex; flex-direction: column; gap: 12px; }
-        .btn { background: #6dbfb1; color: #fff; border: none; border-radius: 8px; padding: 12px; font-size: 1.1rem; font-weight: 700; cursor: pointer; transition: background 0.2s; }
+        .profile-actions { display: flex; flex-direction: column; gap: var(--space-sm); }
+        .btn { background: #6dbfb1; color: #fff; border: none; border-radius: 8px; padding: var(--space-sm); font-size: 1.1rem; font-weight: 700; cursor: pointer; transition: background 0.2s; }
         .btn:hover { background: #41726a; }
         .logout-btn { background: #d9534f; }
         .logout-btn:hover { background: #b52a1a; }
