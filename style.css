@@ -198,7 +198,7 @@ nav a.active::after {
   padding: var(--space-2xl) 0 var(--space-xl) 0;
   background: linear-gradient(120deg, var(--brand-light) 0%, #fafdff 100%);
   border-radius: 0 0 36px 36px;
-  margin-bottom: var(--space-md);
+  margin-bottom: var(--space-xs);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -297,7 +297,7 @@ nav a.active::after {
 
 /* Section */
 .section {
-  padding: var(--space-xl) 0;
+  padding: var(--space-lg) 0;
 }
 
 .section-title {
