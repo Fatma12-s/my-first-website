@@ -1,333 +1,64 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="دائرة التدريب والتطوير المهني المستمر - منصة رسمية لتخطيط وتنفيذ البرامج التدريبية">
     <meta name="keywords" content="تدريب، تطوير مهني، كوادر صحية، برامج تدريبية">
     <meta name="author" content="دائرة التدريب والتطوير المهني المستمر">
-
     <title>دائرة التدريب والتطوير المهني المستمر</title>
-
-    <!-- خط عربي -->
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
-
-    <style>
-        :root {
-            --brand-500: #6dbfb1;
-            --brand-600: #41726a;
-            --brand-100: #8acbc0;
-            --fg: #1f2328;
-            --bg: #ffffff;
-            --radius: 18px;
-            --shadow: 0 8px 32px rgba(65, 114, 106, 0.10);
-            --fs-sm: clamp(.95rem, .8rem + .3vw, 1.05rem);
-            --fs-md: clamp(1.1rem, .9rem + .6vw, 1.25rem);
-            --fs-lg: clamp(1.7rem, 1.2rem + 1vw, 2.2rem);
-            --font: "Cairo", ui-sans-serif, system-ui, "Noto Sans Arabic", "Segoe UI", Tahoma, Arial, sans-serif;
-        }
-
-        body {
-            margin: 0;
-            font-family: var(--font);
-            color: var(--fg);
-            background: linear-gradient(135deg, #f4fbfa 0%, #ffffff 100%);
-            min-height: 100vh;
-        }
-
-        a {
-            text-decoration: none;
-            color: inherit;
-        }
-
-        .container {
-            max-width: 1200px;
-            padding: 0 20px;
-            margin: auto;
-        }
-
-        /* الهيدر */
-        .site-header {
-            background: rgba(255,255,255,0.97);
-            box-shadow: var(--shadow);
-            position: sticky;
-            top: 0;
-            z-index: 99;
-            backdrop-filter: blur(6px);
-            padding: 0;
-        }
-
-        .header-center {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            padding: 18px 0 0 0;
-        }
-
-        .brand-logo {
-            width: 300px;
-            height: auto;
-            filter: drop-shadow(0 3px 10px rgba(0, 0, 0, .10));
-            margin-bottom: 6px;
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        @media (max-width: 768px) {
-            .brand-logo {
-                width: 200px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .brand-logo {
-                width: 150px;
-            }
-        }
-
-        .brand-text {
-            font-size: var(--fs-lg);
-            font-weight: 900;
-            color: var(--brand-600);
-            letter-spacing: 0.5px;
-            margin-bottom: 0.5rem;
-        }
-
-        nav {
-            width: 100%;
-            display: flex;
-            justify-content: center;
-        }
-
-        nav ul {
-            list-style: none;
-            display: flex;
-            gap: 32px;
-            justify-content: center;
-            padding: 0;
-            margin: 0 0 18px 0;
-        }
-
-        nav a {
-            padding: 12px 28px;
-            border-radius: 30px;
-            font-weight: 800;
-            font-size: 1.08em;
-            transition: all 0.25s cubic-bezier(.4,1.3,.6,1);
-            display: inline-block;
-            position: relative;
-        }
-
-        nav a.active, nav a:focus {
-            background: var(--brand-100);
-            color: var(--brand-600);
-            box-shadow: 0 2px 8px #295c4a22;
-        }
-
-        nav a:hover {
-            background: var(--brand-500);
-            color: #fff;
-            box-shadow: 0 2px 8px #295c4a22;
-        }
-
-        nav a:active {
-            color: var(--brand-600);
-            font-weight: 900;
-        }
-
-        /* تظليل العنصر النشط */
-        nav a.active::after {
-            content: '';
-            display: block;
-            margin: 0 auto;
-            width: 60%;
-            height: 4px;
-            background: var(--brand-600);
-            border-radius: 2px;
-            margin-top: 4px;
-        }
-
-        .hero {
-            padding: 90px 0 60px 0;
-            background: linear-gradient(120deg, #e6f7f4 0%, #fafdff 100%);
-            border-radius: 0 0 36px 36px;
-            box-shadow: 0 8px 32px #6dbfb11a;
-            margin-bottom: 30px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 320px;
-        }
-
-        .hero .section-title {
-            color: var(--brand-600);
-            font-size: 2.1em;
-            margin-bottom: 18px;
-            text-align: center;
-        }
-
-        .hero p, .hero .hero-desc {
-            font-size: var(--fs-md);
-            max-width: 700px;
-            margin: 0 auto 18px auto;
-            color: #2a3d3a;
-            font-weight: 600;
-            background: #e6f7f4;
-            border-radius: 18px;
-            padding: 22px 18px;
-            box-shadow: 0 2px 12px #6dbfb11a;
-            text-align: center;
-        }
-
-        .hero-actions {
-            margin-top: 24px;
-            display: flex;
-            gap: 16px;
-            justify-content: center;
-        }
-
-        .btn {
-            padding: 14px 28px;
-            border-radius: 30px;
-            font-weight: 900;
-            cursor: pointer;
-            border: none;
-            transition: all 0.25s cubic-bezier(.4,1.3,.6,1);
-            font-size: var(--fs-md);
-            box-shadow: 0 2px 8px #6dbfb133;
-        }
-
-        .btn.primary {
-            background: var(--brand-600);
-            color: #fff;
-        }
-
-        .btn.primary:hover {
-            background: var(--brand-500);
-            transform: translateY(-2px) scale(1.04);
-            box-shadow: 0 8px 20px #6dbfb144;
-        }
-
-        .btn.ghost {
-            border: 2px solid var(--brand-600);
-            color: var(--brand-600);
-            background: transparent;
-        }
-
-        .btn.ghost:hover {
-            background: var(--brand-100);
-            transform: translateY(-2px) scale(1.04);
-        }
-
-        footer {
-            background: #f4fbfa;
-            padding: 30px 0;
-            text-align: center;
-            margin-top: 60px;
-            border-top: 1px solid #e9efee;
-        }
-
-        footer small {
-            color: #666;
-            font-size: var(--fs-sm);
-        }
-
-        @media (max-width: 900px) {
-            .container { max-width: 98vw; }
-        }
-
-        @media (max-width: 768px) {
-            nav ul {
-                flex-direction: column;
-                gap: 12px;
-            }
-            .hero {
-                padding: 40px 0 30px 0;
-                border-radius: 0 0 18px 18px;
-            }
-            .hero-actions {
-                flex-direction: column;
-                gap: 10px;
-            }
-            .btn {
-                width: 100%;
-                text-align: center;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
-
     <header class="site-header">
         <div class="container header-center">
-            <a href="#home" style="display: flex; flex-direction: column; align-items: center; gap: 0.2em; text-align: center;">
+            <a href="index.html" style="display: flex; flex-direction: column; align-items: center; gap: 0.2em; text-align: center;">
                 <img src="./assets/logo.png" alt="شعار الدائرة" class="brand-logo">
-                <span class="brand-text" style="font-size: 1.25em; font-weight: 900; color: var(--brand-600); line-height: 1.1;">
-                    دائرة التدريب<br>والتطوير المهني المستمر
-                </span>
             </a>
             <nav>
-                <button id="mobileMenuBtn" aria-label="القائمة" style="display:none; background:var(--brand-600); color:#fff; border:none; border-radius:50%; width:44px; height:44px; font-size:1.5em; align-items:center; justify-content:center; position:absolute; left:18px; top:18px; z-index:100; cursor:pointer;">
-                    <span style="font-size:1.5em;">☰</span>
-                </button>
-                <ul id="mainNav" style="transition: max-height 0.3s;">
-                    <li><a href="index.html" class="tab-link" title="دائرة التدريب والتطوير المهني المستمر هي الجهة المسؤولة عن تطوير الكوادر الصحية في المؤسسة من خلال تقديم برامج تدريبية متخصصة وورش عمل عالية الجودة. رؤيتنا هي بناء مجتمع صحي متطور من خلال الاستثمار في رأس المال البشري">الرئيسية</a></li>
-                    <li><a href="programs.html" class="tab-link">البرامج التدريبية</a></li>
-                    <li><a href="about.html" class="tab-link">عن الدائرة</a></li>
-                    <li><a href="contact.html" class="tab-link">تواصل معنا</a></li>
-                    <li><a href="admin.html" class="btn primary" style="font-size:1.08em; padding:10px 24px;">لوحة التحكم</a></li>
+                <ul>
+                    <li><a href="index.html" class="active">الرئيسية</a></li>
+                    <li><a href="programs.html">البرامج التدريبية</a></li>
+                    <li><a href="contact.html">تواصل معنا</a></li>
+                    <li><a href="admin.html" class="btn primary" style="font-size:1.08em; padding:var(--space-sm) var(--space-lg);">لوحة التحكم</a></li>
                 </ul>
             </nav>
         </div>
-        <script>
-        // منطق قائمة الجوال (dropdown)
-        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-        const mainNav = document.getElementById('mainNav');
-        function handleResize() {
-            if (window.innerWidth <= 900) {
-                mobileMenuBtn.style.display = 'flex';
-                mainNav.style.flexDirection = 'column';
-                mainNav.style.gap = '12px';
-                mainNav.style.maxHeight = '0';
-                mainNav.style.overflow = 'hidden';
-            } else {
-                mobileMenuBtn.style.display = 'none';
-                mainNav.style.flexDirection = 'row';
-                mainNav.style.gap = '32px';
-                mainNav.style.maxHeight = 'none';
-                mainNav.style.overflow = 'visible';
-            }
-        }
-        mobileMenuBtn.addEventListener('click', function() {
-            if (mainNav.style.maxHeight === '0px' || mainNav.style.maxHeight === '0') {
-                mainNav.style.maxHeight = '400px';
-            } else {
-                mainNav.style.maxHeight = '0';
-            }
-        });
-        window.addEventListener('resize', handleResize);
-        window.addEventListener('DOMContentLoaded', handleResize);
-        </script>
-
     </header>
+
     <section class="hero">
-        <h2 class="section-title">مرحباً بكم في دائرة التدريب والتطوير المهني المستمر</h2>
-        <p class="hero-desc">هذه المنصة الرسمية لتخطيط وتنفيذ البرامج التدريبية ورفع كفاءة الكوادر الصحية داخل المؤسسة. تصفح البرامج والخدمات، واطلع على آخر الأخبار والمستجدات.</p>
-        <div class="hero-actions">
-            <a href="programs.html" class="btn primary">استكشاف البرامج التدريبية</a>
-            <a href="contact.html" class="btn ghost">تواصل معنا</a>
+        <h2 class="section-title">دائرة التدريب والتطوير المهني المستمر</h2>
+        <p class="hero-desc">دائرة التدريب والتطوير المهني المستمر هي الجهة المسؤولة عن تطوير الكوادر الصحية في المؤسسة من خلال تقديم برامج تدريبية متخصصة وورش عمل عالية الجودة. رؤيتنا هي بناء مجتمع صحي متطور من خلال الاستثمار في رأس المال البشري.</p>
+    </section>
+
+    <section class="section">
+        <div class="container">
+            <section class="hero">
+                <h2 class="section-title">عن الدائرة</h2>
+                <p class="hero-desc">دائرة التدريب والتطوير المهني المستمر هي الجهة المسؤولة عن تطوير الكوادر الصحية في المؤسسة من خلال تقديم برامج تدريبية متخصصة وورش عمل عالية الجودة. رؤيتنا هي بناء مجتمع صحي متطور من خلال الاستثمار في رأس المال البشري.</p>
+            </section>
+            <div class="grid">
+                <div class="card">
+                    <h3>رسالتنا</h3>
+                    <p>تقديم تدريب مهني مستمر يواكب التطورات الحديثة في القطاع الصحي.</p>
+                </div>
+                <div class="card">
+                    <h3>قيمنا</h3>
+                    <p>الجودة، الشفافية، التطوير المستمر، العمل الجماعي.</p>
+                </div>
+                <div class="card">
+                    <h3>خدماتنا</h3>
+                    <p>تخطيط وتنفيذ البرامج التدريبية، تقييم الأداء، إصدار الشهادات، دعم التطوير المهني.</p>
+                </div>
+            </div>
         </div>
     </section>
+
     <footer>
         <small>© دائرة التدريب والتطوير المهني المستمر</small>
-        <div style="width: 100%; margin-top: 12px; background: linear-gradient(120deg, #e6f7f4 0%, #fafdff 100%); padding: 10px 0;">
-            <img src="./assets/logo2.png.png" alt="الشعار الثاني" style="width: 100%; height: auto; display: block; margin: 0 auto; max-width: 100%;">
+        <div style="width: 100%; margin-top: var(--space-2xs); background: linear-gradient(120deg, var(--brand-light) 0%, #fafdff 100%); padding: var(--space-2xs) 0;">
+            <img src="./assets/logo2.png.png" alt="الشعار الثاني">
         </div>
     </footer>
 </body>
