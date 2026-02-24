@@ -308,7 +308,10 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <script src="firebase-config.js"></script>
+    <!-- SheetJS - Primary CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.min.js"></script>
+    <!-- SheetJS - Secondary CDN as fallback -->
+    <script src="https://unpkg.com/xlsx@latest/dist/xlsx.full.min.js"></script>
     <script>
     // تهيئة Firebase
     let db = null;
@@ -553,17 +556,28 @@
         alert(isSpecific ? '✅ تم حذف الطلبات المعروضة لهذا النوع.' : '✅ تم حذف جميع الطلبات.');
     }
 
+    async function ensureXLSXLoaded() {
+        let attempts = 0;
+        while (typeof XLSX === 'undefined' && attempts < 5) {
+            console.log(`Waiting for XLSX to load... (attempt ${attempts + 1})`);
+            await new Promise(resolve => setTimeout(resolve, 500));
+            attempts++;
+        }
+        return typeof XLSX !== 'undefined';
+    }
+
     async function exportToCSV() {
+        // تأكد من تحميل المكتبة
+        const xlsxReady = await ensureXLSXLoaded();
+        if (!xlsxReady) {
+            alert('⚠️ مكتبة التصدير لم تحمّل. يرجى:\n1. التحقق من الإنترنت\n2. تحديث الصفحة (Ctrl+Shift+R)\n3. المحاولة مرة أخرى');
+            return;
+        }
+        
         const container = document.getElementById('submissionsContainer');
         const selectedForm = document.getElementById('formFilter').value;
         const searchTerm = document.getElementById('searchInput').value.toLowerCase();
         let filteredData = [];
-        
-        // تحقق من توفر مكتبة XLSX
-        if (typeof XLSX === 'undefined') {
-            alert('⚠️ مكتبة التصدير لم تحمّل بعد. حاول مرة أخرى...');
-            return;
-        }
         
         // جمع البيانات المعروضة حاليًا
         if (db) {
