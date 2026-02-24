@@ -83,6 +83,26 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
 
+        .config-alert {
+            padding: var(--space-md);
+            border-radius: 8px;
+            margin-bottom: var(--space-lg);
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .config-alert.warning {
+            background: #fff3cd;
+            border: 1px solid #ffe08a;
+            color: #7a5a00;
+        }
+
+        .config-alert.success {
+            background: #d4edda;
+            border: 1px solid #b7e1c1;
+            color: #155724;
+        }
+
         .filter-group {
             display: flex;
             gap: var(--space-md);
@@ -281,6 +301,8 @@
             </div>
         </header>
 
+        <div id="emailConfigAlert" class="config-alert" style="display:none;"></div>
+
         <div class="filters">
             <div class="filter-group">
                 <select id="formFilter">
@@ -334,6 +356,31 @@
 
     const submissionIndex = new Map();
 
+    function isEmailConfigReady() {
+        return !!(
+            REVIEW_EMAIL_CONFIG.apiKey &&
+            !REVIEW_EMAIL_CONFIG.apiKey.includes('YOUR_SENDGRID_API_KEY') &&
+            REVIEW_EMAIL_CONFIG.fromEmail &&
+            /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(REVIEW_EMAIL_CONFIG.fromEmail)
+        );
+    }
+
+    function isValidEmail(email) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || '').trim());
+    }
+
+    function renderEmailConfigAlert() {
+        const alertEl = document.getElementById('emailConfigAlert');
+        if (!alertEl) return;
+
+        const ready = isEmailConfigReady();
+        alertEl.style.display = 'block';
+        alertEl.className = `config-alert ${ready ? 'success' : 'warning'}`;
+        alertEl.textContent = ready
+            ? '✅ إشعارات البريد مفعّلة: سيتم إرسال قرار الموافقة/الرفض للمتقدمين.'
+            : '⚠️ إشعارات البريد غير مفعّلة: أضف SendGrid API Key صحيح في REVIEW_EMAIL_CONFIG داخل admin.html.';
+    }
+
     async function sendApplicantDecisionEmail(submission, newStatus) {
         if (!submission || !submission.email) return false;
         if (!['Approved', 'Rejected'].includes(newStatus)) return false;
@@ -345,15 +392,6 @@
         const statusLabel = newStatus === 'Approved' ? 'تمت الموافقة على الطلب' : 'تم رفض الطلب';
         const decisionColor = newStatus === 'Approved' ? '#28a745' : '#dc3545';
         const reason = submission.notApprovedReason || '';
-
-        if (REVIEW_EMAIL_CONFIG.apiKey.includes('YOUR_SENDGRID_API_KEY')) {
-            console.log('📧 إشعار قرار للمتقدم (وضع تجريبي):', {
-                to: submission.email,
-                status: newStatus,
-                id: submission.id
-            });
-            return true;
-        }
 
         try {
             const payload = {
@@ -394,6 +432,47 @@
             console.error('فشل إرسال إشعار القرار:', error);
             return false;
         }
+    }
+
+    async function notifyApplicantWithGuards(submission, newStatus) {
+        if (!submission || !submission.id) {
+            return { sent: false, skipped: 'missing-submission' };
+        }
+
+        if (!['Approved', 'Rejected'].includes(newStatus)) {
+            return { sent: false, skipped: 'status-not-final' };
+        }
+
+        if (!submission.email || !isValidEmail(submission.email)) {
+            await updateSubmissionRecord(submission.id, {
+                lastNotifiedStatus: newStatus,
+                lastNotifiedAt: new Date().toISOString(),
+                lastNotificationResult: 'invalid-email'
+            });
+            return { sent: false, skipped: 'invalid-email' };
+        }
+
+        if (submission.lastNotifiedStatus === newStatus) {
+            return { sent: false, skipped: 'duplicate-status' };
+        }
+
+        if (!isEmailConfigReady()) {
+            await updateSubmissionRecord(submission.id, {
+                lastNotifiedStatus: newStatus,
+                lastNotifiedAt: new Date().toISOString(),
+                lastNotificationResult: 'email-config-not-ready'
+            });
+            return { sent: false, skipped: 'email-config-not-ready' };
+        }
+
+        const sent = await sendApplicantDecisionEmail(submission, newStatus);
+        await updateSubmissionRecord(submission.id, {
+            lastNotifiedStatus: newStatus,
+            lastNotifiedAt: new Date().toISOString(),
+            lastNotificationResult: sent ? 'sent' : 'send-failed'
+        });
+
+        return sent ? { sent: true } : { sent: false, skipped: 'send-failed' };
     }
 
     // ===== تحميل وعرض البيانات من Firestore أو localStorage =====
@@ -929,8 +1008,23 @@
 
         if (updated) {
             const submission = submissionIndex.get(String(submissionId));
-            await sendApplicantDecisionEmail(submission, newStatus);
-            alert(`✅ تم تحديث الحالة إلى: ${statusText[newStatus]}`);
+            const mergedSubmission = { ...(submission || {}), status: newStatus, id: submissionId };
+            const notifyResult = await notifyApplicantWithGuards(mergedSubmission, newStatus);
+
+            let message = `✅ تم تحديث الحالة إلى: ${statusText[newStatus]}`;
+            if (notifyResult.sent) {
+                message += '\n📧 تم إرسال إشعار للمتقدم.';
+            } else if (notifyResult.skipped === 'duplicate-status') {
+                message += '\nℹ️ لم يُرسل إشعار جديد لأن نفس الحالة أُرسلت سابقًا.';
+            } else if (notifyResult.skipped === 'invalid-email') {
+                message += '\n⚠️ لم يُرسل إشعار لأن بريد المتقدم غير صالح أو غير موجود.';
+            } else if (notifyResult.skipped === 'email-config-not-ready') {
+                message += '\n⚠️ لم يُرسل إشعار لأن إعدادات البريد غير مفعلة.';
+            } else if (notifyResult.skipped === 'send-failed') {
+                message += '\n⚠️ فشل إرسال الإشعار. تحقق من إعدادات SendGrid.';
+            }
+
+            alert(message);
             await loadSubmissions();
         }
     }
@@ -960,8 +1054,22 @@
         if (updated) {
             const submission = submissionIndex.get(String(submissionId));
             const mergedSubmission = { ...(submission || {}), ...updates, id: submissionId };
-            await sendApplicantDecisionEmail(mergedSubmission, statusByApproval);
-            alert('✅ تم حفظ بيانات Section 2 وتحديث حالة الطلب');
+            const notifyResult = await notifyApplicantWithGuards(mergedSubmission, statusByApproval);
+
+            let message = '✅ تم حفظ بيانات Section 2 وتحديث حالة الطلب';
+            if (notifyResult.sent) {
+                message += '\n📧 تم إرسال إشعار للمتقدم.';
+            } else if (notifyResult.skipped === 'duplicate-status') {
+                message += '\nℹ️ لم يُرسل إشعار جديد لأن نفس الحالة أُرسلت سابقًا.';
+            } else if (notifyResult.skipped === 'invalid-email') {
+                message += '\n⚠️ لم يُرسل إشعار لأن بريد المتقدم غير صالح أو غير موجود.';
+            } else if (notifyResult.skipped === 'email-config-not-ready') {
+                message += '\n⚠️ لم يُرسل إشعار لأن إعدادات البريد غير مفعلة.';
+            } else if (notifyResult.skipped === 'send-failed') {
+                message += '\n⚠️ فشل إرسال الإشعار. تحقق من إعدادات SendGrid.';
+            }
+
+            alert(message);
             await loadSubmissions();
         } else {
             alert('⚠️ تعذر حفظ بيانات Section 2 لهذا الطلب');
@@ -973,6 +1081,7 @@
         loadSubmissions();
     });
     document.getElementById('searchInput').addEventListener('input', loadSubmissions);
+    renderEmailConfigAlert();
     updateDeleteButtonLabel();
     loadSubmissions();
     </script>
