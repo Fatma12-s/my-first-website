@@ -563,16 +563,40 @@
             await new Promise(resolve => setTimeout(resolve, 500));
             attempts++;
         }
-        return typeof XLSX !== 'undefined';
+        // تحقق من أن XLSX محمّل بشكل صحيح
+        return typeof XLSX !== 'undefined' && typeof XLSX.utils !== 'undefined';
+    }
+
+    function downloadCSVFallback(exportData, fileName) {
+        if (!exportData || exportData.length === 0) return;
+        
+        const keys = Object.keys(exportData[0]);
+        const csvRows = [];
+        
+        // رؤوس الأعمدة
+        csvRows.push(keys.map(k => `"${k}"`).join(','));
+        
+        // البيانات
+        exportData.forEach(row => {
+            const values = keys.map(key => {
+                let value = row[key] || '';
+                value = String(value).replace(/"/g, '""').replace(/\n/g, ' ');
+                return `"${value}"`;
+            });
+            csvRows.push(values.join(','));
+        });
+        
+        const csv = csvRows.join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = fileName.replace('.xlsx', '.csv');
+        link.click();
     }
 
     async function exportToCSV() {
         // تأكد من تحميل المكتبة
         const xlsxReady = await ensureXLSXLoaded();
-        if (!xlsxReady) {
-            alert('⚠️ مكتبة التصدير لم تحمّل. يرجى:\n1. التحقق من الإنترنت\n2. تحديث الصفحة (Ctrl+Shift+R)\n3. المحاولة مرة أخرى');
-            return;
-        }
         
         const container = document.getElementById('submissionsContainer');
         const selectedForm = document.getElementById('formFilter').value;
@@ -629,10 +653,8 @@
             const exportData = filteredData.map(row => {
                 const cleanRow = {};
                 Object.entries(row).forEach(([key, value]) => {
-                    // تخطي الحقول الداخلية
                     if (['id', 'submittedAtISO', 'firestoreId'].includes(key)) return;
                     
-                    // معالجة الكائنات (المرفقات)
                     if (typeof value === 'object' && value !== null) {
                         cleanRow[key] = value.name || value.url || '';
                     } else {
@@ -641,6 +663,16 @@
                 });
                 return cleanRow;
             });
+
+            const fileName = `طلبات_${new Date().toLocaleDateString('ar-SA')}.xlsx`;
+            
+            // إذا فشلت XLSX، استخدم CSV كبديل
+            if (!xlsxReady || !XLSX || !XLSX.utils) {
+                console.warn('XLSX غير متوفرة، استخدام CSV كبديل');
+                downloadCSVFallback(exportData, fileName);
+                alert(`✅ تم تصدير ${filteredData.length} طلب (صيغة CSV)`);
+                return;
+            }
 
             // إنشاء workbook و worksheet
             const ws = XLSX.utils.json_to_sheet(exportData);
@@ -672,13 +704,11 @@
                 ws['!autofilter'] = XLSX.utils.decode_range(ws['!ref']);
             }
 
-            const fileName = `طلبات_${new Date().toLocaleDateString('ar-SA')}.xlsx`;
             XLSX.writeFile(wb, fileName);
-            
             alert(`✅ تم تصدير ${filteredData.length} طلب إلى ملف Excel`);
         } catch (error) {
             console.error('خطأ في التصدير:', error);
-            alert(`❌ حدث خطأ أثناء التصدير: ${error.message}`);
+            alert(`❌ حدث خطأ: ${error.message}\n\nحاول: 1) حدّث الصفحة (Ctrl+Shift+R) 2) تحقق من الإنترنت`);
         }
     }
 
