@@ -47,45 +47,146 @@ burger?.addEventListener('click', () => {
   navLinks.classList.toggle('open');
 });
 
+// ===== إعدادات SendGrid (ملء البيانات الفعلية هنا) =====
+const SENDGRID_CONFIG = {
+  apiKey: 'SG.YOUR_SENDGRID_API_KEY_HERE', // استبدل بـ API Key من SendGrid
+  fromEmail: 'noreply@hospital.com', // استبدل ببريد المرسل
+  fromName: 'دائرة التدريب والتطوير المهني'
+};
+
+// ===== قائمة المسؤولين (ملء البيانات الفعلية هنا) =====
+const RESPONSIBLE_CONTACTS = {
+  'graduates': { 
+    name: 'مدير الموارد البشرية', 
+    email: 'hr@hospital.com' // استبدل ببريد HR
+  },
+  'internal-employees': { 
+    name: 'مدير الموارد البشرية', 
+    email: 'hr.director@hospital.com' // استبدل ببريد مدير HR
+  },
+  'internal-others': { 
+    name: 'الموظف الإداري', 
+    email: 'admin@hospital.com' // استبدل ببريد الإدارة
+  },
+  'training-employees': { 
+    name: 'منسق التدريب', 
+    email: 'training@hospital.com' // استبدل ببريد التدريب
+  },
+  'training-others': { 
+    name: 'منسق التدريب', 
+    email: 'training.coord@hospital.com' // استبدل ببريد منسق التدريب
+  },
+  'contact': { 
+    name: 'الإدارة العامة', 
+    email: 'info@hospital.com' // استبدل ببريد الاستقبال
+  }
+};
+
 // ===== تعيين المسئول تلقائياً =====
 function assignResponsible(formName) {
-  const assignments = {
-    'graduates': { name: 'HR Manager', email: 'hr@hospital.com' },
-    'internal-employees': { name: 'HR Director', email: 'hr.director@hospital.com' },
-    'internal-others': { name: 'Admin Officer', email: 'admin@hospital.com' },
-    'training-employees': { name: 'Training Lead', email: 'training@hospital.com' },
-    'training-others': { name: 'Training Coordinator', email: 'training.coord@hospital.com' },
-    'contact': { name: 'General Admin', email: 'info@hospital.com' }
+  return RESPONSIBLE_CONTACTS[formName] || { 
+    name: 'الإدارة', 
+    email: 'admin@hospital.com' 
   };
-  return assignments[formName] || { name: 'Admin', email: 'admin@hospital.com' };
 }
 
-// ===== إرسال إشعار بريدي =====
+// ===== إرسال إشعار بريدي عبر SendGrid =====
 async function sendNotificationEmail(applicantData, responsible) {
   try {
-    // يمكن استبدال هذا بخدمة بريد حقيقية (SendGrid, Mailgun، إلخ)
-    const emailPayload = {
-      to: responsible.email,
-      cc: applicantData.email || '',
-      subject: `🔔 طلب جديد من ${applicantData.name || 'متقدم'}`,
-      body: `
-        تم استقبال طلب جديد يحتاج موافقتك.
-        
-        بيانات المتقدم:
-        - الاسم: ${applicantData.name || '---'}
-        - البريد: ${applicantData.email || '---'}
-        - الهاتف: ${applicantData.phone || '---'}
-        - التاريخ: ${applicantData.submittedAt}
-        
-        برجاء مراجعة الطلب في لوحة التحكم.
-      `
-    };
-    
-    // حالياً نسجل الإشعار في Console (سيتم استبدالها بـ API حقيقية)
-    console.log('📧 Notification Email:', emailPayload);
-    return true;
+    // إذا لم يكن API Key مكتوب، فقط سجل في Console
+    if (!SENDGRID_CONFIG.apiKey.includes('YOUR_SENDGRID_API_KEY')) {
+      // استخدم SendGrid API
+      const emailPayload = {
+        personalizations: [
+          {
+            to: [{ email: responsible.email, name: responsible.name }],
+            cc: applicantData.email ? [{ email: applicantData.email }] : [],
+            subject: `🔔 طلب جديد من ${applicantData.name || 'متقدم'}`
+          }
+        ],
+        from: {
+          email: SENDGRID_CONFIG.fromEmail,
+          name: SENDGRID_CONFIG.fromName
+        },
+        content: [
+          {
+            type: 'text/html',
+            value: `
+              <div dir="rtl" style="font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; border-radius: 8px;">
+                <h2 style="color: #295c4a;">🔔 طلب جديد يحتاج موافقتك</h2>
+                <div style="background: white; padding: 20px; border-radius: 8px; margin-top: 20px;">
+                  <h3 style="color: #41726a; border-bottom: 2px solid #e6f7f4; padding-bottom: 10px;">بيانات المتقدم</h3>
+                  <table style="width: 100%; margin-top: 15px;">
+                    <tr>
+                      <td style="padding: 8px; font-weight: 600; width: 30%;">الاسم:</td>
+                      <td style="padding: 8px;">${applicantData.name || '---'}</td>
+                    </tr>
+                    <tr style="background: #f9f9f9;">
+                      <td style="padding: 8px; font-weight: 600;">البريد الإلكتروني:</td>
+                      <td style="padding: 8px;">${applicantData.email || '---'}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 8px; font-weight: 600;">رقم الهاتف:</td>
+                      <td style="padding: 8px;">${applicantData.phone || '---'}</td>
+                    </tr>
+                    <tr style="background: #f9f9f9;">
+                      <td style="padding: 8px; font-weight: 600;">التاريخ:</td>
+                      <td style="padding: 8px;">${applicantData.submittedAt || '---'}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 8px; font-weight: 600;">نوع الطلب:</td>
+                      <td style="padding: 8px;">${applicantData.formType || '---'}</td>
+                    </tr>
+                    <tr style="background: #f9f9f9;">
+                      <td style="padding: 8px; font-weight: 600;">رقم الطلب:</td>
+                      <td style="padding: 8px;"><strong>${applicantData.id}</strong></td>
+                    </tr>
+                  </table>
+                  <div style="margin-top: 20px; padding: 15px; background: #e6f7f4; border-right: 4px solid #295c4a; border-radius: 4px;">
+                    <p style="margin: 0; color: #41726a;">
+                      ⚠️ <strong>برجاء مراجعة الطلب في لوحة التحكم وتقديم الموافقة أو الرفض في أقرب وقت.</strong>
+                    </p>
+                  </div>
+                </div>
+                <div style="margin-top: 20px; text-align: center; color: #999; font-size: 12px;">
+                  <p>هذا البريد تم إرساله تلقائياً من نظام إدارة الطلبات</p>
+                </div>
+              </div>
+            `
+          }
+        ]
+      };
+
+      // إرسال البريد عبر SendGrid API
+      const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SENDGRID_CONFIG.apiKey}`
+        },
+        body: JSON.stringify(emailPayload)
+      });
+
+      if (response.status === 202) {
+        console.log('✅ تم إرسال البريد بفضل:', responsible.email);
+        return true;
+      } else {
+        const error = await response.text();
+        console.warn('⚠️ خطأ في إرسال البريد:', error);
+        return false;
+      }
+    } else {
+      // API Key لم يكن مكتوب، فقط سجل في Console
+      console.log('📧 الإشعار (وضع اختبار - لم يتم إرسال بريد فعلي):', {
+        to: responsible.email,
+        from: SENDGRID_CONFIG.fromEmail,
+        applicant: applicantData.name,
+        submissionId: applicantData.id
+      });
+      return true;
+    }
   } catch (error) {
-    console.error('خطأ إرسال البريد:', error);
+    console.error('❌ خطأ في إرسال البريد:', error);
     return false;
   }
 }
