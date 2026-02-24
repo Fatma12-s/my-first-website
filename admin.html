@@ -615,15 +615,44 @@
                             </div>
                             <div>
                                 <label style="font-size:12px; color:#555;">Department</label>
-                                <input id="directorDepartment-${submissionKey}" type="text" value="${submission.directorDepartment || ''}" style="width:100%; margin-top:4px;">
-                            </div>
-                            <div>
-                                <label style="font-size:12px; color:#555;">Director Signature</label>
-                                <input id="directorSignature-${submissionKey}" type="text" value="${submission.directorSignature || ''}" style="width:100%; margin-top:4px;">
-                            </div>
-                            <div>
-                                <label style="font-size:12px; color:#555;">Director Date</label>
-                                <input id="directorDate-${submissionKey}" type="date" value="${submission.directorDate || ''}" style="width:100%; margin-top:4px;">
+                                <select id="directorDepartment-${submissionKey}" style="width:100%; margin-top:4px;">
+                                    <option value="">-- اختر القسم --</option>
+                                    <option value="Administration Affairs" ${submission.directorDepartment === 'Administration Affairs' ? 'selected' : ''}>Administration Affairs</option>
+                                    <option value="Anesthesia and Intensive Care" ${submission.directorDepartment === 'Anesthesia and Intensive Care' ? 'selected' : ''}>Anesthesia and Intensive Care</option>
+                                    <option value="Behavioral Medicine" ${submission.directorDepartment === 'Behavioral Medicine' ? 'selected' : ''}>Behavioral Medicine</option>
+                                    <option value="Biochemistry" ${submission.directorDepartment === 'Biochemistry' ? 'selected' : ''}>Biochemistry</option>
+                                    <option value="Child Health" ${submission.directorDepartment === 'Child Health' ? 'selected' : ''}>Child Health</option>
+                                    <option value="Clinical Physiology" ${submission.directorDepartment === 'Clinical Physiology' ? 'selected' : ''}>Clinical Physiology</option>
+                                    <option value="Dental and Maxillofacial Surgery" ${submission.directorDepartment === 'Dental and Maxillofacial Surgery' ? 'selected' : ''}>Dental and Maxillofacial Surgery</option>
+                                    <option value="Deputy for Affaires & Finance" ${submission.directorDepartment === 'Deputy for Affaires & Finance' ? 'selected' : ''}>Deputy for Affaires & Finance</option>
+                                    <option value="Development & Quality" ${submission.directorDepartment === 'Development & Quality' ? 'selected' : ''}>Development & Quality</option>
+                                    <option value="Emergency Medicine" ${submission.directorDepartment === 'Emergency Medicine' ? 'selected' : ''}>Emergency Medicine</option>
+                                    <option value="Finance" ${submission.directorDepartment === 'Finance' ? 'selected' : ''}>Finance</option>
+                                    <option value="Genetics" ${submission.directorDepartment === 'Genetics' ? 'selected' : ''}>Genetics</option>
+                                    <option value="Hematology" ${submission.directorDepartment === 'Hematology' ? 'selected' : ''}>Hematology</option>
+                                    <option value="Hospital Information Systems" ${submission.directorDepartment === 'Hospital Information Systems' ? 'selected' : ''}>Hospital Information Systems</option>
+                                    <option value="Hospital Director General Office" ${submission.directorDepartment === 'Hospital Director General Office' ? 'selected' : ''}>Hospital Director General Office</option>
+                                    <option value="Infection Control" ${submission.directorDepartment === 'Infection Control' ? 'selected' : ''}>Infection Control</option>
+                                    <option value="Medical Supplies Directorate" ${submission.directorDepartment === 'Medical Supplies Directorate' ? 'selected' : ''}>Medical Supplies Directorate</option>
+                                    <option value="Medical Record" ${submission.directorDepartment === 'Medical Record' ? 'selected' : ''}>Medical Record</option>
+                                    <option value="Medicine" ${submission.directorDepartment === 'Medicine' ? 'selected' : ''}>Medicine</option>
+                                    <option value="Microbiology" ${submission.directorDepartment === 'Microbiology' ? 'selected' : ''}>Microbiology</option>
+                                    <option value="Nursing" ${submission.directorDepartment === 'Nursing' ? 'selected' : ''}>Nursing</option>
+                                    <option value="Nutrition & Dietetics" ${submission.directorDepartment === 'Nutrition & Dietetics' ? 'selected' : ''}>Nutrition & Dietetics</option>
+                                    <option value="Obstetrics & Gynecology" ${submission.directorDepartment === 'Obstetrics & Gynecology' ? 'selected' : ''}>Obstetrics & Gynecology</option>
+                                    <option value="Ophthalmology" ${submission.directorDepartment === 'Ophthalmology' ? 'selected' : ''}>Ophthalmology</option>
+                                    <option value="Pathology" ${submission.directorDepartment === 'Pathology' ? 'selected' : ''}>Pathology</option>
+                                    <option value="Patients Service" ${submission.directorDepartment === 'Patients Service' ? 'selected' : ''}>Patients Service</option>
+                                    <option value="Personnel Affairs Directorate" ${submission.directorDepartment === 'Personnel Affairs Directorate' ? 'selected' : ''}>Personnel Affairs Directorate</option>
+                                    <option value="Pharmacy" ${submission.directorDepartment === 'Pharmacy' ? 'selected' : ''}>Pharmacy</option>
+                                    <option value="Physiotherapy & Rehabilitation" ${submission.directorDepartment === 'Physiotherapy & Rehabilitation' ? 'selected' : ''}>Physiotherapy & Rehabilitation</option>
+                                    <option value="Procurement" ${submission.directorDepartment === 'Procurement' ? 'selected' : ''}>Procurement</option>
+                                    <option value="Radiology & Molecular Imaging" ${submission.directorDepartment === 'Radiology & Molecular Imaging' ? 'selected' : ''}>Radiology & Molecular Imaging</option>
+                                    <option value="Statistics & Health Information" ${submission.directorDepartment === 'Statistics & Health Information' ? 'selected' : ''}>Statistics & Health Information</option>
+                                    <option value="Surgery" ${submission.directorDepartment === 'Surgery' ? 'selected' : ''}>Surgery</option>
+                                    <option value="Technical Affaires" ${submission.directorDepartment === 'Technical Affaires' ? 'selected' : ''}>Technical Affaires</option>
+                                    <option value="Training & CPD" ${submission.directorDepartment === 'Training & CPD' ? 'selected' : ''}>Training & CPD</option>
+                                </select>
                             </div>
                             <div style="grid-column:1 / -1;">
                                 <label style="font-size:12px; color:#555;">Reason if not approved</label>
@@ -913,8 +942,6 @@
         const notApprovedReason = document.getElementById(`notApprovedReason-${submissionKey}`)?.value || '';
         const directorName = document.getElementById(`directorName-${submissionKey}`)?.value || '';
         const directorDepartment = document.getElementById(`directorDepartment-${submissionKey}`)?.value || '';
-        const directorSignature = document.getElementById(`directorSignature-${submissionKey}`)?.value || '';
-        const directorDate = document.getElementById(`directorDate-${submissionKey}`)?.value || '';
 
         const statusByApproval = approvalStatus === 'Approved' ? 'Approved' : (approvalStatus === 'Not Approved' ? 'Rejected' : 'Pending');
 
@@ -925,8 +952,6 @@
             notApprovedReason,
             directorName,
             directorDepartment,
-            directorSignature,
-            directorDate,
             status: statusByApproval,
             reviewedAt: new Date().toISOString()
         };
