@@ -441,8 +441,14 @@
                 'contact': '💬 رسائل التواصل'
             };
 
+            const submissionKey = String(submission.id).replace(/[^a-zA-Z0-9_-]/g, '_');
+
             const allEntries = Object.entries(submission)
-                .filter(([key]) => key !== 'formType' && key !== 'id' && key !== 'submittedAt' && key !== 'submittedAtISO' && key !== 'firestoreId');
+                .filter(([key]) => ![
+                    'formType', 'id', 'submittedAt', 'submittedAtISO', 'firestoreId', 'status', 'assignedTo',
+                    'approvalStatus', 'approvedFrom', 'approvedTo', 'notApprovedReason', 'directorName',
+                    'directorDepartment', 'directorSignature', 'directorDate'
+                ].includes(key));
 
             const attachmentEntries = allEntries.filter(([, value]) => isAttachmentValue(value));
             const nonAttachmentEntries = allEntries.filter(([, value]) => !isAttachmentValue(value));
@@ -504,10 +510,56 @@
                         </div>
                     ` : ''}
                     <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #eee; display: flex; gap: 8px; flex-wrap: wrap;">
-                        <button onclick="updateSubmissionStatus(${submission.id}, 'Approved')" style="background: #28a745; padding: 8px 16px; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">✅ موافقة</button>
-                        <button onclick="updateSubmissionStatus(${submission.id}, 'Rejected')" style="background: #dc3545; padding: 8px 16px; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">❌ رفض</button>
-                        <button onclick="updateSubmissionStatus(${submission.id}, 'Pending')" style="background: #ffc107; padding: 8px 16px; color: #333; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">⏳ قيد الانتظار</button>
+                        <button onclick='updateSubmissionStatus(${JSON.stringify(submission.id)}, "Approved")' style="background: #28a745; padding: 8px 16px; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">✅ موافقة</button>
+                        <button onclick='updateSubmissionStatus(${JSON.stringify(submission.id)}, "Rejected")' style="background: #dc3545; padding: 8px 16px; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">❌ رفض</button>
+                        <button onclick='updateSubmissionStatus(${JSON.stringify(submission.id)}, "Pending")' style="background: #ffc107; padding: 8px 16px; color: #333; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">⏳ قيد الانتظار</button>
                     </div>
+                    ${submission.formType === 'graduates' ? `
+                    <div style="margin-top: 14px; padding: 14px; background: #f8fbff; border: 1px solid #dbe9ff; border-radius: 8px;">
+                        <div style="font-weight: 700; color: #2e5f8a; margin-bottom: 10px;">Section 2: Department Director/HOD</div>
+                        <div style="display:grid; gap:10px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+                            <div>
+                                <label style="font-size:12px; color:#555;">Approval Status</label>
+                                <select id="approvalStatus-${submissionKey}" style="width:100%; margin-top:4px;">
+                                    <option value="">-- اختر --</option>
+                                    <option value="Approved" ${submission.approvalStatus === 'Approved' ? 'selected' : ''}>Approved</option>
+                                    <option value="Not Approved" ${submission.approvalStatus === 'Not Approved' ? 'selected' : ''}>Not Approved</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size:12px; color:#555;">Approved From</label>
+                                <input id="approvedFrom-${submissionKey}" type="date" value="${submission.approvedFrom || ''}" style="width:100%; margin-top:4px;">
+                            </div>
+                            <div>
+                                <label style="font-size:12px; color:#555;">Approved To</label>
+                                <input id="approvedTo-${submissionKey}" type="date" value="${submission.approvedTo || ''}" style="width:100%; margin-top:4px;">
+                            </div>
+                            <div>
+                                <label style="font-size:12px; color:#555;">Director/HOD Name</label>
+                                <input id="directorName-${submissionKey}" type="text" value="${submission.directorName || ''}" style="width:100%; margin-top:4px;">
+                            </div>
+                            <div>
+                                <label style="font-size:12px; color:#555;">Department</label>
+                                <input id="directorDepartment-${submissionKey}" type="text" value="${submission.directorDepartment || ''}" style="width:100%; margin-top:4px;">
+                            </div>
+                            <div>
+                                <label style="font-size:12px; color:#555;">Director Signature</label>
+                                <input id="directorSignature-${submissionKey}" type="text" value="${submission.directorSignature || ''}" style="width:100%; margin-top:4px;">
+                            </div>
+                            <div>
+                                <label style="font-size:12px; color:#555;">Director Date</label>
+                                <input id="directorDate-${submissionKey}" type="date" value="${submission.directorDate || ''}" style="width:100%; margin-top:4px;">
+                            </div>
+                            <div style="grid-column:1 / -1;">
+                                <label style="font-size:12px; color:#555;">Reason if not approved</label>
+                                <textarea id="notApprovedReason-${submissionKey}" rows="2" style="width:100%; margin-top:4px;">${submission.notApprovedReason || ''}</textarea>
+                            </div>
+                        </div>
+                        <div style="margin-top:10px;">
+                            <button onclick='saveDirectorSection(${JSON.stringify(submission.id)}, ${JSON.stringify(submissionKey)})' style="background:#2e5f8a; color:#fff;">💾 حفظ بيانات Section 2</button>
+                        </div>
+                    </div>
+                    ` : ''}
                 </div>
             `;
         }).join('');
@@ -734,30 +786,80 @@
     }
 
 
-    // ===== تحديث حالة الطلب =====
-    function updateSubmissionStatus(submissionId, newStatus) {
-        const statusText = { 'Pending': '⏳ قيد الانتظار', 'Approved': '✅ موافق', 'Rejected': '❌ مرفوض' };
-        
-        // تحديث في localStorage
-        const formSubmissions = JSON.parse(localStorage.getItem('formSubmissions')) || {};
+    async function updateSubmissionRecord(submissionId, updates) {
         let updated = false;
-        
+
+        if (db && typeof submissionId === 'string') {
+            try {
+                await db.collection('formSubmissions').doc(submissionId).update(updates);
+                updated = true;
+            } catch (err) {
+                console.log('تعذر تحديث Firestore، سيتم محاولة localStorage:', err);
+            }
+        }
+
+        const formSubmissions = JSON.parse(localStorage.getItem('formSubmissions')) || {};
         Object.keys(formSubmissions).forEach(formType => {
             if (Array.isArray(formSubmissions[formType])) {
                 formSubmissions[formType].forEach((sub, idx) => {
-                    if (sub.id === submissionId) {
-                        formSubmissions[formType][idx].status = newStatus;
-                        formSubmissions[formType][idx].updatedAt = new Date().toISOString();
+                    if (String(sub.id) === String(submissionId)) {
+                        formSubmissions[formType][idx] = {
+                            ...formSubmissions[formType][idx],
+                            ...updates,
+                            updatedAt: new Date().toISOString()
+                        };
                         updated = true;
                     }
                 });
             }
         });
-        
+        localStorage.setItem('formSubmissions', JSON.stringify(formSubmissions));
+
+        return updated;
+    }
+
+    // ===== تحديث حالة الطلب =====
+    async function updateSubmissionStatus(submissionId, newStatus) {
+        const statusText = { 'Pending': '⏳ قيد الانتظار', 'Approved': '✅ موافق', 'Rejected': '❌ مرفوض' };
+        const updated = await updateSubmissionRecord(submissionId, { status: newStatus });
+
         if (updated) {
-            localStorage.setItem('formSubmissions', JSON.stringify(formSubmissions));
             alert(`✅ تم تحديث الحالة إلى: ${statusText[newStatus]}`);
-            loadSubmissions();
+            await loadSubmissions();
+        }
+    }
+
+    async function saveDirectorSection(submissionId, submissionKey) {
+        const approvalStatus = document.getElementById(`approvalStatus-${submissionKey}`)?.value || '';
+        const approvedFrom = document.getElementById(`approvedFrom-${submissionKey}`)?.value || '';
+        const approvedTo = document.getElementById(`approvedTo-${submissionKey}`)?.value || '';
+        const notApprovedReason = document.getElementById(`notApprovedReason-${submissionKey}`)?.value || '';
+        const directorName = document.getElementById(`directorName-${submissionKey}`)?.value || '';
+        const directorDepartment = document.getElementById(`directorDepartment-${submissionKey}`)?.value || '';
+        const directorSignature = document.getElementById(`directorSignature-${submissionKey}`)?.value || '';
+        const directorDate = document.getElementById(`directorDate-${submissionKey}`)?.value || '';
+
+        const statusByApproval = approvalStatus === 'Approved' ? 'Approved' : (approvalStatus === 'Not Approved' ? 'Rejected' : 'Pending');
+
+        const updates = {
+            approvalStatus,
+            approvedFrom,
+            approvedTo,
+            notApprovedReason,
+            directorName,
+            directorDepartment,
+            directorSignature,
+            directorDate,
+            status: statusByApproval,
+            reviewedAt: new Date().toISOString()
+        };
+
+        const updated = await updateSubmissionRecord(submissionId, updates);
+        if (updated) {
+            alert('✅ تم حفظ بيانات Section 2 وتحديث حالة الطلب');
+            await loadSubmissions();
+        } else {
+            alert('⚠️ تعذر حفظ بيانات Section 2 لهذا الطلب');
         }
     }
 
