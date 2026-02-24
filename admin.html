@@ -552,6 +552,110 @@
         alert(isSpecific ? '✅ تم حذف الطلبات المعروضة لهذا النوع.' : '✅ تم حذف جميع الطلبات.');
     }
 
+    async function exportToCSV() {
+        const container = document.getElementById('submissionsContainer');
+        const selectedForm = document.getElementById('formFilter').value;
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        let filteredData = [];
+        
+        // جمع البيانات المعروضة حاليًا
+        if (db) {
+            try {
+                let query = db.collection('formSubmissions');
+                if (selectedForm) {
+                    query = query.where('formType', '==', selectedForm);
+                }
+                const snapshot = await query.get();
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    data.id = doc.id;
+                    filteredData.push(data);
+                });
+            } catch (err) {
+                console.log('خطأ في Firestore:', err);
+                filteredData = [];
+            }
+        }
+        
+        if (filteredData.length === 0) {
+            const localData = JSON.parse(localStorage.getItem('formSubmissions')) || {};
+            Object.entries(localData).forEach(([formType, submissions]) => {
+                if (Array.isArray(submissions)) {
+                    submissions.forEach(sub => {
+                        if (!selectedForm || formType === selectedForm) {
+                            filteredData.push({...sub, formType});
+                        }
+                    });
+                }
+            });
+        }
+        
+        // تطبيق البحث
+        if (searchTerm) {
+            filteredData = filteredData.filter(item => {
+                const dataStr = JSON.stringify(item).toLowerCase();
+                return dataStr.includes(searchTerm);
+            });
+        }
+        
+        if (filteredData.length === 0) {
+            alert('⚠️ لا توجد بيانات للتصدير');
+            return;
+        }
+
+        // تحضير رؤوس الأعمدة
+        const allKeys = new Set();
+        filteredData.forEach(row => {
+            Object.keys(row).forEach(key => {
+                if (!['id', 'submittedAtISO', 'firestoreId'].includes(key)) {
+                    allKeys.add(key);
+                }
+            });
+        });
+        const headers = Array.from(allKeys);
+
+        // بناء CSV
+        const csvRows = [];
+        csvRows.push(headers.map(h => `"${h}"`).join(','));
+        
+        filteredData.forEach(row => {
+            const csvRow = headers.map(header => {
+                let value = row[header] || '';
+                
+                // معالجة الكائنات (المرفقات)
+                if (typeof value === 'object') {
+                    value = value.name || value.url || '';
+                }
+                
+                // تحويل إلى نص
+                value = String(value)
+                    .replace(/"/g, '""') // escape quotes
+                    .replace(/\n/g, ' ') // remove newlines
+                    .trim();
+                
+                return `"${value}"`;
+            }).join(',');
+            csvRows.push(csvRow);
+        });
+
+        const csv = csvRows.join('\n');
+        
+        // إنشام ملف وتحميله
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        
+        link.setAttribute('href', url);
+        link.setAttribute('download', `طلبات_${new Date().toLocaleDateString('ar-SA')}.csv`);
+        link.style.visibility = 'hidden';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        alert(`✅ تم تصدير ${filteredData.length} طلب إلى ملف Excel`);
+    }
+
     document.getElementById('formFilter').addEventListener('change', () => {
         updateDeleteButtonLabel();
         loadSubmissions();
