@@ -325,6 +325,77 @@
         console.log('Firebase غير متاح، سيتم استخدام localStorage');
     }
 
+    // ===== إعدادات إرسال إشعار قرار الموافقة للمتقدم =====
+    const REVIEW_EMAIL_CONFIG = {
+        apiKey: 'SG.YOUR_SENDGRID_API_KEY_HERE',
+        fromEmail: 'noreply@hospital.com',
+        fromName: 'Training & CPD - SQUH'
+    };
+
+    const submissionIndex = new Map();
+
+    async function sendApplicantDecisionEmail(submission, newStatus) {
+        if (!submission || !submission.email) return false;
+        if (!['Approved', 'Rejected'].includes(newStatus)) return false;
+
+        const subject = newStatus === 'Approved'
+            ? '✅ تم اعتماد طلب التدريب'
+            : '❌ تحديث بخصوص طلب التدريب';
+
+        const statusLabel = newStatus === 'Approved' ? 'تمت الموافقة على الطلب' : 'تم رفض الطلب';
+        const decisionColor = newStatus === 'Approved' ? '#28a745' : '#dc3545';
+        const reason = submission.notApprovedReason || '';
+
+        if (REVIEW_EMAIL_CONFIG.apiKey.includes('YOUR_SENDGRID_API_KEY')) {
+            console.log('📧 إشعار قرار للمتقدم (وضع تجريبي):', {
+                to: submission.email,
+                status: newStatus,
+                id: submission.id
+            });
+            return true;
+        }
+
+        try {
+            const payload = {
+                personalizations: [{
+                    to: [{ email: submission.email }],
+                    subject
+                }],
+                from: {
+                    email: REVIEW_EMAIL_CONFIG.fromEmail,
+                    name: REVIEW_EMAIL_CONFIG.fromName
+                },
+                content: [{
+                    type: 'text/html',
+                    value: `
+                        <div dir="rtl" style="font-family: Arial, sans-serif; line-height:1.8;">
+                            <h2 style="color:${decisionColor};">${statusLabel}</h2>
+                            <p>عزيزي/عزيزتي <strong>${submission.name || 'المتقدم'}</strong>،</p>
+                            <p>نحيطكم علماً بأنه تم تحديث حالة طلبكم رقم <strong>${submission.id}</strong>.</p>
+                            <p><strong>الحالة:</strong> ${newStatus === 'Approved' ? 'موافق' : 'مرفوض'}</p>
+                            ${reason && newStatus === 'Rejected' ? `<p><strong>السبب:</strong> ${reason}</p>` : ''}
+                            <p>يمكنكم التواصل مع الإدارة عند الحاجة لمزيد من التفاصيل.</p>
+                        </div>
+                    `
+                }]
+            };
+
+            const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${REVIEW_EMAIL_CONFIG.apiKey}`
+                },
+                body: JSON.stringify(payload)
+            });
+
+            return response.status === 202;
+        } catch (error) {
+            console.error('فشل إرسال إشعار القرار:', error);
+            return false;
+        }
+    }
+
     // ===== تحميل وعرض البيانات من Firestore أو localStorage =====
     async function loadSubmissions() {
         const container = document.getElementById('submissionsContainer');
@@ -373,6 +444,10 @@
         }
         // ترتيب حسب التاريخ (الأحدث أولاً)
         filteredData.sort((a, b) => (b.submittedAt || 0) - (a.submittedAt || 0));
+
+        submissionIndex.clear();
+        filteredData.forEach(item => submissionIndex.set(String(item.id), item));
+
         // العرض
         if (filteredData.length === 0) {
             container.innerHTML = `
@@ -824,6 +899,8 @@
         const updated = await updateSubmissionRecord(submissionId, { status: newStatus });
 
         if (updated) {
+            const submission = submissionIndex.get(String(submissionId));
+            await sendApplicantDecisionEmail(submission, newStatus);
             alert(`✅ تم تحديث الحالة إلى: ${statusText[newStatus]}`);
             await loadSubmissions();
         }
@@ -856,6 +933,9 @@
 
         const updated = await updateSubmissionRecord(submissionId, updates);
         if (updated) {
+            const submission = submissionIndex.get(String(submissionId));
+            const mergedSubmission = { ...(submission || {}), ...updates, id: submissionId };
+            await sendApplicantDecisionEmail(mergedSubmission, statusByApproval);
             alert('✅ تم حفظ بيانات Section 2 وتحديث حالة الطلب');
             await loadSubmissions();
         } else {
