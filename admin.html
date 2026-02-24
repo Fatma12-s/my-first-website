@@ -83,26 +83,6 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
 
-        .config-alert {
-            padding: var(--space-md);
-            border-radius: 8px;
-            margin-bottom: var(--space-lg);
-            font-size: 14px;
-            font-weight: 600;
-        }
-
-        .config-alert.warning {
-            background: #fff3cd;
-            border: 1px solid #ffe08a;
-            color: #7a5a00;
-        }
-
-        .config-alert.success {
-            background: #d4edda;
-            border: 1px solid #b7e1c1;
-            color: #155724;
-        }
-
         .filter-group {
             display: flex;
             gap: var(--space-md);
@@ -201,46 +181,6 @@
             word-break: break-word;
         }
 
-        .attachments-box {
-            margin-top: var(--space-md);
-            background: #f9fffe;
-            border-radius: 8px;
-            border: 1px solid #e3f0ee;
-            padding: var(--space-md);
-        }
-
-        .attachments-title {
-            color: #41726a;
-            font-weight: 700;
-            margin-bottom: var(--space-sm);
-        }
-
-        .attachments-list {
-            display: grid;
-            gap: var(--space-sm);
-        }
-
-        .attachment-item {
-            display: grid;
-            gap: var(--space-xs);
-            padding: var(--space-sm);
-            background: #fff;
-            border-radius: 6px;
-            border-right: 3px solid #6dbfb1;
-        }
-
-        .attachment-label {
-            color: #41726a;
-            font-weight: 600;
-            font-size: 12px;
-            text-transform: uppercase;
-        }
-
-        .attachment-value {
-            color: #333;
-            word-break: break-word;
-        }
-
         .empty-state {
             background: white;
             padding: var(--space-2xl);
@@ -293,15 +233,13 @@
 <body>
     <div class="container">
         <header>
-            <h1>📊 لوحة التحكم - DTD</h1>
+            <h1>📊 لوحة التحكم - FATMA12</h1>
             <p>عرض وإدارة جميع طلبات المشاركين والمتدربين</p>
             <p style="font-size: 12px; color: #999; margin-top: 8px;">مرحباً بك: <strong id="adminName">Admin</strong></p>
             <div class="header-info" id="stats">
                 <!-- سيتم ملؤها بـ JavaScript -->
             </div>
         </header>
-
-        <div id="emailConfigAlert" class="config-alert" style="display:none;"></div>
 
         <div class="filters">
             <div class="filter-group">
@@ -330,10 +268,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <script src="firebase-config.js"></script>
-    <!-- SheetJS - Primary CDN -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.min.js"></script>
-    <!-- SheetJS - Secondary CDN as fallback -->
-    <script src="https://unpkg.com/xlsx@latest/dist/xlsx.full.min.js"></script>
     <script>
     // تهيئة Firebase
     let db = null;
@@ -345,134 +279,6 @@
         }
     } catch (err) {
         console.log('Firebase غير متاح، سيتم استخدام localStorage');
-    }
-
-    // ===== إعدادات إرسال إشعار قرار الموافقة للمتقدم =====
-    const REVIEW_EMAIL_CONFIG = {
-        apiKey: 'SG.YOUR_SENDGRID_API_KEY_HERE',
-        fromEmail: 'noreply@hospital.com',
-        fromName: 'Training & CPD - SQUH'
-    };
-
-    const submissionIndex = new Map();
-
-    function isEmailConfigReady() {
-        return !!(
-            REVIEW_EMAIL_CONFIG.apiKey &&
-            !REVIEW_EMAIL_CONFIG.apiKey.includes('YOUR_SENDGRID_API_KEY') &&
-            REVIEW_EMAIL_CONFIG.fromEmail &&
-            /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(REVIEW_EMAIL_CONFIG.fromEmail)
-        );
-    }
-
-    function isValidEmail(email) {
-        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || '').trim());
-    }
-
-    function renderEmailConfigAlert() {
-        const alertEl = document.getElementById('emailConfigAlert');
-        if (!alertEl) return;
-
-        const ready = isEmailConfigReady();
-        alertEl.style.display = 'block';
-        alertEl.className = `config-alert ${ready ? 'success' : 'warning'}`;
-        alertEl.textContent = ready
-            ? '✅ إشعارات البريد مفعّلة: سيتم إرسال قرار الموافقة/الرفض للمتقدمين.'
-            : '⚠️ إشعارات البريد غير مفعّلة: أضف SendGrid API Key صحيح في REVIEW_EMAIL_CONFIG داخل admin.html.';
-    }
-
-    async function sendApplicantDecisionEmail(submission, newStatus) {
-        if (!submission || !submission.email) return false;
-        if (!['Approved', 'Rejected'].includes(newStatus)) return false;
-
-        const subject = newStatus === 'Approved'
-            ? '✅ تم اعتماد طلب التدريب'
-            : '❌ تحديث بخصوص طلب التدريب';
-
-        const statusLabel = newStatus === 'Approved' ? 'تمت الموافقة على الطلب' : 'تم رفض الطلب';
-        const decisionColor = newStatus === 'Approved' ? '#28a745' : '#dc3545';
-        const reason = submission.notApprovedReason || '';
-
-        try {
-            const payload = {
-                personalizations: [{
-                    to: [{ email: submission.email }],
-                    subject
-                }],
-                from: {
-                    email: REVIEW_EMAIL_CONFIG.fromEmail,
-                    name: REVIEW_EMAIL_CONFIG.fromName
-                },
-                content: [{
-                    type: 'text/html',
-                    value: `
-                        <div dir="rtl" style="font-family: Arial, sans-serif; line-height:1.8;">
-                            <h2 style="color:${decisionColor};">${statusLabel}</h2>
-                            <p>عزيزي/عزيزتي <strong>${submission.name || 'المتقدم'}</strong>،</p>
-                            <p>نحيطكم علماً بأنه تم تحديث حالة طلبكم رقم <strong>${submission.id}</strong>.</p>
-                            <p><strong>الحالة:</strong> ${newStatus === 'Approved' ? 'موافق' : 'مرفوض'}</p>
-                            ${reason && newStatus === 'Rejected' ? `<p><strong>السبب:</strong> ${reason}</p>` : ''}
-                            <p>يمكنكم التواصل مع الإدارة عند الحاجة لمزيد من التفاصيل.</p>
-                        </div>
-                    `
-                }]
-            };
-
-            const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${REVIEW_EMAIL_CONFIG.apiKey}`
-                },
-                body: JSON.stringify(payload)
-            });
-
-            return response.status === 202;
-        } catch (error) {
-            console.error('فشل إرسال إشعار القرار:', error);
-            return false;
-        }
-    }
-
-    async function notifyApplicantWithGuards(submission, newStatus) {
-        if (!submission || !submission.id) {
-            return { sent: false, skipped: 'missing-submission' };
-        }
-
-        if (!['Approved', 'Rejected'].includes(newStatus)) {
-            return { sent: false, skipped: 'status-not-final' };
-        }
-
-        if (!submission.email || !isValidEmail(submission.email)) {
-            await updateSubmissionRecord(submission.id, {
-                lastNotifiedStatus: newStatus,
-                lastNotifiedAt: new Date().toISOString(),
-                lastNotificationResult: 'invalid-email'
-            });
-            return { sent: false, skipped: 'invalid-email' };
-        }
-
-        if (submission.lastNotifiedStatus === newStatus) {
-            return { sent: false, skipped: 'duplicate-status' };
-        }
-
-        if (!isEmailConfigReady()) {
-            await updateSubmissionRecord(submission.id, {
-                lastNotifiedStatus: newStatus,
-                lastNotifiedAt: new Date().toISOString(),
-                lastNotificationResult: 'email-config-not-ready'
-            });
-            return { sent: false, skipped: 'email-config-not-ready' };
-        }
-
-        const sent = await sendApplicantDecisionEmail(submission, newStatus);
-        await updateSubmissionRecord(submission.id, {
-            lastNotifiedStatus: newStatus,
-            lastNotifiedAt: new Date().toISOString(),
-            lastNotificationResult: sent ? 'sent' : 'send-failed'
-        });
-
-        return sent ? { sent: true } : { sent: false, skipped: 'send-failed' };
     }
 
     // ===== تحميل وعرض البيانات من Firestore أو localStorage =====
@@ -523,10 +329,6 @@
         }
         // ترتيب حسب التاريخ (الأحدث أولاً)
         filteredData.sort((a, b) => (b.submittedAt || 0) - (a.submittedAt || 0));
-
-        submissionIndex.clear();
-        filteredData.forEach(item => submissionIndex.set(String(item.id), item));
-
         // العرض
         if (filteredData.length === 0) {
             container.innerHTML = `
@@ -540,51 +342,16 @@
         }
         function formatFieldValue(value) {
             if (!value && value !== 0) return '';
-
-            if (typeof value === 'object') {
-                const fileName = value.name || 'ملف';
-                if (value.url) {
-                    return `<a href="${value.url}" target="_blank" rel="noopener noreferrer">📎 ${fileName}</a>`;
-                }
-                if (value.dataUrl) {
-                    return `<a href="${value.dataUrl}" download="${fileName}" target="_blank" rel="noopener noreferrer">📎 ${fileName}</a>`;
-                }
-                return `<span>📎 ${fileName} (لا يوجد رابط مباشر)</span>`;
-            }
-
             const s = String(value);
             if (s.includes(';')) {
                 return s.split(';').map(part => part.trim()).map(p => {
-                    if (/^https?:\/\//.test(p)) return `<a href="${p}" target="_blank" rel="noopener noreferrer">📎 ${p.split('/').pop() || 'ملف'}</a>`;
+                    if (/^https?:\/\//.test(p)) return `<a href="${p}" target="_blank">${p}</a>`;
                     return `<span>${p}</span>`;
                 }).join('<br>');
             }
-            if (/^https?:\/\//.test(s)) return `<a href="${s}" target="_blank" rel="noopener noreferrer">📎 ${s.split('/').pop() || 'ملف'}</a>`;
+            if (/^https?:\/\//.test(s)) return `<a href="${s}" target="_blank">${s}</a>`;
             return `<span>${s}</span>`;
         }
-
-        function isAttachmentValue(value) {
-            if (!value && value !== 0) return false;
-
-            if (typeof value === 'object') {
-                return !!(value.url || value.dataUrl || value.name);
-            }
-
-            const tokens = String(value).split(';').map(part => part.trim()).filter(Boolean);
-            return tokens.some(token => /^https?:\/\//i.test(token) || /\.(pdf|jpe?g|png)$/i.test(token));
-        }
-
-        function getAttachmentCount(value) {
-            if (!value && value !== 0) return 0;
-
-            if (typeof value === 'object') {
-                return (value.url || value.dataUrl || value.name) ? 1 : 0;
-            }
-
-            const tokens = String(value).split(';').map(part => part.trim()).filter(Boolean);
-            return tokens.filter(token => /^https?:\/\//i.test(token) || /\.(pdf|jpe?g|png)$/i.test(token)).length;
-        }
-
         container.innerHTML = filteredData.map(submission => {
             const formTypeNames = {
                 'graduates': '👨‍🎓 تدريب الطلاب والخريجين',
@@ -594,55 +361,17 @@
                 'training-others': '📚 البرامج التدريبية - الآخرين',
                 'contact': '💬 رسائل التواصل'
             };
-
-            const submissionKey = String(submission.id).replace(/[^a-zA-Z0-9_-]/g, '_');
-
-            const allEntries = Object.entries(submission)
-                .filter(([key]) => ![
-                    'formType', 'id', 'submittedAt', 'submittedAtISO', 'firestoreId', 'status', 'assignedTo',
-                    'approvalStatus', 'approvedFrom', 'approvedTo', 'notApprovedReason', 'directorName',
-                    'directorDepartment', 'directorSignature', 'directorDate'
-                ].includes(key));
-
-            const attachmentEntries = allEntries.filter(([, value]) => isAttachmentValue(value));
-            const nonAttachmentEntries = allEntries.filter(([, value]) => !isAttachmentValue(value));
-            
-            // عد عدد الملفات المرفوعة
-            let filesCount = 0;
-            attachmentEntries.forEach(([, value]) => {
-                filesCount += getAttachmentCount(value);
-            });
-            
-            // تحديد لون الحالة
-            const statusColors = {
-                'Pending': { bg: '#fff3cd', border: '#ffc107', text: '#856404', label: '⏳ قيد الانتظار' },
-                'Approved': { bg: '#d4edda', border: '#28a745', text: '#155724', label: '✅ موافق' },
-                'Rejected': { bg: '#f8d7da', border: '#dc3545', text: '#721c24', label: '❌ مرفوض' }
-            };
-            const statusConfig = statusColors[submission.status] || statusColors['Pending'];
-            
             return `
-                <div class="submission-card" style="border-right-color: ${statusConfig.border};">
+                <div class="submission-card">
                     <div class="submission-header">
                         <div>
                             <div class="submission-title">${formTypeNames[submission.formType]}</div>
                             <div class="submission-date">📅 ${submission.submittedAt || 'غير محدد'}</div>
-                            <div class="submission-date" style="font-size: 11px; color: #bbb; margin-top: 4px;">
-                                🆔 ID: ${submission.id}
-                                ${filesCount > 0 ? ` | 📎 ${filesCount} ملف${filesCount > 1 ? 'ات' : ''}` : ''}
-                            </div>
-                        </div>
-                        <div style="display: flex; flex-direction: column; gap: 8px; align-items: flex-end;">
-                            <div style="padding: 6px 12px; border-radius: 20px; background: ${statusConfig.bg}; color: ${statusConfig.text}; font-weight: 600; font-size: 13px; border: 1px solid ${statusConfig.border};">
-                                ${statusConfig.label}
-                            </div>
-                            <div style="font-size: 12px; color: #666; padding: 4px 8px; background: #f5f5f5; border-radius: 4px;">
-                                👤 ${submission.assignedTo || 'لم يتم التعيين'}
-                            </div>
                         </div>
                     </div>
                     <div class="submission-content">
-                        ${nonAttachmentEntries
+                        ${Object.entries(submission)
+                            .filter(([key]) => key !== 'formType' && key !== 'id' && key !== 'submittedAt')
                             .map(([key, value]) => `
                                 <div class="field">
                                     <div class="field-label">${key}</div>
@@ -650,99 +379,6 @@
                                 </div>
                             `).join('')}
                     </div>
-                    ${attachmentEntries.length > 0 ? `
-                        <div class="attachments-box">
-                            <div class="attachments-title">📎 المرفقات</div>
-                            <div class="attachments-list">
-                                ${attachmentEntries.map(([key, value]) => `
-                                    <div class="attachment-item">
-                                        <div class="attachment-label">${key}</div>
-                                        <div class="attachment-value">${formatFieldValue(value)}</div>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </div>
-                    ` : ''}
-                    <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #eee; display: flex; gap: 8px; flex-wrap: wrap;">
-                        <button onclick='updateSubmissionStatus(${JSON.stringify(submission.id)}, "Approved")' style="background: #28a745; padding: 8px 16px; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">✅ موافقة</button>
-                        <button onclick='updateSubmissionStatus(${JSON.stringify(submission.id)}, "Rejected")' style="background: #dc3545; padding: 8px 16px; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">❌ رفض</button>
-                        <button onclick='updateSubmissionStatus(${JSON.stringify(submission.id)}, "Pending")' style="background: #ffc107; padding: 8px 16px; color: #333; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">⏳ قيد الانتظار</button>
-                    </div>
-                    ${submission.formType === 'graduates' ? `
-                    <div style="margin-top: 14px; padding: 14px; background: #f8fbff; border: 1px solid #dbe9ff; border-radius: 8px;">
-                        <div style="font-weight: 700; color: #2e5f8a; margin-bottom: 10px;">Section 2: Department Director/HOD</div>
-                        <div style="display:grid; gap:10px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
-                            <div>
-                                <label style="font-size:12px; color:#555;">Approval Status</label>
-                                <select id="approvalStatus-${submissionKey}" style="width:100%; margin-top:4px;">
-                                    <option value="">-- اختر --</option>
-                                    <option value="Approved" ${submission.approvalStatus === 'Approved' ? 'selected' : ''}>Approved</option>
-                                    <option value="Not Approved" ${submission.approvalStatus === 'Not Approved' ? 'selected' : ''}>Not Approved</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label style="font-size:12px; color:#555;">Approved From</label>
-                                <input id="approvedFrom-${submissionKey}" type="date" value="${submission.approvedFrom || ''}" style="width:100%; margin-top:4px;">
-                            </div>
-                            <div>
-                                <label style="font-size:12px; color:#555;">Approved To</label>
-                                <input id="approvedTo-${submissionKey}" type="date" value="${submission.approvedTo || ''}" style="width:100%; margin-top:4px;">
-                            </div>
-                            <div>
-                                <label style="font-size:12px; color:#555;">Director/HOD Name</label>
-                                <input id="directorName-${submissionKey}" type="text" value="${submission.directorName || ''}" style="width:100%; margin-top:4px;">
-                            </div>
-                            <div>
-                                <label style="font-size:12px; color:#555;">Department</label>
-                                <select id="directorDepartment-${submissionKey}" style="width:100%; margin-top:4px;">
-                                    <option value="">-- اختر القسم --</option>
-                                    <option value="Administration Affairs" ${submission.directorDepartment === 'Administration Affairs' ? 'selected' : ''}>Administration Affairs</option>
-                                    <option value="Anesthesia and Intensive Care" ${submission.directorDepartment === 'Anesthesia and Intensive Care' ? 'selected' : ''}>Anesthesia and Intensive Care</option>
-                                    <option value="Behavioral Medicine" ${submission.directorDepartment === 'Behavioral Medicine' ? 'selected' : ''}>Behavioral Medicine</option>
-                                    <option value="Biochemistry" ${submission.directorDepartment === 'Biochemistry' ? 'selected' : ''}>Biochemistry</option>
-                                    <option value="Child Health" ${submission.directorDepartment === 'Child Health' ? 'selected' : ''}>Child Health</option>
-                                    <option value="Clinical Physiology" ${submission.directorDepartment === 'Clinical Physiology' ? 'selected' : ''}>Clinical Physiology</option>
-                                    <option value="Dental and Maxillofacial Surgery" ${submission.directorDepartment === 'Dental and Maxillofacial Surgery' ? 'selected' : ''}>Dental and Maxillofacial Surgery</option>
-                                    <option value="Deputy for Affaires & Finance" ${submission.directorDepartment === 'Deputy for Affaires & Finance' ? 'selected' : ''}>Deputy for Affaires & Finance</option>
-                                    <option value="Development & Quality" ${submission.directorDepartment === 'Development & Quality' ? 'selected' : ''}>Development & Quality</option>
-                                    <option value="Emergency Medicine" ${submission.directorDepartment === 'Emergency Medicine' ? 'selected' : ''}>Emergency Medicine</option>
-                                    <option value="Finance" ${submission.directorDepartment === 'Finance' ? 'selected' : ''}>Finance</option>
-                                    <option value="Genetics" ${submission.directorDepartment === 'Genetics' ? 'selected' : ''}>Genetics</option>
-                                    <option value="Hematology" ${submission.directorDepartment === 'Hematology' ? 'selected' : ''}>Hematology</option>
-                                    <option value="Hospital Information Systems" ${submission.directorDepartment === 'Hospital Information Systems' ? 'selected' : ''}>Hospital Information Systems</option>
-                                    <option value="Hospital Director General Office" ${submission.directorDepartment === 'Hospital Director General Office' ? 'selected' : ''}>Hospital Director General Office</option>
-                                    <option value="Infection Control" ${submission.directorDepartment === 'Infection Control' ? 'selected' : ''}>Infection Control</option>
-                                    <option value="Medical Supplies Directorate" ${submission.directorDepartment === 'Medical Supplies Directorate' ? 'selected' : ''}>Medical Supplies Directorate</option>
-                                    <option value="Medical Record" ${submission.directorDepartment === 'Medical Record' ? 'selected' : ''}>Medical Record</option>
-                                    <option value="Medicine" ${submission.directorDepartment === 'Medicine' ? 'selected' : ''}>Medicine</option>
-                                    <option value="Microbiology" ${submission.directorDepartment === 'Microbiology' ? 'selected' : ''}>Microbiology</option>
-                                    <option value="Nursing" ${submission.directorDepartment === 'Nursing' ? 'selected' : ''}>Nursing</option>
-                                    <option value="Nutrition & Dietetics" ${submission.directorDepartment === 'Nutrition & Dietetics' ? 'selected' : ''}>Nutrition & Dietetics</option>
-                                    <option value="Obstetrics & Gynecology" ${submission.directorDepartment === 'Obstetrics & Gynecology' ? 'selected' : ''}>Obstetrics & Gynecology</option>
-                                    <option value="Ophthalmology" ${submission.directorDepartment === 'Ophthalmology' ? 'selected' : ''}>Ophthalmology</option>
-                                    <option value="Pathology" ${submission.directorDepartment === 'Pathology' ? 'selected' : ''}>Pathology</option>
-                                    <option value="Patients Service" ${submission.directorDepartment === 'Patients Service' ? 'selected' : ''}>Patients Service</option>
-                                    <option value="Personnel Affairs Directorate" ${submission.directorDepartment === 'Personnel Affairs Directorate' ? 'selected' : ''}>Personnel Affairs Directorate</option>
-                                    <option value="Pharmacy" ${submission.directorDepartment === 'Pharmacy' ? 'selected' : ''}>Pharmacy</option>
-                                    <option value="Physiotherapy & Rehabilitation" ${submission.directorDepartment === 'Physiotherapy & Rehabilitation' ? 'selected' : ''}>Physiotherapy & Rehabilitation</option>
-                                    <option value="Procurement" ${submission.directorDepartment === 'Procurement' ? 'selected' : ''}>Procurement</option>
-                                    <option value="Radiology & Molecular Imaging" ${submission.directorDepartment === 'Radiology & Molecular Imaging' ? 'selected' : ''}>Radiology & Molecular Imaging</option>
-                                    <option value="Statistics & Health Information" ${submission.directorDepartment === 'Statistics & Health Information' ? 'selected' : ''}>Statistics & Health Information</option>
-                                    <option value="Surgery" ${submission.directorDepartment === 'Surgery' ? 'selected' : ''}>Surgery</option>
-                                    <option value="Technical Affaires" ${submission.directorDepartment === 'Technical Affaires' ? 'selected' : ''}>Technical Affaires</option>
-                                    <option value="Training & CPD" ${submission.directorDepartment === 'Training & CPD' ? 'selected' : ''}>Training & CPD</option>
-                                </select>
-                            </div>
-                            <div style="grid-column:1 / -1;">
-                                <label style="font-size:12px; color:#555;">Reason if not approved</label>
-                                <textarea id="notApprovedReason-${submissionKey}" rows="2" style="width:100%; margin-top:4px;">${submission.notApprovedReason || ''}</textarea>
-                            </div>
-                        </div>
-                        <div style="margin-top:10px;">
-                            <button onclick='saveDirectorSection(${JSON.stringify(submission.id)}, ${JSON.stringify(submissionKey)})' style="background:#2e5f8a; color:#fff;">💾 حفظ بيانات Section 2</button>
-                        </div>
-                    </div>
-                    ` : ''}
                 </div>
             `;
         }).join('');
@@ -766,323 +402,8 @@
         });
         document.getElementById('stats').innerHTML = statsHtml;
     }
-
-    function updateDeleteButtonLabel() {
-        const selectedForm = document.getElementById('formFilter').value;
-        const clearBtn = document.querySelector('.clear-btn');
-        if (!clearBtn) return;
-        clearBtn.textContent = selectedForm ? '🗑️ حذف النوع المحدد' : '🗑️ حذف الكل';
-    }
-
-    async function clearAllData() {
-        const selectedForm = document.getElementById('formFilter').value;
-        const isSpecific = !!selectedForm;
-        const confirmationMsg = isSpecific
-            ? 'هل أنت متأكد من حذف الطلبات المعروضة لهذا النوع فقط؟'
-            : 'هل أنت متأكد من حذف جميع الطلبات؟';
-
-        if (!confirm(confirmationMsg)) return;
-
-        if (db) {
-            try {
-                let query = db.collection('formSubmissions');
-                if (isSpecific) {
-                    query = query.where('formType', '==', selectedForm);
-                }
-                const snapshot = await query.get();
-                const batch = db.batch();
-                snapshot.forEach(doc => batch.delete(doc.ref));
-                if (!snapshot.empty) {
-                    await batch.commit();
-                }
-            } catch (err) {
-                console.log('تعذر حذف البيانات من Firestore:', err);
-            }
-        }
-
-        const localData = JSON.parse(localStorage.getItem('formSubmissions')) || {};
-        if (isSpecific) {
-            delete localData[selectedForm];
-        } else {
-            Object.keys(localData).forEach(key => delete localData[key]);
-        }
-        localStorage.setItem('formSubmissions', JSON.stringify(localData));
-
-        await loadSubmissions();
-        alert(isSpecific ? '✅ تم حذف الطلبات المعروضة لهذا النوع.' : '✅ تم حذف جميع الطلبات.');
-    }
-
-    async function ensureXLSXLoaded() {
-        let attempts = 0;
-        while (typeof XLSX === 'undefined' && attempts < 5) {
-            console.log(`Waiting for XLSX to load... (attempt ${attempts + 1})`);
-            await new Promise(resolve => setTimeout(resolve, 500));
-            attempts++;
-        }
-        // تحقق من أن XLSX محمّل بشكل صحيح
-        return typeof XLSX !== 'undefined' && typeof XLSX.utils !== 'undefined';
-    }
-
-    function downloadCSVFallback(exportData, fileName) {
-        if (!exportData || exportData.length === 0) return;
-        
-        const keys = Object.keys(exportData[0]);
-        const csvRows = [];
-        
-        // رؤوس الأعمدة
-        csvRows.push(keys.map(k => `"${k}"`).join(','));
-        
-        // البيانات
-        exportData.forEach(row => {
-            const values = keys.map(key => {
-                let value = row[key] || '';
-                value = String(value).replace(/"/g, '""').replace(/\n/g, ' ');
-                return `"${value}"`;
-            });
-            csvRows.push(values.join(','));
-        });
-        
-        const csv = csvRows.join('\n');
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = fileName.replace('.xlsx', '.csv');
-        link.click();
-    }
-
-    async function exportToCSV() {
-        // تأكد من تحميل المكتبة
-        const xlsxReady = await ensureXLSXLoaded();
-        
-        const container = document.getElementById('submissionsContainer');
-        const selectedForm = document.getElementById('formFilter').value;
-        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-        let filteredData = [];
-        
-        // جمع البيانات المعروضة حاليًا
-        if (db) {
-            try {
-                let query = db.collection('formSubmissions');
-                if (selectedForm) {
-                    query = query.where('formType', '==', selectedForm);
-                }
-                const snapshot = await query.get();
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    data.id = doc.id;
-                    filteredData.push(data);
-                });
-            } catch (err) {
-                console.log('خطأ في Firestore:', err);
-                filteredData = [];
-            }
-        }
-        
-        if (filteredData.length === 0) {
-            const localData = JSON.parse(localStorage.getItem('formSubmissions')) || {};
-            Object.entries(localData).forEach(([formType, submissions]) => {
-                if (Array.isArray(submissions)) {
-                    submissions.forEach(sub => {
-                        if (!selectedForm || formType === selectedForm) {
-                            filteredData.push({...sub, formType});
-                        }
-                    });
-                }
-            });
-        }
-        
-        // تطبيق البحث
-        if (searchTerm) {
-            filteredData = filteredData.filter(item => {
-                const dataStr = JSON.stringify(item).toLowerCase();
-                return dataStr.includes(searchTerm);
-            });
-        }
-        
-        if (filteredData.length === 0) {
-            alert('⚠️ لا توجد بيانات للتصدير');
-            return;
-        }
-
-        try {
-            // تحضير البيانات للتصدير
-            const exportData = filteredData.map(row => {
-                const cleanRow = {};
-                Object.entries(row).forEach(([key, value]) => {
-                    if (['id', 'submittedAtISO', 'firestoreId'].includes(key)) return;
-                    
-                    if (typeof value === 'object' && value !== null) {
-                        cleanRow[key] = value.name || value.url || '';
-                    } else {
-                        cleanRow[key] = value || '';
-                    }
-                });
-                return cleanRow;
-            });
-
-            const fileName = `طلبات_${new Date().toLocaleDateString('ar-SA')}.xlsx`;
-            
-            // إذا فشلت XLSX، استخدم CSV كبديل
-            if (!xlsxReady || !XLSX || !XLSX.utils) {
-                console.warn('XLSX غير متوفرة، استخدام CSV كبديل');
-                downloadCSVFallback(exportData, fileName);
-                alert(`✅ تم تصدير ${filteredData.length} طلب (صيغة CSV)`);
-                return;
-            }
-
-            // إنشاء workbook و worksheet
-            const ws = XLSX.utils.json_to_sheet(exportData);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'الطلبات');
-
-            // تنسيق الأعمدة
-            if (exportData.length > 0) {
-                const keys = Object.keys(exportData[0]);
-                const colWidths = keys.map(key => ({ wch: Math.max(15, key.length + 5) }));
-                ws['!cols'] = colWidths;
-            }
-
-            // تحديث رؤوس الأعمدة (صف أول)
-            if (ws['!ref']) {
-                const range = XLSX.utils.decode_range(ws['!ref']);
-                for (let col = 0; col <= range.e.c; col++) {
-                    const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
-                    if (ws[cellAddress]) {
-                        ws[cellAddress].font = { bold: true, color: { rgb: 'FFFFFF' } };
-                        ws[cellAddress].fill = { fgColor: { rgb: '295c4a' } };
-                        ws[cellAddress].alignment = { horizontal: 'center', vertical: 'center', wrapText: true };
-                    }
-                }
-            }
-
-            // اتجاه من اليمين إلى اليسار للعربية
-            if (ws['!ref']) {
-                ws['!autofilter'] = XLSX.utils.decode_range(ws['!ref']);
-            }
-
-            XLSX.writeFile(wb, fileName);
-            alert(`✅ تم تصدير ${filteredData.length} طلب إلى ملف Excel`);
-        } catch (error) {
-            console.error('خطأ في التصدير:', error);
-            alert(`❌ حدث خطأ: ${error.message}\n\nحاول: 1) حدّث الصفحة (Ctrl+Shift+R) 2) تحقق من الإنترنت`);
-        }
-    }
-
-
-    async function updateSubmissionRecord(submissionId, updates) {
-        let updated = false;
-
-        if (db && typeof submissionId === 'string') {
-            try {
-                await db.collection('formSubmissions').doc(submissionId).update(updates);
-                updated = true;
-            } catch (err) {
-                console.log('تعذر تحديث Firestore، سيتم محاولة localStorage:', err);
-            }
-        }
-
-        const formSubmissions = JSON.parse(localStorage.getItem('formSubmissions')) || {};
-        Object.keys(formSubmissions).forEach(formType => {
-            if (Array.isArray(formSubmissions[formType])) {
-                formSubmissions[formType].forEach((sub, idx) => {
-                    if (String(sub.id) === String(submissionId)) {
-                        formSubmissions[formType][idx] = {
-                            ...formSubmissions[formType][idx],
-                            ...updates,
-                            updatedAt: new Date().toISOString()
-                        };
-                        updated = true;
-                    }
-                });
-            }
-        });
-        localStorage.setItem('formSubmissions', JSON.stringify(formSubmissions));
-
-        return updated;
-    }
-
-    // ===== تحديث حالة الطلب =====
-    async function updateSubmissionStatus(submissionId, newStatus) {
-        const statusText = { 'Pending': '⏳ قيد الانتظار', 'Approved': '✅ موافق', 'Rejected': '❌ مرفوض' };
-        const updated = await updateSubmissionRecord(submissionId, { status: newStatus });
-
-        if (updated) {
-            const submission = submissionIndex.get(String(submissionId));
-            const mergedSubmission = { ...(submission || {}), status: newStatus, id: submissionId };
-            const notifyResult = await notifyApplicantWithGuards(mergedSubmission, newStatus);
-
-            let message = `✅ تم تحديث الحالة إلى: ${statusText[newStatus]}`;
-            if (notifyResult.sent) {
-                message += '\n📧 تم إرسال إشعار للمتقدم.';
-            } else if (notifyResult.skipped === 'duplicate-status') {
-                message += '\nℹ️ لم يُرسل إشعار جديد لأن نفس الحالة أُرسلت سابقًا.';
-            } else if (notifyResult.skipped === 'invalid-email') {
-                message += '\n⚠️ لم يُرسل إشعار لأن بريد المتقدم غير صالح أو غير موجود.';
-            } else if (notifyResult.skipped === 'email-config-not-ready') {
-                message += '\n⚠️ لم يُرسل إشعار لأن إعدادات البريد غير مفعلة.';
-            } else if (notifyResult.skipped === 'send-failed') {
-                message += '\n⚠️ فشل إرسال الإشعار. تحقق من إعدادات SendGrid.';
-            }
-
-            alert(message);
-            await loadSubmissions();
-        }
-    }
-
-    async function saveDirectorSection(submissionId, submissionKey) {
-        const approvalStatus = document.getElementById(`approvalStatus-${submissionKey}`)?.value || '';
-        const approvedFrom = document.getElementById(`approvedFrom-${submissionKey}`)?.value || '';
-        const approvedTo = document.getElementById(`approvedTo-${submissionKey}`)?.value || '';
-        const notApprovedReason = document.getElementById(`notApprovedReason-${submissionKey}`)?.value || '';
-        const directorName = document.getElementById(`directorName-${submissionKey}`)?.value || '';
-        const directorDepartment = document.getElementById(`directorDepartment-${submissionKey}`)?.value || '';
-
-        const statusByApproval = approvalStatus === 'Approved' ? 'Approved' : (approvalStatus === 'Not Approved' ? 'Rejected' : 'Pending');
-
-        const updates = {
-            approvalStatus,
-            approvedFrom,
-            approvedTo,
-            notApprovedReason,
-            directorName,
-            directorDepartment,
-            status: statusByApproval,
-            reviewedAt: new Date().toISOString()
-        };
-
-        const updated = await updateSubmissionRecord(submissionId, updates);
-        if (updated) {
-            const submission = submissionIndex.get(String(submissionId));
-            const mergedSubmission = { ...(submission || {}), ...updates, id: submissionId };
-            const notifyResult = await notifyApplicantWithGuards(mergedSubmission, statusByApproval);
-
-            let message = '✅ تم حفظ بيانات Section 2 وتحديث حالة الطلب';
-            if (notifyResult.sent) {
-                message += '\n📧 تم إرسال إشعار للمتقدم.';
-            } else if (notifyResult.skipped === 'duplicate-status') {
-                message += '\nℹ️ لم يُرسل إشعار جديد لأن نفس الحالة أُرسلت سابقًا.';
-            } else if (notifyResult.skipped === 'invalid-email') {
-                message += '\n⚠️ لم يُرسل إشعار لأن بريد المتقدم غير صالح أو غير موجود.';
-            } else if (notifyResult.skipped === 'email-config-not-ready') {
-                message += '\n⚠️ لم يُرسل إشعار لأن إعدادات البريد غير مفعلة.';
-            } else if (notifyResult.skipped === 'send-failed') {
-                message += '\n⚠️ فشل إرسال الإشعار. تحقق من إعدادات SendGrid.';
-            }
-
-            alert(message);
-            await loadSubmissions();
-        } else {
-            alert('⚠️ تعذر حفظ بيانات Section 2 لهذا الطلب');
-        }
-    }
-
-    document.getElementById('formFilter').addEventListener('change', () => {
-        updateDeleteButtonLabel();
-        loadSubmissions();
-    });
+    document.getElementById('formFilter').addEventListener('change', loadSubmissions);
     document.getElementById('searchInput').addEventListener('input', loadSubmissions);
-    renderEmailConfigAlert();
-    updateDeleteButtonLabel();
     loadSubmissions();
     </script>
     <footer style="text-align:center; margin: 40px 0 10px; color:#666;">
