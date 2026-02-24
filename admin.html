@@ -559,6 +559,12 @@
         const searchTerm = document.getElementById('searchInput').value.toLowerCase();
         let filteredData = [];
         
+        // تحقق من توفر مكتبة XLSX
+        if (typeof XLSX === 'undefined') {
+            alert('⚠️ مكتبة التصدير لم تحمّل بعد. حاول مرة أخرى...');
+            return;
+        }
+        
         // جمع البيانات المعروضة حاليًا
         if (db) {
             try {
@@ -604,55 +610,62 @@
             return;
         }
 
-        // تحضير البيانات للتصدير
-        const exportData = filteredData.map(row => {
-            const cleanRow = {};
-            Object.entries(row).forEach(([key, value]) => {
-                // تخطي الحقول الداخلية
-                if (['id', 'submittedAtISO', 'firestoreId'].includes(key)) return;
-                
-                // معالجة الكائنات (المرفقات)
-                if (typeof value === 'object' && value !== null) {
-                    cleanRow[key] = value.name || value.url || '';
-                } else {
-                    cleanRow[key] = value || '';
-                }
+        try {
+            // تحضير البيانات للتصدير
+            const exportData = filteredData.map(row => {
+                const cleanRow = {};
+                Object.entries(row).forEach(([key, value]) => {
+                    // تخطي الحقول الداخلية
+                    if (['id', 'submittedAtISO', 'firestoreId'].includes(key)) return;
+                    
+                    // معالجة الكائنات (المرفقات)
+                    if (typeof value === 'object' && value !== null) {
+                        cleanRow[key] = value.name || value.url || '';
+                    } else {
+                        cleanRow[key] = value || '';
+                    }
+                });
+                return cleanRow;
             });
-            return cleanRow;
-        });
 
-        // إنشاء workbook و worksheet
-        const ws = XLSX.utils.json_to_sheet(exportData, { header: 1 });
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, 'الطلبات');
+            // إنشاء workbook و worksheet
+            const ws = XLSX.utils.json_to_sheet(exportData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'الطلبات');
 
-        // تنسيق الأعمدة
-        if (exportData.length > 0) {
-            const keys = Object.keys(exportData[0]);
-            const colWidths = keys.map(key => ({ wch: Math.max(15, key.length + 5) }));
-            ws['!cols'] = colWidths;
-        }
+            // تنسيق الأعمدة
+            if (exportData.length > 0) {
+                const keys = Object.keys(exportData[0]);
+                const colWidths = keys.map(key => ({ wch: Math.max(15, key.length + 5) }));
+                ws['!cols'] = colWidths;
+            }
 
-        // تنسيق رؤوس الأعمدة (صف أول)
-        if (ws['!ref']) {
-            const range = XLSX.utils.decode_range(ws['!ref']);
-            for (let col = 0; col <= range.e.c; col++) {
-                const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
-                if (ws[cellAddress]) {
-                    ws[cellAddress].font = { bold: true, color: { rgb: 'FFFFFF' } };
-                    ws[cellAddress].fill = { fgColor: { rgb: '295c4a' } };
-                    ws[cellAddress].alignment = { horizontal: 'center', vertical: 'center', wrapText: true };
+            // تحديث رؤوس الأعمدة (صف أول)
+            if (ws['!ref']) {
+                const range = XLSX.utils.decode_range(ws['!ref']);
+                for (let col = 0; col <= range.e.c; col++) {
+                    const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
+                    if (ws[cellAddress]) {
+                        ws[cellAddress].font = { bold: true, color: { rgb: 'FFFFFF' } };
+                        ws[cellAddress].fill = { fgColor: { rgb: '295c4a' } };
+                        ws[cellAddress].alignment = { horizontal: 'center', vertical: 'center', wrapText: true };
+                    }
                 }
             }
+
+            // اتجاه من اليمين إلى اليسار للعربية
+            if (ws['!ref']) {
+                ws['!autofilter'] = XLSX.utils.decode_range(ws['!ref']);
+            }
+
+            const fileName = `طلبات_${new Date().toLocaleDateString('ar-SA')}.xlsx`;
+            XLSX.writeFile(wb, fileName);
+            
+            alert(`✅ تم تصدير ${filteredData.length} طلب إلى ملف Excel`);
+        } catch (error) {
+            console.error('خطأ في التصدير:', error);
+            alert(`❌ حدث خطأ أثناء التصدير: ${error.message}`);
         }
-
-        // اتجاه من اليمين إلى اليسار للعربية
-        ws['!autofilter'] = XLSX.utils.decode_range(ws['!ref'] || 'A1');
-
-        const fileName = `طلبات_${new Date().toLocaleDateString('ar-SA')}.xlsx`;
-        XLSX.writeFile(wb, fileName);
-        
-        alert(`✅ تم تصدير ${filteredData.length} طلب إلى ملف Excel`);
     }
 
     document.getElementById('formFilter').addEventListener('change', () => {
