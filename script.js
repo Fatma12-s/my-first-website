@@ -47,6 +47,49 @@ burger?.addEventListener('click', () => {
   navLinks.classList.toggle('open');
 });
 
+// ===== تعيين المسئول تلقائياً =====
+function assignResponsible(formName) {
+  const assignments = {
+    'graduates': { name: 'HR Manager', email: 'hr@hospital.com' },
+    'internal-employees': { name: 'HR Director', email: 'hr.director@hospital.com' },
+    'internal-others': { name: 'Admin Officer', email: 'admin@hospital.com' },
+    'training-employees': { name: 'Training Lead', email: 'training@hospital.com' },
+    'training-others': { name: 'Training Coordinator', email: 'training.coord@hospital.com' },
+    'contact': { name: 'General Admin', email: 'info@hospital.com' }
+  };
+  return assignments[formName] || { name: 'Admin', email: 'admin@hospital.com' };
+}
+
+// ===== إرسال إشعار بريدي =====
+async function sendNotificationEmail(applicantData, responsible) {
+  try {
+    // يمكن استبدال هذا بخدمة بريد حقيقية (SendGrid, Mailgun، إلخ)
+    const emailPayload = {
+      to: responsible.email,
+      cc: applicantData.email || '',
+      subject: `🔔 طلب جديد من ${applicantData.name || 'متقدم'}`,
+      body: `
+        تم استقبال طلب جديد يحتاج موافقتك.
+        
+        بيانات المتقدم:
+        - الاسم: ${applicantData.name || '---'}
+        - البريد: ${applicantData.email || '---'}
+        - الهاتف: ${applicantData.phone || '---'}
+        - التاريخ: ${applicantData.submittedAt}
+        
+        برجاء مراجعة الطلب في لوحة التحكم.
+      `
+    };
+    
+    // حالياً نسجل الإشعار في Console (سيتم استبدالها بـ API حقيقية)
+    console.log('📧 Notification Email:', emailPayload);
+    return true;
+  } catch (error) {
+    console.error('خطأ إرسال البريد:', error);
+    return false;
+  }
+}
+
 // ===== حفظ البيانات في localStorage أو Firestore =====
 async function saveFormData(formName, formData) {
   // استنسخ البيانات ونظف أي حقول ملفات إلى أسماء الملفات قبل التخزين
@@ -73,6 +116,16 @@ async function saveFormData(formName, formData) {
   cleaned.submittedAtISO = new Date().toISOString();
   cleaned.id = Date.now();
   cleaned.formType = formName;
+  
+  // إضافة نظام الحالات والتعيين التلقائي
+  cleaned.status = 'Pending'; // Pending, Approved, Rejected
+  const responsible = assignResponsible(formName);
+  cleaned.assignedTo = responsible.name;
+  cleaned.assignedEmail = responsible.email;
+  cleaned.createdAt = new Date().toISOString();
+  
+  // إرسال إشعار بريدي (يعمل بدون انتظار)
+  sendNotificationEmail(cleaned, responsible);
 
   // إذا كان Firebase متاحاً، احفظ في Firestore
   if (window.FIREBASE_CONFIG && window.firebase && window.firebase.firestore) {

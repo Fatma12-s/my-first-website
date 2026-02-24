@@ -453,8 +453,16 @@
                 filesCount += getAttachmentCount(value);
             });
             
+            // تحديد لون الحالة
+            const statusColors = {
+                'Pending': { bg: '#fff3cd', border: '#ffc107', text: '#856404', label: '⏳ قيد الانتظار' },
+                'Approved': { bg: '#d4edda', border: '#28a745', text: '#155724', label: '✅ موافق' },
+                'Rejected': { bg: '#f8d7da', border: '#dc3545', text: '#721c24', label: '❌ مرفوض' }
+            };
+            const statusConfig = statusColors[submission.status] || statusColors['Pending'];
+            
             return `
-                <div class="submission-card">
+                <div class="submission-card" style="border-right-color: ${statusConfig.border};">
                     <div class="submission-header">
                         <div>
                             <div class="submission-title">${formTypeNames[submission.formType]}</div>
@@ -462,6 +470,14 @@
                             <div class="submission-date" style="font-size: 11px; color: #bbb; margin-top: 4px;">
                                 🆔 ID: ${submission.id}
                                 ${filesCount > 0 ? ` | 📎 ${filesCount} ملف${filesCount > 1 ? 'ات' : ''}` : ''}
+                            </div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 8px; align-items: flex-end;">
+                            <div style="padding: 6px 12px; border-radius: 20px; background: ${statusConfig.bg}; color: ${statusConfig.text}; font-weight: 600; font-size: 13px; border: 1px solid ${statusConfig.border};">
+                                ${statusConfig.label}
+                            </div>
+                            <div style="font-size: 12px; color: #666; padding: 4px 8px; background: #f5f5f5; border-radius: 4px;">
+                                👤 ${submission.assignedTo || 'لم يتم التعيين'}
                             </div>
                         </div>
                     </div>
@@ -487,6 +503,11 @@
                             </div>
                         </div>
                     ` : ''}
+                    <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #eee; display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button onclick="updateSubmissionStatus(${submission.id}, 'Approved')" style="background: #28a745; padding: 8px 16px; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">✅ موافقة</button>
+                        <button onclick="updateSubmissionStatus(${submission.id}, 'Rejected')" style="background: #dc3545; padding: 8px 16px; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">❌ رفض</button>
+                        <button onclick="updateSubmissionStatus(${submission.id}, 'Pending')" style="background: #ffc107; padding: 8px 16px; color: #333; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">⏳ قيد الانتظار</button>
+                    </div>
                 </div>
             `;
         }).join('');
@@ -709,6 +730,34 @@
         } catch (error) {
             console.error('خطأ في التصدير:', error);
             alert(`❌ حدث خطأ: ${error.message}\n\nحاول: 1) حدّث الصفحة (Ctrl+Shift+R) 2) تحقق من الإنترنت`);
+        }
+    }
+
+
+    // ===== تحديث حالة الطلب =====
+    function updateSubmissionStatus(submissionId, newStatus) {
+        const statusText = { 'Pending': '⏳ قيد الانتظار', 'Approved': '✅ موافق', 'Rejected': '❌ مرفوض' };
+        
+        // تحديث في localStorage
+        const formSubmissions = JSON.parse(localStorage.getItem('formSubmissions')) || {};
+        let updated = false;
+        
+        Object.keys(formSubmissions).forEach(formType => {
+            if (Array.isArray(formSubmissions[formType])) {
+                formSubmissions[formType].forEach((sub, idx) => {
+                    if (sub.id === submissionId) {
+                        formSubmissions[formType][idx].status = newStatus;
+                        formSubmissions[formType][idx].updatedAt = new Date().toISOString();
+                        updated = true;
+                    }
+                });
+            }
+        });
+        
+        if (updated) {
+            localStorage.setItem('formSubmissions', JSON.stringify(formSubmissions));
+            alert(`✅ تم تحديث الحالة إلى: ${statusText[newStatus]}`);
+            loadSubmissions();
         }
     }
 
