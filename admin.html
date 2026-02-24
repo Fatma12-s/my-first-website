@@ -308,6 +308,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <script src="firebase-config.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.min.js"></script>
     <script>
     // تهيئة Firebase
     let db = null;
@@ -603,55 +604,53 @@
             return;
         }
 
-        // تحضير رؤوس الأعمدة
-        const allKeys = new Set();
-        filteredData.forEach(row => {
-            Object.keys(row).forEach(key => {
-                if (!['id', 'submittedAtISO', 'firestoreId'].includes(key)) {
-                    allKeys.add(key);
-                }
-            });
-        });
-        const headers = Array.from(allKeys);
-
-        // بناء CSV
-        const csvRows = [];
-        csvRows.push(headers.map(h => `"${h}"`).join(','));
-        
-        filteredData.forEach(row => {
-            const csvRow = headers.map(header => {
-                let value = row[header] || '';
+        // تحضير البيانات للتصدير
+        const exportData = filteredData.map(row => {
+            const cleanRow = {};
+            Object.entries(row).forEach(([key, value]) => {
+                // تخطي الحقول الداخلية
+                if (['id', 'submittedAtISO', 'firestoreId'].includes(key)) return;
                 
                 // معالجة الكائنات (المرفقات)
-                if (typeof value === 'object') {
-                    value = value.name || value.url || '';
+                if (typeof value === 'object' && value !== null) {
+                    cleanRow[key] = value.name || value.url || '';
+                } else {
+                    cleanRow[key] = value || '';
                 }
-                
-                // تحويل إلى نص
-                value = String(value)
-                    .replace(/"/g, '""') // escape quotes
-                    .replace(/\n/g, ' ') // remove newlines
-                    .trim();
-                
-                return `"${value}"`;
-            }).join(',');
-            csvRows.push(csvRow);
+            });
+            return cleanRow;
         });
 
-        const csv = csvRows.join('\n');
-        
-        // إنشام ملف وتحميله
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-        
-        link.setAttribute('href', url);
-        link.setAttribute('download', `طلبات_${new Date().toLocaleDateString('ar-SA')}.csv`);
-        link.style.visibility = 'hidden';
-        
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        // إنشاء workbook و worksheet
+        const ws = XLSX.utils.json_to_sheet(exportData, { header: 1 });
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'الطلبات');
+
+        // تنسيق الأعمدة
+        if (exportData.length > 0) {
+            const keys = Object.keys(exportData[0]);
+            const colWidths = keys.map(key => ({ wch: Math.max(15, key.length + 5) }));
+            ws['!cols'] = colWidths;
+        }
+
+        // تنسيق رؤوس الأعمدة (صف أول)
+        if (ws['!ref']) {
+            const range = XLSX.utils.decode_range(ws['!ref']);
+            for (let col = 0; col <= range.e.c; col++) {
+                const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
+                if (ws[cellAddress]) {
+                    ws[cellAddress].font = { bold: true, color: { rgb: 'FFFFFF' } };
+                    ws[cellAddress].fill = { fgColor: { rgb: '295c4a' } };
+                    ws[cellAddress].alignment = { horizontal: 'center', vertical: 'center', wrapText: true };
+                }
+            }
+        }
+
+        // اتجاه من اليمين إلى اليسار للعربية
+        ws['!autofilter'] = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+
+        const fileName = `طلبات_${new Date().toLocaleDateString('ar-SA')}.xlsx`;
+        XLSX.writeFile(wb, fileName);
         
         alert(`✅ تم تصدير ${filteredData.length} طلب إلى ملف Excel`);
     }
