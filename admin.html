@@ -495,16 +495,16 @@
 
         const wrapper = document.createElement('div');
         wrapper.style.position = 'fixed';
-        wrapper.style.top = '10px';
-        wrapper.style.left = '10px';
+        wrapper.style.top = '0';
+        wrapper.style.left = '0';
         wrapper.style.width = '800px';
         wrapper.style.maxWidth = '800px';
         wrapper.style.background = '#fff';
         wrapper.style.padding = '20px';
         wrapper.style.direction = 'rtl';
-        wrapper.style.opacity = '0.01';
+        wrapper.style.opacity = '1';
         wrapper.style.pointerEvents = 'none';
-        wrapper.style.zIndex = '-1';
+        wrapper.style.zIndex = '2147483647';
         wrapper.innerHTML = `
             <div style="font-family:Arial,sans-serif;color:#222;line-height:1.8;">
                 <h2 style="margin:0 0 8px;">استمارة الطلب</h2>
@@ -529,6 +529,8 @@
         `;
 
         document.body.appendChild(wrapper);
+
+        await new Promise(resolve => requestAnimationFrame(resolve));
 
         const fileName = `submission-${String(submission.id || 'request').replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`;
         const captureWidth = wrapper.scrollWidth || 800;
