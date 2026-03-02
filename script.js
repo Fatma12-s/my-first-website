@@ -55,31 +55,91 @@ const SENDGRID_CONFIG = {
   fromName: (window.APP_EMAIL_CONFIG && window.APP_EMAIL_CONFIG.fromName) || 'دائرة التدريب والتطوير المهني'
 };
 
+const EMAIL_ENDPOINT = (window.APP_EMAIL_CONFIG && window.APP_EMAIL_CONFIG.endpoint) || '';
+
+function hasSecureEmailEndpoint() {
+  return typeof EMAIL_ENDPOINT === 'string' && /^https?:\/\//.test(EMAIL_ENDPOINT);
+}
+
+function hasDirectSendgridKey() {
+  return !!(
+    SENDGRID_CONFIG.apiKey &&
+    !SENDGRID_CONFIG.apiKey.includes('YOUR_SENDGRID_API_KEY')
+  );
+}
+
+async function dispatchEmailPayload(emailPayload, testLogData) {
+  try {
+    if (hasSecureEmailEndpoint()) {
+      const endpointResponse = await fetch(EMAIL_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(emailPayload)
+      });
+
+      if (endpointResponse.ok) {
+        return true;
+      }
+
+      const endpointError = await endpointResponse.text();
+      console.warn('⚠️ فشل الإرسال عبر endpoint الآمن:', endpointError);
+      return false;
+    }
+
+    if (hasDirectSendgridKey()) {
+      const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SENDGRID_CONFIG.apiKey}`
+        },
+        body: JSON.stringify(emailPayload)
+      });
+
+      if (response.status === 202) {
+        return true;
+      }
+
+      const error = await response.text();
+      console.warn('⚠️ خطأ في إرسال البريد:', error);
+      return false;
+    }
+
+    console.log('📧 وضع اختبار - لم يتم إرسال بريد فعلي:', testLogData);
+    return true;
+  } catch (error) {
+    console.error('❌ خطأ أثناء محاولة إرسال البريد:', error);
+    return false;
+  }
+}
+
 // ===== قائمة المسؤولين (ملء البيانات الفعلية هنا) =====
 const RESPONSIBLE_CONTACTS = {
   'graduates': { 
     name: 'مدير الموارد البشرية', 
-    email: 'hr@hospital.com' // استبدل ببريد HR
+    email: 'fsalim@squ.edu.om'
   },
   'internal-employees': { 
     name: 'مدير الموارد البشرية', 
-    email: 'hr.director@hospital.com' // استبدل ببريد مدير HR
+    email: 'fsalim@squ.edu.om'
   },
   'internal-others': { 
     name: 'الموظف الإداري', 
-    email: 'admin@hospital.com' // استبدل ببريد الإدارة
+    email: 'fsalim@squ.edu.om'
   },
   'training-employees': { 
     name: 'منسق التدريب', 
-    email: 'training@hospital.com' // استبدل ببريد التدريب
+    email: 'fsalim@squ.edu.om'
   },
   'training-others': { 
     name: 'منسق التدريب', 
-    email: 'training.coord@hospital.com' // استبدل ببريد منسق التدريب
+    email: 'fsalim@squ.edu.om'
   },
   'contact': { 
     name: 'الإدارة العامة', 
-    email: 'info@hospital.com' // استبدل ببريد الاستقبال
+    email: 'fsalim@squ.edu.om'
   }
 };
 
@@ -94,24 +154,21 @@ function assignResponsible(formName) {
 // ===== إرسال إشعار بريدي للمسؤول عبر SendGrid =====
 async function sendResponsibleNotificationEmail(applicantData, responsible) {
   try {
-    // إذا لم يكن API Key مكتوب، فقط سجل في Console
-    if (!SENDGRID_CONFIG.apiKey.includes('YOUR_SENDGRID_API_KEY')) {
-      // استخدم SendGrid API
-      const emailPayload = {
-        personalizations: [
-          {
-            to: [{ email: responsible.email, name: responsible.name }],
-            subject: `🔔 طلب جديد من ${applicantData.name || 'متقدم'}`
-          }
-        ],
-        from: {
-          email: SENDGRID_CONFIG.fromEmail,
-          name: SENDGRID_CONFIG.fromName
-        },
-        content: [
-          {
-            type: 'text/html',
-            value: `
+    const emailPayload = {
+      personalizations: [
+        {
+          to: [{ email: responsible.email, name: responsible.name }],
+          subject: `🔔 طلب جديد من ${applicantData.name || 'متقدم'}`
+        }
+      ],
+      from: {
+        email: SENDGRID_CONFIG.fromEmail,
+        name: SENDGRID_CONFIG.fromName
+      },
+      content: [
+        {
+          type: 'text/html',
+          value: `
               <div dir="rtl" style="font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; border-radius: 8px;">
                 <h2 style="color: #295c4a;">🔔 طلب جديد يحتاج موافقتك</h2>
                 <div style="background: white; padding: 20px; border-radius: 8px; margin-top: 20px;">
@@ -153,38 +210,22 @@ async function sendResponsibleNotificationEmail(applicantData, responsible) {
                 </div>
               </div>
             `
-          }
-        ]
-      };
+        }
+      ]
+    };
 
-      // إرسال البريد عبر SendGrid API
-      const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${SENDGRID_CONFIG.apiKey}`
-        },
-        body: JSON.stringify(emailPayload)
-      });
+    const sent = await dispatchEmailPayload(emailPayload, {
+      to: responsible.email,
+      from: SENDGRID_CONFIG.fromEmail,
+      applicant: applicantData.name,
+      submissionId: applicantData.id
+    });
 
-      if (response.status === 202) {
-        console.log('✅ تم إرسال البريد بفضل:', responsible.email);
-        return true;
-      } else {
-        const error = await response.text();
-        console.warn('⚠️ خطأ في إرسال البريد:', error);
-        return false;
-      }
-    } else {
-      // API Key لم يكن مكتوب، فقط سجل في Console
-      console.log('📧 الإشعار (وضع اختبار - لم يتم إرسال بريد فعلي):', {
-        to: responsible.email,
-        from: SENDGRID_CONFIG.fromEmail,
-        applicant: applicantData.name,
-        submissionId: applicantData.id
-      });
-      return true;
+    if (sent) {
+      console.log('✅ تم إرسال إشعار المسؤول:', responsible.email);
     }
+
+    return sent;
   } catch (error) {
     console.error('❌ خطأ في إرسال البريد:', error);
     return false;
@@ -196,22 +237,21 @@ async function sendApplicantConfirmationEmail(applicantData) {
   if (!applicantData?.email) return true;
 
   try {
-    if (!SENDGRID_CONFIG.apiKey.includes('YOUR_SENDGRID_API_KEY')) {
-      const emailPayload = {
-        personalizations: [
-          {
-            to: [{ email: applicantData.email, name: applicantData.name || 'المتقدم' }],
-            subject: `✅ تم استلام طلبك رقم ${applicantData.id}`
-          }
-        ],
-        from: {
-          email: SENDGRID_CONFIG.fromEmail,
-          name: SENDGRID_CONFIG.fromName
-        },
-        content: [
-          {
-            type: 'text/html',
-            value: `
+    const emailPayload = {
+      personalizations: [
+        {
+          to: [{ email: applicantData.email, name: applicantData.name || 'المتقدم' }],
+          subject: `✅ تم استلام طلبك رقم ${applicantData.id}`
+        }
+      ],
+      from: {
+        email: SENDGRID_CONFIG.fromEmail,
+        name: SENDGRID_CONFIG.fromName
+      },
+      content: [
+        {
+          type: 'text/html',
+          value: `
               <div dir="rtl" style="font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; border-radius: 8px;">
                 <h2 style="color: #295c4a;">✅ تم استلام طلبك بنجاح</h2>
                 <div style="background: white; padding: 20px; border-radius: 8px; margin-top: 20px;">
@@ -242,35 +282,21 @@ async function sendApplicantConfirmationEmail(applicantData) {
                 </div>
               </div>
             `
-          }
-        ]
-      };
+        }
+      ]
+    };
 
-      const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${SENDGRID_CONFIG.apiKey}`
-        },
-        body: JSON.stringify(emailPayload)
-      });
-
-      if (response.status === 202) {
-        console.log('✅ تم إرسال بريد تأكيد للمُقدِّم:', applicantData.email);
-        return true;
-      }
-
-      const error = await response.text();
-      console.warn('⚠️ خطأ في إرسال بريد المُقدِّم:', error);
-      return false;
-    }
-
-    console.log('📧 تأكيد للمُقدِّم (وضع اختبار - لم يتم إرسال بريد فعلي):', {
+    const sent = await dispatchEmailPayload(emailPayload, {
       to: applicantData.email,
       applicant: applicantData.name,
       submissionId: applicantData.id
     });
-    return true;
+
+    if (sent) {
+      console.log('✅ تم إرسال بريد تأكيد للمُقدِّم:', applicantData.email);
+    }
+
+    return sent;
   } catch (error) {
     console.error('❌ خطأ في إرسال بريد المُقدِّم:', error);
     return false;

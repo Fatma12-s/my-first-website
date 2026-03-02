@@ -13,6 +13,7 @@
 
 // إعداد البريد (اختياري لكن مطلوب لتفعيل الإشعارات الفعلية)
 // window.APP_EMAIL_CONFIG = {
+//   endpoint: "https://us-central1-your-project.cloudfunctions.net/sendEmailNotification",
 //   apiKey: "SG.xxxxx",
 //   fromEmail: "noreply@your-domain.com",
 //   fromName: "Training & CPD"

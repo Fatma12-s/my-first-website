@@ -10,9 +10,11 @@ window.FIREBASE_CONFIG = {
   appId: "YOUR_APP_ID"
 };
 
-// إعداد البريد للإشعارات (أدخل القيم الفعلية لتفعيل الإرسال)
+// إعدادات البريد لتفعيل إشعارات الإيميل عبر SendGrid
+// ضع بياناتك الفعلية هنا
 window.APP_EMAIL_CONFIG = {
+  endpoint: "",
   apiKey: "SG.YOUR_SENDGRID_API_KEY_HERE",
-  fromEmail: "noreply@hospital.com",
-  fromName: "Training & CPD - SQUH"
+  fromEmail: "fsalim@squ.edu.om",
+  fromName: "دائرة التدريب والتطوير المهني"
 };

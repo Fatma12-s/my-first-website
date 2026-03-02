@@ -6,38 +6,31 @@
     <meta name="description" content="تقديم طلب - البرامج التدريبية (غير الموظفين)">
     <title>تقديم طلب - البرامج التدريبية (غير الموظفين)</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
     <style>
-        :root{--radius:12px;--font:"Cairo",ui-sans-serif,system-ui,"Noto Sans Arabic",Segoe UI,Tahoma,Arial,sans-serif}
+        :root{--brand-500:#6dbfb1;--brand-600:#41726a;--radius:12px;--font:"Cairo",ui-sans-serif,system-ui,"Noto Sans Arabic",Segoe UI,Tahoma,Arial,sans-serif}
         body{margin:0;font-family:var(--font);color:#1f2328;background:#fff}
-        .container{max-width:1200px;padding:0 20px;margin:auto}
-        main.container{max-width:1000px}
+        .container{max-width:1000px;padding:0 20px;margin:auto}
+        header{padding:8px 0;text-align:center}
+        .brand-logo{width:200px;display:block;margin:0 auto}
         form{max-width:720px;margin:30px auto;display:grid;gap:16px}
         label{font-weight:700}
         input,select,textarea{padding:10px;border:1px solid #cfd8d6;border-radius:var(--radius);font-family:var(--font)}
-        .form-btn{padding:12px;border-radius:var(--radius);background:var(--brand-main);color:#fff;border:none;font-weight:800;cursor:pointer}
-        .back-link{display:inline-block;margin:12px 0;color:var(--brand-main);text-decoration:underline}
+        .btn{padding:12px;border-radius:var(--radius);background:var(--brand-600);color:#fff;border:none;font-weight:800;cursor:pointer}
+        .back-link{display:inline-block;margin:12px 0;color:var(--brand-600);text-decoration:underline}
     </style>
 </head>
 <body>
-    <header class="site-header">
-        <div class="container header-center">
-            <a href="index.html" style="display: flex; flex-direction: column; align-items: center; gap: 0.2em; text-align: center;">
+    <header>
+        <div class="container">
+            <a href="index.html">
                 <img src="./assets/logo.png" alt="شعار الدائرة" class="brand-logo">
+                <div style="font-weight:800;margin-top:6px;">البرامج التدريبية - تقديم غير الموظفين</div>
             </a>
-            <nav>
-                <ul>
-                    <li><a href="index.html">الرئيسية</a></li>
-                    <li><a href="programs.html" class="active">البرامج التدريبية</a></li>
-                    <li><a href="contact.html">تواصل معنا</a></li>
-                    <li><a href="admin.html" class="btn primary" style="font-size:1.08em; padding:var(--space-sm) var(--space-lg);">لوحة التحكم</a></li>
-                </ul>
-            </nav>
         </div>
     </header>
 
     <main class="container">
-        <a href="programs.html" class="back-link">← العودة للبرامج</a>
+        <a href="index.html#programs" class="back-link">← العودة للبرامج</a>
         <form id="training-others-form" enctype="multipart/form-data">
             <div>
                 <label for="to-name">الاسم الكامل</label>
@@ -106,20 +99,18 @@
                 <textarea id="to-notes" name="notes" rows="4"></textarea>
             </div>
 
-            <button type="submit" class="form-btn">تقديم الطلب</button>
+            <button type="submit" class="btn">تقديم الطلب</button>
         </form>
 
         <footer style="text-align:center;margin:40px 0;color:#666">
             <a href="admin.html" style="color:var(--brand-600);text-decoration:underline">عرض لوحة التحكم والطلبات</a>
-            <div style="width: 100%; margin-top: 12px; background: linear-gradient(120deg, #e6f7f4 0%, #fafdff 100%); padding: 10px 0;">
-                <img src="./assets/logo2.png.png" alt="الشعار الثاني" style="width: 100%; height: auto; display: block; margin: 0 auto; max-width: 100%;">
-            </div>
+            <img src="./assets/logo2.png.png" alt="الشعار الثاني" style="width: 120px; height: auto; display: block; margin: 12px auto 0; opacity: 0.9;">
         </footer>
     </main>
 
         <script>
             (async function(){
-                try{ const res = await fetch('firebase-config.js', {method:'HEAD'}); if(res.ok){ const s=document.createElement('script'); s.src='firebase-config.js'; document.head.appendChild(s);} }catch(e){}
+                try{ const cfg='firebase-config.js?v=20260302'; const res = await fetch(cfg, {method:'HEAD'}); if(res.ok){ const s=document.createElement('script'); s.src=cfg; document.head.appendChild(s);} }catch(e){}
                 const s2=document.createElement('script'); s2.src='script.js'; document.body.appendChild(s2);
             })();
         </script>

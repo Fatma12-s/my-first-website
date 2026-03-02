@@ -329,7 +329,7 @@
 
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-    <script src="firebase-config.js"></script>
+    <script src="firebase-config.js?v=20260302"></script>
     <!-- SheetJS - Primary CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.min.js"></script>
     <!-- SheetJS - Secondary CDN as fallback -->
@@ -350,6 +350,7 @@
     // ===== إعدادات إرسال إشعار قرار الموافقة للمتقدم =====
     // يمكن ضبطها مركزياً عبر window.APP_EMAIL_CONFIG داخل firebase-config.js
     const REVIEW_EMAIL_CONFIG = {
+        endpoint: (window.APP_EMAIL_CONFIG && window.APP_EMAIL_CONFIG.endpoint) || '',
         apiKey: (window.APP_EMAIL_CONFIG && window.APP_EMAIL_CONFIG.apiKey) || 'SG.YOUR_SENDGRID_API_KEY_HERE',
         fromEmail: (window.APP_EMAIL_CONFIG && window.APP_EMAIL_CONFIG.fromEmail) || 'noreply@hospital.com',
         fromName: (window.APP_EMAIL_CONFIG && window.APP_EMAIL_CONFIG.fromName) || 'Training & CPD - SQUH'
@@ -358,6 +359,9 @@
     const submissionIndex = new Map();
 
     function isEmailConfigReady() {
+        const hasSecureEndpoint = typeof REVIEW_EMAIL_CONFIG.endpoint === 'string' && /^https?:\/\//.test(REVIEW_EMAIL_CONFIG.endpoint);
+        if (hasSecureEndpoint) return true;
+
         return !!(
             REVIEW_EMAIL_CONFIG.apiKey &&
             !REVIEW_EMAIL_CONFIG.apiKey.includes('YOUR_SENDGRID_API_KEY') &&
@@ -379,7 +383,7 @@
         alertEl.className = `config-alert ${ready ? 'success' : 'warning'}`;
         alertEl.textContent = ready
             ? '✅ إشعارات البريد مفعّلة: سيتم إرسال قرار الموافقة/الرفض للمتقدمين.'
-            : '⚠️ إشعارات البريد غير مفعّلة: أضف SendGrid API Key صحيح داخل APP_EMAIL_CONFIG في firebase-config.js.';
+            : '⚠️ إشعارات البريد غير مفعّلة: أضف endpoint آمن أو SendGrid API Key صحيح داخل APP_EMAIL_CONFIG في firebase-config.js.';
     }
 
     async function sendApplicantDecisionEmail(submission, newStatus) {
@@ -418,6 +422,19 @@
                     `
                 }]
             };
+
+            const hasSecureEndpoint = typeof REVIEW_EMAIL_CONFIG.endpoint === 'string' && /^https?:\/\//.test(REVIEW_EMAIL_CONFIG.endpoint);
+
+            if (hasSecureEndpoint) {
+                const endpointResponse = await fetch(REVIEW_EMAIL_CONFIG.endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                return endpointResponse.ok;
+            }
 
             const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
                 method: 'POST',
