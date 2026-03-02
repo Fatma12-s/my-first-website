@@ -413,8 +413,9 @@
         const firstRecipient = (firstPersonalization.to && firstPersonalization.to[0]) || {};
         const htmlContent = (payload.content || []).find(item => item.type === 'text/html');
         const messageHtml = (htmlContent && htmlContent.value) || '';
-        const messageText = htmlToText(messageHtml);
+        const messageText = payload.messageText || htmlToText(messageHtml);
         const selectedTemplateId = payload.emailjsTemplateId || REVIEW_EMAIL_CONFIG.emailjsDecisionTemplateId || REVIEW_EMAIL_CONFIG.emailjsTemplateId;
+        const decisionSubject = firstPersonalization.subject || '';
 
         const section2Details = [
             `حالة الموافقة: ${payload.section2ApprovalStatus || 'غير محدد'}`,
@@ -439,18 +440,34 @@
                     to_name: firstRecipient.name || '',
                     email: firstRecipient.email || '',
                     name: firstRecipient.name || '',
-                    subject: firstPersonalization.subject || '',
+                    subject: decisionSubject,
+                    email_subject: decisionSubject,
+                    title: decisionSubject,
+                    request_id: payload.requestId || '',
+                    applicant_name: payload.applicantName || firstRecipient.name || '',
+                    applicant_email: payload.applicantEmail || firstRecipient.email || '',
+                    decision_status: payload.decisionStatus || '',
+                    decision_status_ar: payload.decisionStatusLabelAr || '',
+                    decision_status_en: payload.decisionStatusLabelEn || '',
                     from_email: (payload.from && payload.from.email) || REVIEW_EMAIL_CONFIG.fromEmail,
                     from_name: (payload.from && payload.from.name) || REVIEW_EMAIL_CONFIG.fromName,
                     message_html: messageHtml,
                     message_text: messageText,
                     message: combinedMessage,
                     body: combinedMessage,
+                    content: combinedMessage,
+                    email_body: combinedMessage,
+                    mail_body: combinedMessage,
                     status: payload.section2ApprovalStatus || '',
                     approved_from: payload.section2ApprovedFrom || '',
                     approved_to: payload.section2ApprovedTo || '',
                     department: payload.section2Department || '',
-                    section2_details: section2Details
+                    section2_details: section2Details,
+                    section2_status: payload.section2ApprovalStatus || '',
+                    section2_approved_from: payload.section2ApprovedFrom || '',
+                    section2_approved_to: payload.section2ApprovedTo || '',
+                    section2_department: payload.section2Department || '',
+                    rejection_reason: payload.rejectionReason || ''
                 }
             })
         });
@@ -463,8 +480,8 @@
         if (!['Approved', 'Rejected'].includes(newStatus)) return false;
 
         const subject = newStatus === 'Approved'
-            ? '✅ تم اعتماد طلب التدريب'
-            : '❌ تحديث بخصوص طلب التدريب';
+            ? `✅ الموافقة على طلب التدريب رقم ${submission.id}`
+            : `❌ الرفض على طلب التدريب رقم ${submission.id}`;
 
         const statusLabel = newStatus === 'Approved' ? 'تمت الموافقة على الطلب' : 'تم رفض الطلب';
         const decisionColor = newStatus === 'Approved' ? '#28a745' : '#dc3545';
@@ -473,6 +490,8 @@
         const approvedFromLabel = submission.approvedFrom || 'غير محدد';
         const approvedToLabel = submission.approvedTo || 'غير محدد';
         const departmentLabel = submission.directorDepartment || 'غير محدد';
+        const decisionStatusLabelAr = newStatus === 'Approved' ? 'موافق' : 'مرفوض';
+        const decisionStatusLabelEn = newStatus === 'Approved' ? 'Approved' : 'Rejected';
         const section2Html = newStatus === 'Approved'
             ? `
                 <div style="background:#f8fbff; border:1px solid #dbe9ff; border-radius:8px; padding:12px; margin:14px 0;">
@@ -485,6 +504,19 @@
             `
             : '';
 
+        const messageText = [
+            `${statusLabel}`,
+            `رقم الطلب: ${submission.id}`,
+            `الاسم: ${submission.name || 'المتقدم'}`,
+            `الحالة: ${decisionStatusLabelAr}`,
+            `الموافقة (Section 2): ${approvalStatusLabel}`,
+            `تاريخ البدء: ${approvedFromLabel}`,
+            `تاريخ الانتهاء: ${approvedToLabel}`,
+            `القسم: ${departmentLabel}`,
+            reason && newStatus === 'Rejected' ? `سبب الرفض: ${reason}` : '',
+            'مع تحيات فريق التدريب'
+        ].filter(Boolean).join('\n');
+
         try {
             const payload = {
                 personalizations: [{
@@ -496,22 +528,33 @@
                 section2ApprovedFrom: approvedFromLabel,
                 section2ApprovedTo: approvedToLabel,
                 section2Department: departmentLabel,
+                requestId: submission.id,
+                applicantName: submission.name || 'المتقدم',
+                applicantEmail: submission.email,
+                decisionStatus: newStatus,
+                decisionStatusLabelAr,
+                decisionStatusLabelEn,
+                rejectionReason: reason,
                 from: {
                     email: REVIEW_EMAIL_CONFIG.fromEmail,
                     name: REVIEW_EMAIL_CONFIG.fromName
                 },
+                messageText,
                 content: [{
                     type: 'text/html',
                     value: `
-                        <div dir="rtl" style="font-family: Arial, sans-serif; line-height:1.8;">
-                            <h2 style="color:${decisionColor};">${statusLabel}</h2>
-                            <p>عزيزي/عزيزتي <strong>${submission.name || 'المتقدم'}</strong>،</p>
-                            <p>نحيطكم علماً بأنه تم تحديث حالة طلبكم رقم <strong>${submission.id}</strong>.</p>
-                            <p><strong>الحالة:</strong> ${newStatus === 'Approved' ? 'موافق' : 'مرفوض'}</p>
+                        <div dir="rtl" style="font-family: Arial, sans-serif; line-height:1.9; background:#f5f8fb; border:1px solid #e1e7ef; border-radius:12px; padding:18px;">
+                            <h2 style="color:${decisionColor}; margin:0 0 12px;">${statusLabel}</h2>
+                            <p style="margin:0 0 8px;">عزيزي/عزيزتي <strong>${submission.name || 'المتقدم'}</strong>،</p>
+                            <p style="margin:0 0 12px;">نحيطكم علمًا بأنه تم تحديث حالة طلب التدريب الخاص بكم.</p>
+                            <div style="background:#ffffff; border:1px solid #e6edf5; border-radius:10px; padding:12px;">
+                                <p style="margin:4px 0;"><strong>رقم الطلب:</strong> ${submission.id}</p>
+                                <p style="margin:4px 0;"><strong>الحالة:</strong> ${newStatus === 'Approved' ? 'موافق' : 'مرفوض'}</p>
+                            </div>
                             ${section2Html}
                             ${reason && newStatus === 'Rejected' ? `<p><strong>السبب:</strong> ${reason}</p>` : ''}
-                            <p>يمكنكم التواصل مع الإدارة عند الحاجة لمزيد من التفاصيل.</p>
-                            <p style="margin-top:14px;"><strong>مع تحيات فريق التدريب</strong></p>
+                            <p style="margin:12px 0 0;">للمزيد من التفاصيل، يمكنكم التواصل مع الإدارة.</p>
+                            <p style="margin-top:14px; color:#2e5f8a;"><strong>مع تحيات فريق التدريب</strong></p>
                         </div>
                     `
                 }]
