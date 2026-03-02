@@ -55,6 +55,19 @@ const SENDGRID_CONFIG = {
   fromName: (window.APP_EMAIL_CONFIG && window.APP_EMAIL_CONFIG.fromName) || 'دائرة التدريب والتطوير المهني'
 };
 
+function hasUsableFirebaseConfig() {
+  const cfg = window.FIREBASE_CONFIG;
+  if (!cfg) return false;
+  const projectId = String(cfg.projectId || '');
+  const storageBucket = String(cfg.storageBucket || '');
+  return !!(
+    projectId &&
+    storageBucket &&
+    !projectId.includes('YOUR_') &&
+    !storageBucket.includes('YOUR_')
+  );
+}
+
 const EMAIL_ENDPOINT = (window.APP_EMAIL_CONFIG && window.APP_EMAIL_CONFIG.endpoint) || '';
 
 function hasSecureEmailEndpoint() {
@@ -439,7 +452,7 @@ async function loadFirebaseSDK() {
 }
 
 async function ensureFirebase() {
-  if (!window.FIREBASE_CONFIG) return false;
+  if (!hasUsableFirebaseConfig()) return false;
   if (!window.firebase || !window.firebase.apps || !window.firebase.apps.length) {
     await loadFirebaseSDK();
     try {
@@ -538,7 +551,7 @@ async function handleFormSubmit(formEl, formName) {
   try {
     const fd = new FormData(formEl);
     const obj = {};
-    const useFirebase = !!window.FIREBASE_CONFIG;
+    const useFirebase = hasUsableFirebaseConfig();
     
     // تحقق من الملفات أولاً (تجاهل الملفات الفارغة والاختيارية)
     for (const [k, v] of fd.entries()) {
