@@ -20,6 +20,8 @@
         .check-row label{font-weight:600}
         .pledge-list{margin:0;padding-inline-start:20px;line-height:1.8}
         .form-btn{padding:12px;border-radius:12px;background:var(--brand-main);color:#fff;border:none;font-weight:800;cursor:pointer}
+        .upload-icon{font-size:14px;vertical-align:middle;margin-inline-end:6px}
+        .field-hint{font-size:12px;color:#5f6f6a;margin-top:6px;line-height:1.6}
         @media (max-width:768px){.two-col{grid-template-columns:1fr} nav ul{flex-direction:column;gap:var(--space-sm)}}
     </style>
 </head>
@@ -47,8 +49,7 @@
             <h2 class="section-title">تقديم الطلب - تدريب الطلاب والخريجين</h2>
 
             <div class="notice">
-                <div>الرجاء تعبئة هذا النموذج باللغة العربية والإنجليزية.</div>
-                <div>Please complete this form in Arabic and English.</div>
+                <div>الرجاء تعبئة هذا النموذج فقط.</div>
             </div>
 
             <form id="graduates-form" enctype="multipart/form-data">
@@ -188,6 +189,14 @@
                     <div>
                         <label for="otherAttachments">4) Others</label>
                         <input type="file" id="otherAttachments" name="otherAttachments" accept=".pdf,.jpg,.jpeg,.png">
+                    </div>
+                    <div>
+                        <label for="applicantPhoto">
+                            <span class="upload-icon">📷</span>
+                            5) صورة المتقدم (مقاس صورة الجواز/البطاقة الشخصية)
+                        </label>
+                        <input type="file" id="applicantPhoto" name="applicantPhoto" accept=".jpg,.jpeg,.png">
+                        <div class="field-hint">يرجى رفع صورة شخصية واضحة بمقاس صورة الجواز أو البطاقة الشخصية.</div>
                     </div>
                 </fieldset>
 
