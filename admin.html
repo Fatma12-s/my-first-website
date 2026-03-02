@@ -466,7 +466,8 @@
             return;
         }
 
-        if (typeof html2pdf === 'undefined') {
+        const jsPDFCtor = window.jspdf && window.jspdf.jsPDF;
+        if (!jsPDFCtor) {
             alert('⚠️ مكتبة PDF غير محمّلة، حاول تحديث الصفحة.');
             return;
         }
@@ -478,92 +479,61 @@
             'lastNotifiedAt', 'lastNotificationResult', 'lastNotifiedDecisionSnapshot'
         ]);
 
-        const section1Rows = Object.entries(submission)
-            .filter(([key]) => !excludedKeys.has(key))
-            .map(([key, value]) => `
-                <tr>
-                    <td style="border:1px solid #ddd;padding:8px;font-weight:600;background:#f7f7f7;vertical-align:top;width:33%;word-break:break-word;">${escapeHtml(key)}</td>
-                    <td style="border:1px solid #ddd;padding:8px;vertical-align:top;width:67%;word-break:break-word;white-space:pre-wrap;">${escapeHtml(formatPdfFieldValue(value))}</td>
-                </tr>
-            `)
-            .join('');
+        const doc = new jsPDFCtor({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const margin = 10;
+        const maxTextWidth = pageWidth - (margin * 2);
+        const lineHeight = 5;
+        let y = 14;
 
-        const isGraduates = submission.formType === 'graduates';
-        const section2Rows = isGraduates
-            ? `
-                <tr><td style="border:1px solid #ddd;padding:8px;font-weight:600;background:#f7f7f7;">Approval Status</td><td style="border:1px solid #ddd;padding:8px;">${escapeHtml(submission.approvalStatus || 'غير محدد')}</td></tr>
-                <tr><td style="border:1px solid #ddd;padding:8px;font-weight:600;background:#f7f7f7;">Approved From</td><td style="border:1px solid #ddd;padding:8px;">${escapeHtml(submission.approvedFrom || 'غير محدد')}</td></tr>
-                <tr><td style="border:1px solid #ddd;padding:8px;font-weight:600;background:#f7f7f7;">Approved To</td><td style="border:1px solid #ddd;padding:8px;">${escapeHtml(submission.approvedTo || 'غير محدد')}</td></tr>
-                <tr><td style="border:1px solid #ddd;padding:8px;font-weight:600;background:#f7f7f7;">Director/HOD Name</td><td style="border:1px solid #ddd;padding:8px;">${escapeHtml(submission.directorName || 'غير محدد')}</td></tr>
-                <tr><td style="border:1px solid #ddd;padding:8px;font-weight:600;background:#f7f7f7;">Department</td><td style="border:1px solid #ddd;padding:8px;">${escapeHtml(submission.directorDepartment || 'غير محدد')}</td></tr>
-                <tr><td style="border:1px solid #ddd;padding:8px;font-weight:600;background:#f7f7f7;">Reason if not approved</td><td style="border:1px solid #ddd;padding:8px;">${escapeHtml(submission.notApprovedReason || '—')}</td></tr>
-            `
-            : '';
+        const writeBlock = (text, options = {}) => {
+            const fontSize = options.fontSize || 11;
+            const bold = !!options.bold;
+            doc.setFont('helvetica', bold ? 'bold' : 'normal');
+            doc.setFontSize(fontSize);
 
-        const wrapper = document.createElement('div');
-        wrapper.style.position = 'fixed';
-        wrapper.style.top = '0';
-        wrapper.style.left = '0';
-        wrapper.style.width = '800px';
-        wrapper.style.maxWidth = '800px';
-        wrapper.style.background = '#fff';
-        wrapper.style.padding = '20px';
-        wrapper.style.direction = 'rtl';
-        wrapper.style.opacity = '1';
-        wrapper.style.pointerEvents = 'none';
-        wrapper.style.zIndex = '2147483647';
-        wrapper.innerHTML = `
-            <div style="font-family:Arial,sans-serif;color:#222;line-height:1.8;">
-                <h2 style="margin:0 0 8px;">استمارة الطلب</h2>
-                <p style="margin:0 0 4px;"><strong>رقم الطلب:</strong> ${escapeHtml(submission.id || '')}</p>
-                <p style="margin:0 0 4px;"><strong>التاريخ:</strong> ${escapeHtml(submission.submittedAt || 'غير محدد')}</p>
-                <p style="margin:0 0 16px;"><strong>الحالة:</strong> ${escapeHtml(submission.status || 'Pending')}</p>
+            const lines = doc.splitTextToSize(String(text || ''), maxTextWidth);
+            const requiredHeight = lines.length * lineHeight + 2;
+            if (y + requiredHeight > pageHeight - margin) {
+                doc.addPage();
+                y = 14;
+                doc.setFont('helvetica', bold ? 'bold' : 'normal');
+                doc.setFontSize(fontSize);
+            }
+            doc.text(lines, margin, y);
+            y += requiredHeight;
+        };
 
-                <h3 style="margin:0 0 8px;">Section 1</h3>
-                <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:16px;">
-                    <tbody>
-                        ${section1Rows || '<tr><td style="border:1px solid #ddd;padding:8px;" colspan="2">لا توجد بيانات</td></tr>'}
-                    </tbody>
-                </table>
+        writeBlock('Application Form', { bold: true, fontSize: 14 });
+        writeBlock(`Request ID: ${submission.id || ''}`);
+        writeBlock(`Submitted At: ${submission.submittedAt || 'N/A'}`);
+        writeBlock(`Status: ${submission.status || 'Pending'}`);
+        writeBlock('');
 
-                ${isGraduates ? `
-                    <h3 style="margin:0 0 8px;">Section 2</h3>
-                    <table style="width:100%;border-collapse:collapse;font-size:12px;">
-                        <tbody>${section2Rows}</tbody>
-                    </table>
-                ` : ''}
-            </div>
-        `;
+        writeBlock('Section 1', { bold: true, fontSize: 12 });
+        const section1Entries = Object.entries(submission).filter(([key]) => !excludedKeys.has(key));
+        if (section1Entries.length === 0) {
+            writeBlock('- No section 1 data -');
+        } else {
+            section1Entries.forEach(([key, value]) => {
+                writeBlock(`${key}: ${formatPdfFieldValue(value)}`);
+            });
+        }
 
-        document.body.appendChild(wrapper);
-
-        await new Promise(resolve => requestAnimationFrame(resolve));
+        if (submission.formType === 'graduates') {
+            writeBlock('');
+            writeBlock('Section 2', { bold: true, fontSize: 12 });
+            writeBlock(`Approval Status: ${submission.approvalStatus || 'N/A'}`);
+            writeBlock(`Approved From: ${submission.approvedFrom || 'N/A'}`);
+            writeBlock(`Approved To: ${submission.approvedTo || 'N/A'}`);
+            writeBlock(`Director/HOD Name: ${submission.directorName || 'N/A'}`);
+            writeBlock(`Department: ${submission.directorDepartment || 'N/A'}`);
+            writeBlock(`Reason if not approved: ${submission.notApprovedReason || '-'}`);
+        }
 
         const fileName = `submission-${String(submission.id || 'request').replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`;
-        const captureWidth = wrapper.scrollWidth || 800;
-        const captureHeight = wrapper.scrollHeight || 1120;
-
-        try {
-            await html2pdf()
-                .set({
-                    margin: [10, 10, 10, 10],
-                    filename: fileName,
-                    image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: {
-                        scale: 2,
-                        useCORS: true,
-                        scrollX: 0,
-                        scrollY: 0,
-                        windowWidth: captureWidth,
-                        windowHeight: captureHeight
-                    },
-                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-                })
-                .from(wrapper)
-                .save();
-        } finally {
-            wrapper.remove();
-        }
+        doc.save(fileName);
     }
 
     async function sendViaEmailJS(payload) {
