@@ -247,11 +247,22 @@ function assignResponsible(formName) {
 // ===== إرسال إشعار بريدي للمسؤول عبر SendGrid =====
 async function sendResponsibleNotificationEmail(applicantData, responsible) {
   try {
+    const isContactForm = applicantData.formType === 'contact';
+    const emailSubject = isContactForm
+      ? `📩 Contact Us - رسالة جديدة من ${applicantData.name || 'مرسل'}`
+      : `🔔 طلب جديد من ${applicantData.name || 'متقدم'}`;
+    const emailHeading = isContactForm
+      ? '📩 رسالة تواصل جديدة'
+      : '🔔 طلب جديد يحتاج موافقتك';
+    const actionNote = isContactForm
+      ? '💬 <strong>برجاء مراجعة رسالة التواصل والرد على المرسل في أقرب وقت.</strong>'
+      : '⚠️ <strong>برجاء مراجعة الطلب في لوحة التحكم وتقديم الموافقة أو الرفض في أقرب وقت.</strong>';
+
     const emailPayload = {
       personalizations: [
         {
           to: [{ email: responsible.email, name: responsible.name }],
-          subject: `🔔 طلب جديد من ${applicantData.name || 'متقدم'}`
+          subject: emailSubject
         }
       ],
       from: {
@@ -263,7 +274,7 @@ async function sendResponsibleNotificationEmail(applicantData, responsible) {
           type: 'text/html',
           value: `
               <div dir="rtl" style="font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; border-radius: 8px;">
-                <h2 style="color: #295c4a;">🔔 طلب جديد يحتاج موافقتك</h2>
+                <h2 style="color: #295c4a;">${emailHeading}</h2>
                 <div style="background: white; padding: 20px; border-radius: 8px; margin-top: 20px;">
                   <h3 style="color: #41726a; border-bottom: 2px solid #e6f7f4; padding-bottom: 10px;">بيانات المتقدم</h3>
                   <table style="width: 100%; margin-top: 15px;">
@@ -294,7 +305,7 @@ async function sendResponsibleNotificationEmail(applicantData, responsible) {
                   </table>
                   <div style="margin-top: 20px; padding: 15px; background: #e6f7f4; border-right: 4px solid #295c4a; border-radius: 4px;">
                     <p style="margin: 0; color: #41726a;">
-                      ⚠️ <strong>برجاء مراجعة الطلب في لوحة التحكم وتقديم الموافقة أو الرفض في أقرب وقت.</strong>
+                      ${actionNote}
                     </p>
                   </div>
                 </div>
