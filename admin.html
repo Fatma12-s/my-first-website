@@ -440,16 +440,23 @@
 
         if (typeof value === 'object') {
             if (value.url) return value.url;
-            if (value.dataUrl) return value.dataUrl;
+            if (value.dataUrl) return value.dataUrl.startsWith('data:image/') ? '📷 مرفق صورة' : '📎 مرفق';
             if (value.name) return value.name;
             return JSON.stringify(value);
         }
 
-        return String(value)
+        const raw = String(value).trim();
+        if (raw.startsWith('data:image/')) return '📷 مرفق صورة';
+        if (raw.startsWith('data:application/pdf')) return '📄 مرفق PDF';
+
+        const normalized = raw
             .split(';')
             .map(part => part.trim())
             .filter(Boolean)
-            .join(' | ') || '—';
+            .join(' | ');
+
+        if (!normalized) return '—';
+        return normalized.length > 220 ? `${normalized.slice(0, 220)}...` : normalized;
     }
 
     async function downloadSubmissionPDF(submissionId) {
@@ -475,8 +482,8 @@
             .filter(([key]) => !excludedKeys.has(key))
             .map(([key, value]) => `
                 <tr>
-                    <td style="border:1px solid #ddd;padding:8px;font-weight:600;background:#f7f7f7;">${escapeHtml(key)}</td>
-                    <td style="border:1px solid #ddd;padding:8px;">${escapeHtml(formatPdfFieldValue(value))}</td>
+                    <td style="border:1px solid #ddd;padding:8px;font-weight:600;background:#f7f7f7;vertical-align:top;width:33%;word-break:break-word;">${escapeHtml(key)}</td>
+                    <td style="border:1px solid #ddd;padding:8px;vertical-align:top;width:67%;word-break:break-word;white-space:pre-wrap;">${escapeHtml(formatPdfFieldValue(value))}</td>
                 </tr>
             `)
             .join('');
