@@ -47,11 +47,12 @@ burger?.addEventListener('click', () => {
   navLinks.classList.toggle('open');
 });
 
-// ===== إعدادات SendGrid (ملء البيانات الفعلية هنا) =====
+// ===== إعدادات SendGrid =====
+// يمكن ضبطها مركزياً عبر window.APP_EMAIL_CONFIG داخل firebase-config.js
 const SENDGRID_CONFIG = {
-  apiKey: 'SG.YOUR_SENDGRID_API_KEY_HERE', // استبدل بـ API Key من SendGrid
-  fromEmail: 'noreply@hospital.com', // استبدل ببريد المرسل
-  fromName: 'دائرة التدريب والتطوير المهني'
+  apiKey: (window.APP_EMAIL_CONFIG && window.APP_EMAIL_CONFIG.apiKey) || 'SG.YOUR_SENDGRID_API_KEY_HERE',
+  fromEmail: (window.APP_EMAIL_CONFIG && window.APP_EMAIL_CONFIG.fromEmail) || 'noreply@hospital.com',
+  fromName: (window.APP_EMAIL_CONFIG && window.APP_EMAIL_CONFIG.fromName) || 'دائرة التدريب والتطوير المهني'
 };
 
 // ===== قائمة المسؤولين (ملء البيانات الفعلية هنا) =====

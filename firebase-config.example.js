@@ -11,4 +11,11 @@
 //   appId: "1:...:web:..."
 // };
 
+// إعداد البريد (اختياري لكن مطلوب لتفعيل الإشعارات الفعلية)
+// window.APP_EMAIL_CONFIG = {
+//   apiKey: "SG.xxxxx",
+//   fromEmail: "noreply@your-domain.com",
+//   fromName: "Training & CPD"
+// };
+
 // ملاحظة: لا تشارك مفاتيحك سرية؛ مفاتيح الـ API للمواقع الثابتة عادة آمنة للاستخدام في الـ client ولكن تأكد من إعداد قواعد الـ Storage المناسبة.

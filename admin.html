@@ -348,10 +348,11 @@
     }
 
     // ===== إعدادات إرسال إشعار قرار الموافقة للمتقدم =====
+    // يمكن ضبطها مركزياً عبر window.APP_EMAIL_CONFIG داخل firebase-config.js
     const REVIEW_EMAIL_CONFIG = {
-        apiKey: 'SG.YOUR_SENDGRID_API_KEY_HERE',
-        fromEmail: 'noreply@hospital.com',
-        fromName: 'Training & CPD - SQUH'
+        apiKey: (window.APP_EMAIL_CONFIG && window.APP_EMAIL_CONFIG.apiKey) || 'SG.YOUR_SENDGRID_API_KEY_HERE',
+        fromEmail: (window.APP_EMAIL_CONFIG && window.APP_EMAIL_CONFIG.fromEmail) || 'noreply@hospital.com',
+        fromName: (window.APP_EMAIL_CONFIG && window.APP_EMAIL_CONFIG.fromName) || 'Training & CPD - SQUH'
     };
 
     const submissionIndex = new Map();
@@ -378,7 +379,7 @@
         alertEl.className = `config-alert ${ready ? 'success' : 'warning'}`;
         alertEl.textContent = ready
             ? '✅ إشعارات البريد مفعّلة: سيتم إرسال قرار الموافقة/الرفض للمتقدمين.'
-            : '⚠️ إشعارات البريد غير مفعّلة: أضف SendGrid API Key صحيح في REVIEW_EMAIL_CONFIG داخل admin.html.';
+            : '⚠️ إشعارات البريد غير مفعّلة: أضف SendGrid API Key صحيح داخل APP_EMAIL_CONFIG في firebase-config.js.';
     }
 
     async function sendApplicantDecisionEmail(submission, newStatus) {
