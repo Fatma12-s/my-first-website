@@ -334,6 +334,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.min.js"></script>
     <!-- SheetJS - Secondary CDN as fallback -->
     <script src="https://unpkg.com/xlsx@latest/dist/xlsx.full.min.js"></script>
+    <!-- HTML to PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script>
     // تهيئة Firebase
     let db = null;
@@ -419,6 +421,124 @@
             .replace(/<[^>]+>/g, ' ')
             .replace(/\s+/g, ' ')
             .trim();
+    }
+
+    function escapeHtml(value) {
+        return String(value == null ? '' : value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function formatPdfFieldValue(value) {
+        if (!value && value !== 0) return '—';
+
+        if (typeof value === 'object') {
+            if (value.url) return value.url;
+            if (value.dataUrl) return value.dataUrl;
+            if (value.name) return value.name;
+            return JSON.stringify(value);
+        }
+
+        return String(value)
+            .split(';')
+            .map(part => part.trim())
+            .filter(Boolean)
+            .join(' | ') || '—';
+    }
+
+    async function downloadSubmissionPDF(submissionId) {
+        const submission = submissionIndex.get(String(submissionId));
+        if (!submission) {
+            alert('⚠️ تعذر العثور على الطلب المطلوب.');
+            return;
+        }
+
+        if (typeof html2pdf === 'undefined') {
+            alert('⚠️ مكتبة PDF غير محمّلة، حاول تحديث الصفحة.');
+            return;
+        }
+
+        const excludedKeys = new Set([
+            'formType', 'id', 'submittedAt', 'submittedAtISO', 'firestoreId', 'status', 'assignedTo',
+            'approvalStatus', 'approvedFrom', 'approvedTo', 'notApprovedReason', 'directorName',
+            'directorDepartment', 'directorSignature', 'directorDate', 'lastNotifiedStatus',
+            'lastNotifiedAt', 'lastNotificationResult', 'lastNotifiedDecisionSnapshot'
+        ]);
+
+        const section1Rows = Object.entries(submission)
+            .filter(([key]) => !excludedKeys.has(key))
+            .map(([key, value]) => `
+                <tr>
+                    <td style="border:1px solid #ddd;padding:8px;font-weight:600;background:#f7f7f7;">${escapeHtml(key)}</td>
+                    <td style="border:1px solid #ddd;padding:8px;">${escapeHtml(formatPdfFieldValue(value))}</td>
+                </tr>
+            `)
+            .join('');
+
+        const isGraduates = submission.formType === 'graduates';
+        const section2Rows = isGraduates
+            ? `
+                <tr><td style="border:1px solid #ddd;padding:8px;font-weight:600;background:#f7f7f7;">Approval Status</td><td style="border:1px solid #ddd;padding:8px;">${escapeHtml(submission.approvalStatus || 'غير محدد')}</td></tr>
+                <tr><td style="border:1px solid #ddd;padding:8px;font-weight:600;background:#f7f7f7;">Approved From</td><td style="border:1px solid #ddd;padding:8px;">${escapeHtml(submission.approvedFrom || 'غير محدد')}</td></tr>
+                <tr><td style="border:1px solid #ddd;padding:8px;font-weight:600;background:#f7f7f7;">Approved To</td><td style="border:1px solid #ddd;padding:8px;">${escapeHtml(submission.approvedTo || 'غير محدد')}</td></tr>
+                <tr><td style="border:1px solid #ddd;padding:8px;font-weight:600;background:#f7f7f7;">Director/HOD Name</td><td style="border:1px solid #ddd;padding:8px;">${escapeHtml(submission.directorName || 'غير محدد')}</td></tr>
+                <tr><td style="border:1px solid #ddd;padding:8px;font-weight:600;background:#f7f7f7;">Department</td><td style="border:1px solid #ddd;padding:8px;">${escapeHtml(submission.directorDepartment || 'غير محدد')}</td></tr>
+                <tr><td style="border:1px solid #ddd;padding:8px;font-weight:600;background:#f7f7f7;">Reason if not approved</td><td style="border:1px solid #ddd;padding:8px;">${escapeHtml(submission.notApprovedReason || '—')}</td></tr>
+            `
+            : '';
+
+        const wrapper = document.createElement('div');
+        wrapper.style.position = 'fixed';
+        wrapper.style.left = '-99999px';
+        wrapper.style.top = '0';
+        wrapper.style.width = '800px';
+        wrapper.style.background = '#fff';
+        wrapper.style.padding = '20px';
+        wrapper.style.direction = 'rtl';
+        wrapper.innerHTML = `
+            <div style="font-family:Arial,sans-serif;color:#222;line-height:1.8;">
+                <h2 style="margin:0 0 8px;">استمارة الطلب</h2>
+                <p style="margin:0 0 4px;"><strong>رقم الطلب:</strong> ${escapeHtml(submission.id || '')}</p>
+                <p style="margin:0 0 4px;"><strong>التاريخ:</strong> ${escapeHtml(submission.submittedAt || 'غير محدد')}</p>
+                <p style="margin:0 0 16px;"><strong>الحالة:</strong> ${escapeHtml(submission.status || 'Pending')}</p>
+
+                <h3 style="margin:0 0 8px;">Section 1</h3>
+                <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:16px;">
+                    <tbody>
+                        ${section1Rows || '<tr><td style="border:1px solid #ddd;padding:8px;" colspan="2">لا توجد بيانات</td></tr>'}
+                    </tbody>
+                </table>
+
+                ${isGraduates ? `
+                    <h3 style="margin:0 0 8px;">Section 2</h3>
+                    <table style="width:100%;border-collapse:collapse;font-size:12px;">
+                        <tbody>${section2Rows}</tbody>
+                    </table>
+                ` : ''}
+            </div>
+        `;
+
+        document.body.appendChild(wrapper);
+
+        const fileName = `submission-${String(submission.id || 'request').replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`;
+
+        try {
+            await html2pdf()
+                .set({
+                    margin: [10, 10, 10, 10],
+                    filename: fileName,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2, useCORS: true },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                })
+                .from(wrapper)
+                .save();
+        } finally {
+            wrapper.remove();
+        }
     }
 
     async function sendViaEmailJS(payload) {
@@ -871,6 +991,7 @@
                         ${approveButtonHtml}
                         <button onclick='updateSubmissionStatus(${JSON.stringify(submission.id)}, "Rejected")' style="background: #dc3545; padding: 8px 16px; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">❌ رفض</button>
                         <button onclick='updateSubmissionStatus(${JSON.stringify(submission.id)}, "Pending")' style="background: #ffc107; padding: 8px 16px; color: #333; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">⏳ قيد الانتظار</button>
+                        <button onclick='downloadSubmissionPDF(${JSON.stringify(submission.id)})' style="background: #2e5f8a; padding: 8px 16px; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">📄 تنزيل PDF</button>
                     </div>
                     ${submission.formType === 'graduates' ? `
                     <div style="margin-top: 14px; padding: 14px; background: #f8fbff; border: 1px solid #dbe9ff; border-radius: 8px;">
