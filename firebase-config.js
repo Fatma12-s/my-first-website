@@ -16,6 +16,7 @@ window.APP_EMAIL_CONFIG = {
   endpoint: "",
   emailjsServiceId: "service_bzfkj3q",
   emailjsTemplateId: "template_ihph0ia",
+  emailjsDecisionTemplateId: "template_ihph0ia",
   emailjsPublicKey: "XIbn_hYrfaNHp7Z0F",
   apiKey: "SG.YOUR_SENDGRID_API_KEY_HERE",
   fromEmail: "fsalim@squ.edu.om",
