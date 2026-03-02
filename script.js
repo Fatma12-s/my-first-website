@@ -90,8 +90,8 @@ function assignResponsible(formName) {
   };
 }
 
-// ===== إرسال إشعار بريدي عبر SendGrid =====
-async function sendNotificationEmail(applicantData, responsible) {
+// ===== إرسال إشعار بريدي للمسؤول عبر SendGrid =====
+async function sendResponsibleNotificationEmail(applicantData, responsible) {
   try {
     // إذا لم يكن API Key مكتوب، فقط سجل في Console
     if (!SENDGRID_CONFIG.apiKey.includes('YOUR_SENDGRID_API_KEY')) {
@@ -100,7 +100,6 @@ async function sendNotificationEmail(applicantData, responsible) {
         personalizations: [
           {
             to: [{ email: responsible.email, name: responsible.name }],
-            cc: applicantData.email ? [{ email: applicantData.email }] : [],
             subject: `🔔 طلب جديد من ${applicantData.name || 'متقدم'}`
           }
         ],
@@ -189,6 +188,98 @@ async function sendNotificationEmail(applicantData, responsible) {
     console.error('❌ خطأ في إرسال البريد:', error);
     return false;
   }
+}
+
+// ===== إرسال بريد تأكيد للمُقدِّم =====
+async function sendApplicantConfirmationEmail(applicantData) {
+  if (!applicantData?.email) return true;
+
+  try {
+    if (!SENDGRID_CONFIG.apiKey.includes('YOUR_SENDGRID_API_KEY')) {
+      const emailPayload = {
+        personalizations: [
+          {
+            to: [{ email: applicantData.email, name: applicantData.name || 'المتقدم' }],
+            subject: `✅ تم استلام طلبك رقم ${applicantData.id}`
+          }
+        ],
+        from: {
+          email: SENDGRID_CONFIG.fromEmail,
+          name: SENDGRID_CONFIG.fromName
+        },
+        content: [
+          {
+            type: 'text/html',
+            value: `
+              <div dir="rtl" style="font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; border-radius: 8px;">
+                <h2 style="color: #295c4a;">✅ تم استلام طلبك بنجاح</h2>
+                <div style="background: white; padding: 20px; border-radius: 8px; margin-top: 20px;">
+                  <p style="margin: 0 0 12px;">مرحباً ${applicantData.name || 'عزيزي المتقدم'}،</p>
+                  <p style="margin: 0 0 12px;">تم استلام طلبك بنجاح وسيتم مراجعته من الجهة المختصة.</p>
+                  <table style="width: 100%; margin-top: 10px; border-collapse: collapse;">
+                    <tr>
+                      <td style="padding: 8px; font-weight: 600; width: 35%;">رقم الطلب:</td>
+                      <td style="padding: 8px;"><strong>${applicantData.id}</strong></td>
+                    </tr>
+                    <tr style="background: #f9f9f9;">
+                      <td style="padding: 8px; font-weight: 600;">تاريخ التقديم:</td>
+                      <td style="padding: 8px;">${applicantData.submittedAt || '---'}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 8px; font-weight: 600;">نوع الطلب:</td>
+                      <td style="padding: 8px;">${applicantData.formType || '---'}</td>
+                    </tr>
+                    <tr style="background: #f9f9f9;">
+                      <td style="padding: 8px; font-weight: 600;">الحالة الحالية:</td>
+                      <td style="padding: 8px;">قيد المراجعة</td>
+                    </tr>
+                  </table>
+                  <p style="margin: 16px 0 0; color: #41726a;">نرجو الاحتفاظ برقم الطلب للمتابعة لاحقاً.</p>
+                </div>
+                <div style="margin-top: 20px; text-align: center; color: #999; font-size: 12px;">
+                  <p>هذه رسالة آلية، يرجى عدم الرد عليها مباشرة.</p>
+                </div>
+              </div>
+            `
+          }
+        ]
+      };
+
+      const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SENDGRID_CONFIG.apiKey}`
+        },
+        body: JSON.stringify(emailPayload)
+      });
+
+      if (response.status === 202) {
+        console.log('✅ تم إرسال بريد تأكيد للمُقدِّم:', applicantData.email);
+        return true;
+      }
+
+      const error = await response.text();
+      console.warn('⚠️ خطأ في إرسال بريد المُقدِّم:', error);
+      return false;
+    }
+
+    console.log('📧 تأكيد للمُقدِّم (وضع اختبار - لم يتم إرسال بريد فعلي):', {
+      to: applicantData.email,
+      applicant: applicantData.name,
+      submissionId: applicantData.id
+    });
+    return true;
+  } catch (error) {
+    console.error('❌ خطأ في إرسال بريد المُقدِّم:', error);
+    return false;
+  }
+}
+
+// ===== إرسال إشعارات البريد (المسؤول + المُقدِّم) =====
+function sendNotificationEmail(applicantData, responsible) {
+  sendResponsibleNotificationEmail(applicantData, responsible);
+  sendApplicantConfirmationEmail(applicantData);
 }
 
 // ===== حفظ البيانات في localStorage أو Firestore =====
