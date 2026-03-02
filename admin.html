@@ -414,10 +414,12 @@
         const htmlContent = (payload.content || []).find(item => item.type === 'text/html');
         const messageHtml = (htmlContent && htmlContent.value) || '';
         const messageText = htmlToText(messageHtml);
+        const selectedTemplateId = payload.emailjsTemplateId || REVIEW_EMAIL_CONFIG.emailjsDecisionTemplateId || REVIEW_EMAIL_CONFIG.emailjsTemplateId;
 
         const section2Details = [
-            `الموافقة: ${payload.section2ApprovalStatus || 'غير محدد'}`,
+            `حالة الموافقة: ${payload.section2ApprovalStatus || 'غير محدد'}`,
             `تاريخ البدء: ${payload.section2ApprovedFrom || 'غير محدد'}`,
+            `تاريخ الانتهاء: ${payload.section2ApprovedTo || 'غير محدد'}`,
             `القسم: ${payload.section2Department || 'غير محدد'}`
         ].join(' | ');
 
@@ -430,7 +432,7 @@
             },
             body: JSON.stringify({
                 service_id: REVIEW_EMAIL_CONFIG.emailjsServiceId,
-                template_id: REVIEW_EMAIL_CONFIG.emailjsTemplateId,
+                template_id: selectedTemplateId,
                 user_id: REVIEW_EMAIL_CONFIG.emailjsPublicKey,
                 template_params: {
                     to_email: firstRecipient.email || '',
@@ -446,7 +448,9 @@
                     body: combinedMessage,
                     status: payload.section2ApprovalStatus || '',
                     approved_from: payload.section2ApprovedFrom || '',
-                    department: payload.section2Department || ''
+                    approved_to: payload.section2ApprovedTo || '',
+                    department: payload.section2Department || '',
+                    section2_details: section2Details
                 }
             })
         });
@@ -467,6 +471,7 @@
         const reason = submission.notApprovedReason || '';
         const approvalStatusLabel = submission.approvalStatus || 'غير محدد';
         const approvedFromLabel = submission.approvedFrom || 'غير محدد';
+        const approvedToLabel = submission.approvedTo || 'غير محدد';
         const departmentLabel = submission.directorDepartment || 'غير محدد';
         const section2Html = newStatus === 'Approved'
             ? `
@@ -474,6 +479,7 @@
                     <h3 style="margin:0 0 8px; color:#2e5f8a; font-size:16px;">بيانات Section 2</h3>
                     <p style="margin:4px 0;"><strong>الموافقة:</strong> ${approvalStatusLabel}</p>
                     <p style="margin:4px 0;"><strong>تاريخ البدء:</strong> ${approvedFromLabel}</p>
+                    <p style="margin:4px 0;"><strong>تاريخ الانتهاء:</strong> ${approvedToLabel}</p>
                     <p style="margin:4px 0;"><strong>القسم:</strong> ${departmentLabel}</p>
                 </div>
             `
@@ -485,8 +491,10 @@
                     to: [{ email: submission.email }],
                     subject
                 }],
+                emailjsTemplateId: REVIEW_EMAIL_CONFIG.emailjsDecisionTemplateId || REVIEW_EMAIL_CONFIG.emailjsTemplateId,
                 section2ApprovalStatus: approvalStatusLabel,
                 section2ApprovedFrom: approvedFromLabel,
+                section2ApprovedTo: approvedToLabel,
                 section2Department: departmentLabel,
                 from: {
                     email: REVIEW_EMAIL_CONFIG.fromEmail,
@@ -1157,10 +1165,24 @@
         }
 
         const statusText = { 'Pending': '⏳ قيد الانتظار', 'Approved': '✅ موافق', 'Rejected': '❌ مرفوض' };
-        const updated = await updateSubmissionRecord(submissionId, { status: newStatus });
+
+        const submissionKey = String(submissionId).replace(/[^a-zA-Z0-9_-]/g, '_');
+        const section2Updates = submission && submission.formType === 'graduates' ? {
+            approvalStatus: document.getElementById(`approvalStatus-${submissionKey}`)?.value || submission.approvalStatus || '',
+            approvedFrom: document.getElementById(`approvedFrom-${submissionKey}`)?.value || submission.approvedFrom || '',
+            approvedTo: document.getElementById(`approvedTo-${submissionKey}`)?.value || submission.approvedTo || '',
+            directorName: document.getElementById(`directorName-${submissionKey}`)?.value || submission.directorName || '',
+            directorDepartment: document.getElementById(`directorDepartment-${submissionKey}`)?.value || submission.directorDepartment || '',
+            notApprovedReason: document.getElementById(`notApprovedReason-${submissionKey}`)?.value || submission.notApprovedReason || ''
+        } : {};
+
+        const updated = await updateSubmissionRecord(submissionId, {
+            status: newStatus,
+            ...section2Updates
+        });
 
         if (updated) {
-            const mergedSubmission = { ...(submission || {}), status: newStatus, id: submissionId };
+            const mergedSubmission = { ...(submission || {}), ...section2Updates, status: newStatus, id: submissionId };
             const notifyResult = await notifyApplicantWithGuards(mergedSubmission, newStatus);
 
             let message = `✅ تم تحديث الحالة إلى: ${statusText[newStatus]}`;
