@@ -366,14 +366,7 @@
         const hasSecureEndpoint = typeof REVIEW_EMAIL_CONFIG.endpoint === 'string' && /^https?:\/\//.test(REVIEW_EMAIL_CONFIG.endpoint);
         if (hasSecureEndpoint) return true;
 
-        const hasEmailJS = !!(
-            REVIEW_EMAIL_CONFIG.emailjsServiceId &&
-            REVIEW_EMAIL_CONFIG.emailjsTemplateId &&
-            REVIEW_EMAIL_CONFIG.emailjsPublicKey &&
-            !REVIEW_EMAIL_CONFIG.emailjsServiceId.includes('YOUR_') &&
-            !REVIEW_EMAIL_CONFIG.emailjsTemplateId.includes('YOUR_') &&
-            !REVIEW_EMAIL_CONFIG.emailjsPublicKey.includes('YOUR_')
-        );
+        const hasEmailJS = hasDecisionEmailJSConfig();
         if (hasEmailJS) return true;
 
         return !!(
@@ -388,6 +381,25 @@
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || '').trim());
     }
 
+    function hasDecisionEmailJSConfig() {
+        const hasBase = !!(
+            REVIEW_EMAIL_CONFIG.emailjsServiceId &&
+            REVIEW_EMAIL_CONFIG.emailjsPublicKey &&
+            !REVIEW_EMAIL_CONFIG.emailjsServiceId.includes('YOUR_') &&
+            !REVIEW_EMAIL_CONFIG.emailjsPublicKey.includes('YOUR_')
+        );
+
+        const decisionTemplate = String(REVIEW_EMAIL_CONFIG.emailjsDecisionTemplateId || '').trim();
+        const genericTemplate = String(REVIEW_EMAIL_CONFIG.emailjsTemplateId || '').trim();
+        const hasDedicatedDecisionTemplate = !!(
+            decisionTemplate &&
+            !decisionTemplate.includes('YOUR_') &&
+            decisionTemplate !== genericTemplate
+        );
+
+        return hasBase && hasDedicatedDecisionTemplate;
+    }
+
     function renderEmailConfigAlert() {
         const alertEl = document.getElementById('emailConfigAlert');
         if (!alertEl) return;
@@ -397,7 +409,7 @@
         alertEl.className = `config-alert ${ready ? 'success' : 'warning'}`;
         alertEl.textContent = ready
             ? '✅ إشعارات البريد مفعّلة: سيتم إرسال قرار الموافقة/الرفض للمتقدمين.'
-            : '⚠️ إشعارات البريد غير مفعّلة: أضف endpoint آمن أو EmailJS أو SendGrid API Key صحيح داخل APP_EMAIL_CONFIG في firebase-config.js.';
+            : '⚠️ إشعارات البريد غير مفعّلة: أضف endpoint آمن أو EmailJS (مع emailjsDecisionTemplateId مخصص ومختلف عن emailjsTemplateId) أو SendGrid API Key صحيح داخل APP_EMAIL_CONFIG في firebase-config.js.';
     }
 
     function htmlToText(htmlValue) {
@@ -415,8 +427,13 @@
         const htmlContent = (payload.content || []).find(item => item.type === 'text/html');
         const messageHtml = (htmlContent && htmlContent.value) || '';
         const messageText = payload.messageText || htmlToText(messageHtml);
-        const selectedTemplateId = payload.emailjsTemplateId || REVIEW_EMAIL_CONFIG.emailjsDecisionTemplateId || REVIEW_EMAIL_CONFIG.emailjsTemplateId;
+        const selectedTemplateId = payload.emailjsTemplateId || REVIEW_EMAIL_CONFIG.emailjsDecisionTemplateId || '';
         const decisionSubject = firstPersonalization.subject || '';
+
+        if (!selectedTemplateId || selectedTemplateId === REVIEW_EMAIL_CONFIG.emailjsTemplateId) {
+            console.warn('EmailJS Decision Template غير مضبوط أو يساوي قالب Contact Us.');
+            return false;
+        }
 
         const section2Details = [
             `حالة الموافقة: ${payload.section2ApprovalStatus || 'غير محدد'}`,
@@ -524,7 +541,7 @@
                     to: [{ email: submission.email }],
                     subject
                 }],
-                emailjsTemplateId: REVIEW_EMAIL_CONFIG.emailjsDecisionTemplateId || REVIEW_EMAIL_CONFIG.emailjsTemplateId,
+                emailjsTemplateId: REVIEW_EMAIL_CONFIG.emailjsDecisionTemplateId || '',
                 section2ApprovalStatus: approvalStatusLabel,
                 section2ApprovedFrom: approvedFromLabel,
                 section2ApprovedTo: approvedToLabel,
@@ -574,14 +591,7 @@
                 return endpointResponse.ok;
             }
 
-            const hasEmailJS = !!(
-                REVIEW_EMAIL_CONFIG.emailjsServiceId &&
-                REVIEW_EMAIL_CONFIG.emailjsTemplateId &&
-                REVIEW_EMAIL_CONFIG.emailjsPublicKey &&
-                !REVIEW_EMAIL_CONFIG.emailjsServiceId.includes('YOUR_') &&
-                !REVIEW_EMAIL_CONFIG.emailjsTemplateId.includes('YOUR_') &&
-                !REVIEW_EMAIL_CONFIG.emailjsPublicKey.includes('YOUR_')
-            );
+            const hasEmailJS = hasDecisionEmailJSConfig();
 
             if (hasEmailJS) {
                 return await sendViaEmailJS(payload);
@@ -644,7 +654,7 @@
             }
         }
 
-        if (!isEmailConfigReady()) {
+        if (!hasDecisionEmailJSConfig()) {
             await updateSubmissionRecord(submission.id, {
                 lastNotifiedStatus: newStatus,
                 lastNotifiedAt: new Date().toISOString(),

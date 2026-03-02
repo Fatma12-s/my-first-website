@@ -17,8 +17,9 @@
 //   emailjsServiceId: "YOUR_EMAILJS_SERVICE_ID",
 //   emailjsTemplateId: "YOUR_EMAILJS_TEMPLATE_ID",
 //   emailjsPublicKey: "YOUR_EMAILJS_PUBLIC_KEY",
-	// قالب مخصص لإشعارات قرار الموافقة/الرفض من admin
-	emailjsDecisionTemplateId: "",
+//   // قالب مخصص لإشعارات قرار الموافقة/الرفض من admin
+//   // يجب أن يكون مختلفًا عن emailjsTemplateId
+//   emailjsDecisionTemplateId: "YOUR_EMAILJS_DECISION_TEMPLATE_ID",
 //   apiKey: "SG.xxxxx",
 //   fromEmail: "noreply@your-domain.com",
 //   fromName: "Training & CPD"
