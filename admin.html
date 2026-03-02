@@ -334,6 +334,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.min.js"></script>
     <!-- SheetJS - Secondary CDN as fallback -->
     <script src="https://unpkg.com/xlsx@latest/dist/xlsx.full.min.js"></script>
+    <!-- jsPDF - Primary CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <!-- HTML to PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script>
@@ -459,10 +461,58 @@
         return normalized.length > 220 ? `${normalized.slice(0, 220)}...` : normalized;
     }
 
+    function loadScriptOnce(src) {
+        return new Promise((resolve, reject) => {
+            const existing = Array.from(document.querySelectorAll('script')).find(s => s.src === src);
+            if (existing) {
+                if (window.jspdf && window.jspdf.jsPDF) {
+                    resolve(true);
+                    return;
+                }
+                existing.addEventListener('load', () => resolve(true), { once: true });
+                existing.addEventListener('error', () => reject(new Error(`Failed to load ${src}`)), { once: true });
+                return;
+            }
+
+            const script = document.createElement('script');
+            script.src = src;
+            script.async = true;
+            script.onload = () => resolve(true);
+            script.onerror = () => reject(new Error(`Failed to load ${src}`));
+            document.head.appendChild(script);
+        });
+    }
+
+    async function ensureJsPdfLoaded() {
+        if (window.jspdf && window.jspdf.jsPDF) return true;
+
+        const cdnCandidates = [
+            'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
+            'https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js'
+        ];
+
+        for (const src of cdnCandidates) {
+            try {
+                await loadScriptOnce(src);
+                if (window.jspdf && window.jspdf.jsPDF) return true;
+            } catch (err) {
+                console.warn('فشل تحميل jsPDF من:', src, err);
+            }
+        }
+
+        return !!(window.jspdf && window.jspdf.jsPDF);
+    }
+
     async function downloadSubmissionPDF(submissionId) {
         const submission = submissionIndex.get(String(submissionId));
         if (!submission) {
             alert('⚠️ تعذر العثور على الطلب المطلوب.');
+            return;
+        }
+
+        const loaded = await ensureJsPdfLoaded();
+        if (!loaded) {
+            alert('⚠️ تعذر تحميل مكتبة PDF. تحقق من الاتصال بالإنترنت ثم حدّث الصفحة.');
             return;
         }
 
