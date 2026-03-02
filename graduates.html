@@ -22,6 +22,7 @@
         .form-btn{padding:12px;border-radius:12px;background:var(--brand-main);color:#fff;border:none;font-weight:800;cursor:pointer}
         .upload-icon{font-size:14px;vertical-align:middle;margin-inline-end:6px}
         .field-hint{font-size:12px;color:#5f6f6a;margin-top:6px;line-height:1.6}
+        .photo-upload{background:#f7fbfa;border:1px dashed #cfded9;border-radius:12px;padding:12px}
         @media (max-width:768px){.two-col{grid-template-columns:1fr} nav ul{flex-direction:column;gap:var(--space-sm)}}
     </style>
 </head>
@@ -49,7 +50,8 @@
             <h2 class="section-title">تقديم الطلب - تدريب الطلاب والخريجين</h2>
 
             <div class="notice">
-                <div>الرجاء تعبئة هذا النموذج فقط.</div>
+                <div>الرجاء تعبئة استمارة التدريب.</div>
+                <div>Please complete the training application form.</div>
             </div>
 
             <form id="graduates-form" enctype="multipart/form-data">
@@ -72,9 +74,19 @@
 
                 <fieldset>
                     <legend>Section 1: Applicant Details</legend>
-                    <div>
-                        <label for="grad-name">Name / الاسم</label>
-                        <input type="text" id="grad-name" name="name" required>
+                    <div class="two-col">
+                        <div>
+                            <label for="grad-name">Name / الاسم</label>
+                            <input type="text" id="grad-name" name="name" required>
+                        </div>
+                        <div class="photo-upload">
+                            <label for="applicantPhoto">
+                                <span class="upload-icon">📷</span>
+                                صورة المتقدم
+                            </label>
+                            <input type="file" id="applicantPhoto" name="applicantPhoto" accept=".jpg,.jpeg,.png" style="margin-top:6px;">
+                            <div class="field-hint">مقاس صورة الجواز أو البطاقة الشخصية.</div>
+                        </div>
                     </div>
                     <div>
                         <label for="address">Address / العنوان</label>
@@ -189,14 +201,6 @@
                     <div>
                         <label for="otherAttachments">4) Others</label>
                         <input type="file" id="otherAttachments" name="otherAttachments" accept=".pdf,.jpg,.jpeg,.png">
-                    </div>
-                    <div>
-                        <label for="applicantPhoto">
-                            <span class="upload-icon">📷</span>
-                            5) صورة المتقدم (مقاس صورة الجواز/البطاقة الشخصية)
-                        </label>
-                        <input type="file" id="applicantPhoto" name="applicantPhoto" accept=".jpg,.jpeg,.png">
-                        <div class="field-hint">يرجى رفع صورة شخصية واضحة بمقاس صورة الجواز أو البطاقة الشخصية.</div>
                     </div>
                 </fieldset>
 
