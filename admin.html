@@ -412,6 +412,16 @@
         const firstPersonalization = (payload.personalizations && payload.personalizations[0]) || {};
         const firstRecipient = (firstPersonalization.to && firstPersonalization.to[0]) || {};
         const htmlContent = (payload.content || []).find(item => item.type === 'text/html');
+        const messageHtml = (htmlContent && htmlContent.value) || '';
+        const messageText = htmlToText(messageHtml);
+
+        const section2Details = [
+            `الموافقة: ${payload.section2ApprovalStatus || 'غير محدد'}`,
+            `تاريخ البدء: ${payload.section2ApprovedFrom || 'غير محدد'}`,
+            `القسم: ${payload.section2Department || 'غير محدد'}`
+        ].join(' | ');
+
+        const combinedMessage = [messageText, section2Details].filter(Boolean).join(' | ');
 
         const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
             method: 'POST',
@@ -425,11 +435,18 @@
                 template_params: {
                     to_email: firstRecipient.email || '',
                     to_name: firstRecipient.name || '',
+                    email: firstRecipient.email || '',
+                    name: firstRecipient.name || '',
                     subject: firstPersonalization.subject || '',
                     from_email: (payload.from && payload.from.email) || REVIEW_EMAIL_CONFIG.fromEmail,
                     from_name: (payload.from && payload.from.name) || REVIEW_EMAIL_CONFIG.fromName,
-                    message_html: (htmlContent && htmlContent.value) || '',
-                    message_text: htmlToText((htmlContent && htmlContent.value) || '')
+                    message_html: messageHtml,
+                    message_text: messageText,
+                    message: combinedMessage,
+                    body: combinedMessage,
+                    status: payload.section2ApprovalStatus || '',
+                    approved_from: payload.section2ApprovedFrom || '',
+                    department: payload.section2Department || ''
                 }
             })
         });
@@ -468,6 +485,9 @@
                     to: [{ email: submission.email }],
                     subject
                 }],
+                section2ApprovalStatus: approvalStatusLabel,
+                section2ApprovedFrom: approvedFromLabel,
+                section2Department: departmentLabel,
                 from: {
                     email: REVIEW_EMAIL_CONFIG.fromEmail,
                     name: REVIEW_EMAIL_CONFIG.fromName
