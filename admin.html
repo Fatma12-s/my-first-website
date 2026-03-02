@@ -448,6 +448,19 @@
         const statusLabel = newStatus === 'Approved' ? 'تمت الموافقة على الطلب' : 'تم رفض الطلب';
         const decisionColor = newStatus === 'Approved' ? '#28a745' : '#dc3545';
         const reason = submission.notApprovedReason || '';
+        const approvalStatusLabel = submission.approvalStatus || 'غير محدد';
+        const approvedFromLabel = submission.approvedFrom || 'غير محدد';
+        const departmentLabel = submission.directorDepartment || 'غير محدد';
+        const section2Html = newStatus === 'Approved'
+            ? `
+                <div style="background:#f8fbff; border:1px solid #dbe9ff; border-radius:8px; padding:12px; margin:14px 0;">
+                    <h3 style="margin:0 0 8px; color:#2e5f8a; font-size:16px;">بيانات Section 2</h3>
+                    <p style="margin:4px 0;"><strong>الموافقة:</strong> ${approvalStatusLabel}</p>
+                    <p style="margin:4px 0;"><strong>تاريخ البدء:</strong> ${approvedFromLabel}</p>
+                    <p style="margin:4px 0;"><strong>القسم:</strong> ${departmentLabel}</p>
+                </div>
+            `
+            : '';
 
         try {
             const payload = {
@@ -467,8 +480,10 @@
                             <p>عزيزي/عزيزتي <strong>${submission.name || 'المتقدم'}</strong>،</p>
                             <p>نحيطكم علماً بأنه تم تحديث حالة طلبكم رقم <strong>${submission.id}</strong>.</p>
                             <p><strong>الحالة:</strong> ${newStatus === 'Approved' ? 'موافق' : 'مرفوض'}</p>
+                            ${section2Html}
                             ${reason && newStatus === 'Rejected' ? `<p><strong>السبب:</strong> ${reason}</p>` : ''}
                             <p>يمكنكم التواصل مع الإدارة عند الحاجة لمزيد من التفاصيل.</p>
+                            <p style="margin-top:14px;"><strong>مع تحيات فريق التدريب</strong></p>
                         </div>
                     `
                 }]

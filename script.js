@@ -61,6 +61,10 @@ const EMAILJS_CONFIG = {
   publicKey: (window.APP_EMAIL_CONFIG && window.APP_EMAIL_CONFIG.emailjsPublicKey) || ''
 };
 
+const SEND_APPLICANT_CONFIRMATION_ON_SUBMIT = !!(
+  window.APP_EMAIL_CONFIG && window.APP_EMAIL_CONFIG.sendApplicantConfirmationOnSubmit === true
+);
+
 function hasUsableFirebaseConfig() {
   const cfg = window.FIREBASE_CONFIG;
   if (!cfg) return false;
@@ -395,7 +399,17 @@ async function sendApplicantConfirmationEmail(applicantData) {
 // ===== إرسال إشعارات البريد (المسؤول + المُقدِّم) =====
 function sendNotificationEmail(applicantData, responsible) {
   sendResponsibleNotificationEmail(applicantData, responsible);
-  sendApplicantConfirmationEmail(applicantData);
+
+  const applicantEmail = String((applicantData && applicantData.email) || '').trim().toLowerCase();
+  const responsibleEmail = String((responsible && responsible.email) || '').trim().toLowerCase();
+  const shouldSendApplicantConfirmation =
+    SEND_APPLICANT_CONFIRMATION_ON_SUBMIT &&
+    applicantEmail &&
+    applicantEmail !== responsibleEmail;
+
+  if (shouldSendApplicantConfirmation) {
+    sendApplicantConfirmationEmail(applicantData);
+  }
 }
 
 // ===== حفظ البيانات في localStorage أو Firestore =====
