@@ -510,6 +510,87 @@
             return;
         }
 
+        const excludedKeys = new Set([
+            'formType', 'id', 'submittedAt', 'submittedAtISO', 'firestoreId', 'status', 'assignedTo',
+            'approvalStatus', 'approvedFrom', 'approvedTo', 'notApprovedReason', 'directorName',
+            'directorDepartment', 'directorSignature', 'directorDate', 'lastNotifiedStatus',
+            'lastNotifiedAt', 'lastNotificationResult', 'lastNotifiedDecisionSnapshot'
+        ]);
+
+        const section1Entries = Object.entries(submission).filter(([key]) => !excludedKeys.has(key));
+        const isGraduates = submission.formType === 'graduates';
+
+        if (typeof html2pdf !== 'undefined') {
+            const section1Rows = section1Entries.length
+                ? section1Entries.map(([key, value]) => `
+                    <tr>
+                        <td style="border:1px solid #ddd;padding:8px;background:#f8f9fa;font-weight:700;width:35%;vertical-align:top;word-break:break-word;">${escapeHtml(key)}</td>
+                        <td style="border:1px solid #ddd;padding:8px;width:65%;vertical-align:top;word-break:break-word;white-space:pre-wrap;">${escapeHtml(formatPdfFieldValue(value))}</td>
+                    </tr>
+                `).join('')
+                : '<tr><td colspan="2" style="border:1px solid #ddd;padding:8px;">لا توجد بيانات في Section 1</td></tr>';
+
+            const wrapper = document.createElement('div');
+            wrapper.style.position = 'fixed';
+            wrapper.style.top = '0';
+            wrapper.style.left = '0';
+            wrapper.style.width = '794px';
+            wrapper.style.background = '#fff';
+            wrapper.style.padding = '18px';
+            wrapper.style.zIndex = '2147483647';
+            wrapper.style.pointerEvents = 'none';
+            wrapper.style.direction = 'rtl';
+            wrapper.innerHTML = `
+                <div style="font-family:Tahoma, Arial, sans-serif; color:#111; line-height:1.8;">
+                    <h2 style="margin:0 0 8px; color:#1f3f5b;">استمارة الطلب</h2>
+                    <p style="margin:0 0 4px;"><strong>رقم الطلب:</strong> ${escapeHtml(submission.id || '')}</p>
+                    <p style="margin:0 0 4px;"><strong>التاريخ:</strong> ${escapeHtml(submission.submittedAt || 'غير محدد')}</p>
+                    <p style="margin:0 0 12px;"><strong>الحالة:</strong> ${escapeHtml(submission.status || 'Pending')}</p>
+
+                    <h3 style="margin:0 0 8px; color:#1f3f5b;">Section 1</h3>
+                    <table style="width:100%; border-collapse:collapse; font-size:12px; margin-bottom:16px; table-layout:fixed;">
+                        <tbody>${section1Rows}</tbody>
+                    </table>
+
+                    ${isGraduates ? `
+                    <h3 style="margin:0 0 8px; color:#1f3f5b;">Section 2</h3>
+                    <table style="width:100%; border-collapse:collapse; font-size:12px; table-layout:fixed;">
+                        <tbody>
+                            <tr><td style="border:1px solid #ddd;padding:8px;background:#f8f9fa;font-weight:700;width:35%;">Approval Status</td><td style="border:1px solid #ddd;padding:8px;width:65%;">${escapeHtml(submission.approvalStatus || 'غير محدد')}</td></tr>
+                            <tr><td style="border:1px solid #ddd;padding:8px;background:#f8f9fa;font-weight:700;">Approved From</td><td style="border:1px solid #ddd;padding:8px;">${escapeHtml(submission.approvedFrom || 'غير محدد')}</td></tr>
+                            <tr><td style="border:1px solid #ddd;padding:8px;background:#f8f9fa;font-weight:700;">Approved To</td><td style="border:1px solid #ddd;padding:8px;">${escapeHtml(submission.approvedTo || 'غير محدد')}</td></tr>
+                            <tr><td style="border:1px solid #ddd;padding:8px;background:#f8f9fa;font-weight:700;">Director/HOD Name</td><td style="border:1px solid #ddd;padding:8px;">${escapeHtml(submission.directorName || 'غير محدد')}</td></tr>
+                            <tr><td style="border:1px solid #ddd;padding:8px;background:#f8f9fa;font-weight:700;">Department</td><td style="border:1px solid #ddd;padding:8px;">${escapeHtml(submission.directorDepartment || 'غير محدد')}</td></tr>
+                            <tr><td style="border:1px solid #ddd;padding:8px;background:#f8f9fa;font-weight:700;">Reason if not approved</td><td style="border:1px solid #ddd;padding:8px;">${escapeHtml(submission.notApprovedReason || '—')}</td></tr>
+                        </tbody>
+                    </table>
+                    ` : ''}
+                </div>
+            `;
+
+            document.body.appendChild(wrapper);
+
+            try {
+                await new Promise(resolve => requestAnimationFrame(resolve));
+                const fileName = `submission-${String(submission.id || 'request').replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`;
+                await html2pdf()
+                    .set({
+                        margin: [8, 8, 8, 8],
+                        filename: fileName,
+                        image: { type: 'jpeg', quality: 0.98 },
+                        html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0 },
+                        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                    })
+                    .from(wrapper)
+                    .save();
+                return;
+            } catch (err) {
+                console.warn('فشل تصدير html2pdf، سيتم استخدام jsPDF fallback:', err);
+            } finally {
+                wrapper.remove();
+            }
+        }
+
         const loaded = await ensureJsPdfLoaded();
         if (!loaded) {
             alert('⚠️ تعذر تحميل مكتبة PDF. تحقق من الاتصال بالإنترنت ثم حدّث الصفحة.');
@@ -521,13 +602,6 @@
             alert('⚠️ مكتبة PDF غير محمّلة، حاول تحديث الصفحة.');
             return;
         }
-
-        const excludedKeys = new Set([
-            'formType', 'id', 'submittedAt', 'submittedAtISO', 'firestoreId', 'status', 'assignedTo',
-            'approvalStatus', 'approvedFrom', 'approvedTo', 'notApprovedReason', 'directorName',
-            'directorDepartment', 'directorSignature', 'directorDate', 'lastNotifiedStatus',
-            'lastNotifiedAt', 'lastNotificationResult', 'lastNotifiedDecisionSnapshot'
-        ]);
 
         const doc = new jsPDFCtor({ unit: 'mm', format: 'a4', orientation: 'portrait' });
         const pageWidth = doc.internal.pageSize.getWidth();
@@ -562,7 +636,6 @@
         writeBlock('');
 
         writeBlock('Section 1', { bold: true, fontSize: 12 });
-        const section1Entries = Object.entries(submission).filter(([key]) => !excludedKeys.has(key));
         if (section1Entries.length === 0) {
             writeBlock('- No section 1 data -');
         } else {
@@ -571,7 +644,7 @@
             });
         }
 
-        if (submission.formType === 'graduates') {
+        if (isGraduates) {
             writeBlock('');
             writeBlock('Section 2', { bold: true, fontSize: 12 });
             writeBlock(`Approval Status: ${submission.approvalStatus || 'N/A'}`);
