@@ -55,6 +55,12 @@ const SENDGRID_CONFIG = {
   fromName: (window.APP_EMAIL_CONFIG && window.APP_EMAIL_CONFIG.fromName) || 'دائرة التدريب والتطوير المهني'
 };
 
+const EMAILJS_CONFIG = {
+  serviceId: (window.APP_EMAIL_CONFIG && window.APP_EMAIL_CONFIG.emailjsServiceId) || '',
+  templateId: (window.APP_EMAIL_CONFIG && window.APP_EMAIL_CONFIG.emailjsTemplateId) || '',
+  publicKey: (window.APP_EMAIL_CONFIG && window.APP_EMAIL_CONFIG.emailjsPublicKey) || ''
+};
+
 function hasUsableFirebaseConfig() {
   const cfg = window.FIREBASE_CONFIG;
   if (!cfg) return false;
@@ -81,6 +87,72 @@ function hasDirectSendgridKey() {
   );
 }
 
+function hasEmailJSConfig() {
+  return !!(
+    EMAILJS_CONFIG.serviceId &&
+    EMAILJS_CONFIG.templateId &&
+    EMAILJS_CONFIG.publicKey &&
+    !EMAILJS_CONFIG.serviceId.includes('YOUR_') &&
+    !EMAILJS_CONFIG.templateId.includes('YOUR_') &&
+    !EMAILJS_CONFIG.publicKey.includes('YOUR_')
+  );
+}
+
+function htmlToText(htmlValue) {
+  return String(htmlValue || '')
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function extractEmailPayloadFields(emailPayload) {
+  const firstPersonalization = (emailPayload.personalizations && emailPayload.personalizations[0]) || {};
+  const firstRecipient = (firstPersonalization.to && firstPersonalization.to[0]) || {};
+  const htmlContent = (emailPayload.content || []).find(item => item.type === 'text/html');
+  const textContent = (emailPayload.content || []).find(item => item.type === 'text/plain');
+
+  return {
+    toEmail: firstRecipient.email || '',
+    toName: firstRecipient.name || '',
+    subject: firstPersonalization.subject || '',
+    fromEmail: (emailPayload.from && emailPayload.from.email) || SENDGRID_CONFIG.fromEmail,
+    fromName: (emailPayload.from && emailPayload.from.name) || SENDGRID_CONFIG.fromName,
+    messageHtml: (htmlContent && htmlContent.value) || '',
+    messageText: (textContent && textContent.value) || htmlToText((htmlContent && htmlContent.value) || '')
+  };
+}
+
+async function sendViaEmailJS(emailPayload) {
+  const fields = extractEmailPayloadFields(emailPayload);
+  const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      service_id: EMAILJS_CONFIG.serviceId,
+      template_id: EMAILJS_CONFIG.templateId,
+      user_id: EMAILJS_CONFIG.publicKey,
+      template_params: {
+        to_email: fields.toEmail,
+        to_name: fields.toName,
+        subject: fields.subject,
+        from_email: fields.fromEmail,
+        from_name: fields.fromName,
+        message_html: fields.messageHtml,
+        message_text: fields.messageText
+      }
+    })
+  });
+
+  if (response.ok) return true;
+  const errorBody = await response.text();
+  console.warn('⚠️ خطأ EmailJS:', errorBody);
+  return false;
+}
+
 async function dispatchEmailPayload(emailPayload, testLogData) {
   try {
     if (hasSecureEmailEndpoint()) {
@@ -99,6 +171,10 @@ async function dispatchEmailPayload(emailPayload, testLogData) {
       const endpointError = await endpointResponse.text();
       console.warn('⚠️ فشل الإرسال عبر endpoint الآمن:', endpointError);
       return false;
+    }
+
+    if (hasEmailJSConfig()) {
+      return await sendViaEmailJS(emailPayload);
     }
 
     if (hasDirectSendgridKey()) {

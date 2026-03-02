@@ -5,7 +5,9 @@
   "private": true,
   "main": "test_submit.js",
   "scripts": {
-    "test:e2e": "node test_submit.js"
+    "test:e2e": "node test_submit.js",
+    "test:e2e:local": "node test_submit.js",
+    "test:e2e:prod": "node -e \"process.env.TARGET_URL='https://squh-training.web.app/graduates.html'; require('./test_submit.js')\""
   },
   "repository": {
     "type": "git",

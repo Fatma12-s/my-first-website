@@ -14,6 +14,9 @@
 // إعداد البريد (اختياري لكن مطلوب لتفعيل الإشعارات الفعلية)
 // window.APP_EMAIL_CONFIG = {
 //   endpoint: "https://us-central1-your-project.cloudfunctions.net/sendEmailNotification",
+//   emailjsServiceId: "YOUR_EMAILJS_SERVICE_ID",
+//   emailjsTemplateId: "YOUR_EMAILJS_TEMPLATE_ID",
+//   emailjsPublicKey: "YOUR_EMAILJS_PUBLIC_KEY",
 //   apiKey: "SG.xxxxx",
 //   fromEmail: "noreply@your-domain.com",
 //   fromName: "Training & CPD"

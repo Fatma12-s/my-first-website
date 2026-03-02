@@ -14,6 +14,9 @@ window.FIREBASE_CONFIG = {
 // ضع بياناتك الفعلية هنا
 window.APP_EMAIL_CONFIG = {
   endpoint: "",
+  emailjsServiceId: "service_bzfkj3q",
+  emailjsTemplateId: "template_ihph0ia",
+  emailjsPublicKey: "XIbn_hYrfaNHp7Z0F",
   apiKey: "SG.YOUR_SENDGRID_API_KEY_HERE",
   fromEmail: "fsalim@squ.edu.om",
   fromName: "دائرة التدريب والتطوير المهني"
