@@ -391,15 +391,18 @@
             !REVIEW_EMAIL_CONFIG.emailjsPublicKey.includes('YOUR_')
         );
 
+        const selectedTemplate = getDecisionEmailTemplateId();
+        return hasBase && !!selectedTemplate;
+    }
+
+    function getDecisionEmailTemplateId() {
         const decisionTemplate = String(REVIEW_EMAIL_CONFIG.emailjsDecisionTemplateId || '').trim();
         const genericTemplate = String(REVIEW_EMAIL_CONFIG.emailjsTemplateId || '').trim();
-        const hasDedicatedDecisionTemplate = !!(
-            decisionTemplate &&
-            !decisionTemplate.includes('YOUR_') &&
-            decisionTemplate !== genericTemplate
-        );
+        const decisionTemplateValid = !!(decisionTemplate && !decisionTemplate.includes('YOUR_'));
+        if (decisionTemplateValid) return decisionTemplate;
 
-        return hasBase && hasDedicatedDecisionTemplate;
+        const genericTemplateValid = !!(genericTemplate && !genericTemplate.includes('YOUR_'));
+        return genericTemplateValid ? genericTemplate : '';
     }
 
     function renderEmailConfigAlert() {
@@ -411,7 +414,7 @@
         alertEl.className = `config-alert ${ready ? 'success' : 'warning'}`;
         alertEl.textContent = ready
             ? '✅ إشعارات البريد مفعّلة: سيتم إرسال قرار الموافقة/الرفض للمتقدمين.'
-            : '⚠️ إشعارات البريد غير مفعّلة: أضف endpoint آمن أو EmailJS (مع emailjsDecisionTemplateId مخصص ومختلف عن emailjsTemplateId) أو SendGrid API Key صحيح داخل APP_EMAIL_CONFIG في firebase-config.js.';
+            : '⚠️ إشعارات البريد غير مفعّلة: أضف endpoint آمن أو EmailJS (emailjsServiceId + emailjsTemplateId أو emailjsDecisionTemplateId) أو SendGrid API Key صحيح داخل APP_EMAIL_CONFIG في firebase-config.js.';
     }
 
     function htmlToText(htmlValue) {
@@ -547,11 +550,11 @@
         const htmlContent = (payload.content || []).find(item => item.type === 'text/html');
         const messageHtml = (htmlContent && htmlContent.value) || '';
         const messageText = payload.messageText || htmlToText(messageHtml);
-        const selectedTemplateId = payload.emailjsTemplateId || REVIEW_EMAIL_CONFIG.emailjsDecisionTemplateId || '';
+        const selectedTemplateId = payload.emailjsTemplateId || getDecisionEmailTemplateId();
         const decisionSubject = firstPersonalization.subject || '';
 
-        if (!selectedTemplateId || selectedTemplateId === REVIEW_EMAIL_CONFIG.emailjsTemplateId) {
-            console.warn('EmailJS Decision Template غير مضبوط أو يساوي قالب Contact Us.');
+        if (!selectedTemplateId) {
+            console.warn('EmailJS Template غير مضبوط لإشعار القرار.');
             return false;
         }
 
@@ -661,7 +664,7 @@
                     to: [{ email: submission.email }],
                     subject
                 }],
-                emailjsTemplateId: REVIEW_EMAIL_CONFIG.emailjsDecisionTemplateId || '',
+                emailjsTemplateId: getDecisionEmailTemplateId(),
                 section2ApprovalStatus: approvalStatusLabel,
                 section2ApprovedFrom: approvedFromLabel,
                 section2ApprovedTo: approvedToLabel,

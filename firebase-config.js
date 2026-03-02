@@ -16,7 +16,7 @@ window.APP_EMAIL_CONFIG = {
   endpoint: "",
   emailjsServiceId: "service_bzfkj3q",
   emailjsTemplateId: "template_ihph0ia",
-  // مهم: يجب أن يكون قالب القرار مختلفًا عن emailjsTemplateId (قالب Contact Us)
+  // اختياري: قالب مخصص لإشعار القرار، وإن تُرك فارغًا سيتم استخدام emailjsTemplateId
   emailjsDecisionTemplateId: "",
   emailjsPublicKey: "XIbn_hYrfaNHp7Z0F",
   apiKey: "SG.YOUR_SENDGRID_API_KEY_HERE",
