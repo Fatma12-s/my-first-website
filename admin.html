@@ -531,7 +531,21 @@
         }
     }
 
-    async function notifyApplicantWithGuards(submission, newStatus) {
+    function buildDecisionSnapshot(submission, newStatus) {
+        return JSON.stringify({
+            status: newStatus,
+            approvalStatus: submission.approvalStatus || '',
+            approvedFrom: submission.approvedFrom || '',
+            approvedTo: submission.approvedTo || '',
+            directorDepartment: submission.directorDepartment || '',
+            directorName: submission.directorName || '',
+            notApprovedReason: submission.notApprovedReason || ''
+        });
+    }
+
+    async function notifyApplicantWithGuards(submission, newStatus, options = {}) {
+        const forceResend = !!options.forceResend;
+
         if (!submission || !submission.id) {
             return { sent: false, skipped: 'missing-submission' };
         }
@@ -549,15 +563,21 @@
             return { sent: false, skipped: 'invalid-email' };
         }
 
+        const decisionSnapshot = buildDecisionSnapshot(submission, newStatus);
+
         if (submission.lastNotifiedStatus === newStatus) {
-            return { sent: false, skipped: 'duplicate-status' };
+            const sameSnapshot = submission.lastNotifiedDecisionSnapshot === decisionSnapshot;
+            if (sameSnapshot) {
+                return { sent: false, skipped: 'duplicate-status' };
+            }
         }
 
         if (!isEmailConfigReady()) {
             await updateSubmissionRecord(submission.id, {
                 lastNotifiedStatus: newStatus,
                 lastNotifiedAt: new Date().toISOString(),
-                lastNotificationResult: 'email-config-not-ready'
+                lastNotificationResult: 'email-config-not-ready',
+                lastNotifiedDecisionSnapshot: decisionSnapshot
             });
             return { sent: false, skipped: 'email-config-not-ready' };
         }
@@ -566,7 +586,8 @@
         await updateSubmissionRecord(submission.id, {
             lastNotifiedStatus: newStatus,
             lastNotifiedAt: new Date().toISOString(),
-            lastNotificationResult: sent ? 'sent' : 'send-failed'
+            lastNotificationResult: sent ? 'sent' : 'send-failed',
+            lastNotifiedDecisionSnapshot: decisionSnapshot
         });
 
         return sent ? { sent: true } : { sent: false, skipped: 'send-failed' };
@@ -1148,8 +1169,6 @@
         const directorName = document.getElementById(`directorName-${submissionKey}`)?.value || '';
         const directorDepartment = document.getElementById(`directorDepartment-${submissionKey}`)?.value || '';
 
-        const statusByApproval = approvalStatus === 'Approved' ? 'Approved' : (approvalStatus === 'Not Approved' ? 'Rejected' : 'Pending');
-
         const updates = {
             approvalStatus,
             approvedFrom,
@@ -1157,30 +1176,12 @@
             notApprovedReason,
             directorName,
             directorDepartment,
-            status: statusByApproval,
             reviewedAt: new Date().toISOString()
         };
 
         const updated = await updateSubmissionRecord(submissionId, updates);
         if (updated) {
-            const submission = submissionIndex.get(String(submissionId));
-            const mergedSubmission = { ...(submission || {}), ...updates, id: submissionId };
-            const notifyResult = await notifyApplicantWithGuards(mergedSubmission, statusByApproval);
-
-            let message = '✅ تم حفظ بيانات Section 2 وتحديث حالة الطلب';
-            if (notifyResult.sent) {
-                message += '\n📧 تم إرسال إشعار للمتقدم.';
-            } else if (notifyResult.skipped === 'duplicate-status') {
-                message += '\nℹ️ لم يُرسل إشعار جديد لأن نفس الحالة أُرسلت سابقًا.';
-            } else if (notifyResult.skipped === 'invalid-email') {
-                message += '\n⚠️ لم يُرسل إشعار لأن بريد المتقدم غير صالح أو غير موجود.';
-            } else if (notifyResult.skipped === 'email-config-not-ready') {
-                message += '\n⚠️ لم يُرسل إشعار لأن إعدادات البريد غير مفعلة.';
-            } else if (notifyResult.skipped === 'send-failed') {
-                message += '\n⚠️ فشل إرسال الإشعار. تحقق من إعدادات endpoint أو EmailJS أو SendGrid.';
-            }
-
-            alert(message);
+            alert('✅ تم حفظ بيانات Section 2 بنجاح.\nاضغط زر الموافقة أو الرفض لإرسال الإشعار للمتقدم.');
             await loadSubmissions();
         } else {
             alert('⚠️ تعذر حفظ بيانات Section 2 لهذا الطلب');
