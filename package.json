@@ -1,0 +1,25 @@
+{
+  "name": "my-first-website",
+  "version": "1.0.0",
+  "description": "Static training portal website with automated form submission smoke test",
+  "private": true,
+  "main": "test_submit.js",
+  "scripts": {
+    "test:e2e": "node test_submit.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fatma12-s/my-first-website.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/fatma12-s/my-first-website/issues"
+  },
+  "homepage": "https://github.com/fatma12-s/my-first-website#readme",
+  "devDependencies": {
+    "puppeteer": "^24.37.5"
+  }
+}
