@@ -702,6 +702,10 @@
                 'Rejected': { bg: '#f8d7da', border: '#dc3545', text: '#721c24', label: '❌ مرفوض' }
             };
             const statusConfig = statusColors[submission.status] || statusColors['Pending'];
+            const section2NotApproved = submission.formType === 'graduates' && submission.approvalStatus !== 'Approved';
+            const approveButtonHtml = section2NotApproved
+                ? `<button disabled title="يلزم اعتماد Section 2 أولاً" style="background: #9aa4ac; padding: 8px 16px; color: white; border: none; border-radius: 4px; cursor: not-allowed; font-size: 12px; font-weight: 600; opacity: 0.8;">✅ موافقة</button>`
+                : `<button onclick='updateSubmissionStatus(${JSON.stringify(submission.id)}, "Approved")' style="background: #28a745; padding: 8px 16px; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">✅ موافقة</button>`;
             
             return `
                 <div class="submission-card" style="border-right-color: ${statusConfig.border};">
@@ -746,7 +750,7 @@
                         </div>
                     ` : ''}
                     <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #eee; display: flex; gap: 8px; flex-wrap: wrap;">
-                        <button onclick='updateSubmissionStatus(${JSON.stringify(submission.id)}, "Approved")' style="background: #28a745; padding: 8px 16px; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">✅ موافقة</button>
+                        ${approveButtonHtml}
                         <button onclick='updateSubmissionStatus(${JSON.stringify(submission.id)}, "Rejected")' style="background: #dc3545; padding: 8px 16px; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">❌ رفض</button>
                         <button onclick='updateSubmissionStatus(${JSON.stringify(submission.id)}, "Pending")' style="background: #ffc107; padding: 8px 16px; color: #333; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">⏳ قيد الانتظار</button>
                     </div>
@@ -1085,11 +1089,21 @@
 
     // ===== تحديث حالة الطلب =====
     async function updateSubmissionStatus(submissionId, newStatus) {
+        const submission = submissionIndex.get(String(submissionId));
+        if (
+            newStatus === 'Approved' &&
+            submission &&
+            submission.formType === 'graduates' &&
+            submission.approvalStatus !== 'Approved'
+        ) {
+            alert('⚠️ لا يمكن الموافقة النهائية قبل اعتماد Section 2 (Department Director/HOD).');
+            return;
+        }
+
         const statusText = { 'Pending': '⏳ قيد الانتظار', 'Approved': '✅ موافق', 'Rejected': '❌ مرفوض' };
         const updated = await updateSubmissionRecord(submissionId, { status: newStatus });
 
         if (updated) {
-            const submission = submissionIndex.get(String(submissionId));
             const mergedSubmission = { ...(submission || {}), status: newStatus, id: submissionId };
             const notifyResult = await notifyApplicantWithGuards(mergedSubmission, newStatus);
 
