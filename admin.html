@@ -495,12 +495,16 @@
 
         const wrapper = document.createElement('div');
         wrapper.style.position = 'fixed';
-        wrapper.style.left = '-99999px';
-        wrapper.style.top = '0';
+        wrapper.style.top = '10px';
+        wrapper.style.left = '10px';
         wrapper.style.width = '800px';
+        wrapper.style.maxWidth = '800px';
         wrapper.style.background = '#fff';
         wrapper.style.padding = '20px';
         wrapper.style.direction = 'rtl';
+        wrapper.style.opacity = '0.01';
+        wrapper.style.pointerEvents = 'none';
+        wrapper.style.zIndex = '-1';
         wrapper.innerHTML = `
             <div style="font-family:Arial,sans-serif;color:#222;line-height:1.8;">
                 <h2 style="margin:0 0 8px;">استمارة الطلب</h2>
@@ -527,6 +531,8 @@
         document.body.appendChild(wrapper);
 
         const fileName = `submission-${String(submission.id || 'request').replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`;
+        const captureWidth = wrapper.scrollWidth || 800;
+        const captureHeight = wrapper.scrollHeight || 1120;
 
         try {
             await html2pdf()
@@ -534,7 +540,14 @@
                     margin: [10, 10, 10, 10],
                     filename: fileName,
                     image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { scale: 2, useCORS: true },
+                    html2canvas: {
+                        scale: 2,
+                        useCORS: true,
+                        scrollX: 0,
+                        scrollY: 0,
+                        windowWidth: captureWidth,
+                        windowHeight: captureHeight
+                    },
                     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
                 })
                 .from(wrapper)
