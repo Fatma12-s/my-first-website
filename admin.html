@@ -319,7 +319,6 @@
                 <input type="text" id="searchInput" placeholder="🔍 ابحث عن اسم أو بريد...">
 
                 <button onclick="exportToCSV()">📥 تصدير Excel</button>
-                <button onclick="migrateLocalStorageToFirestore()" style="background:#2e5f8a; color:#fff;">⬆️ ترحيل Local إلى Firebase</button>
                 <button class="clear-btn" onclick="clearAllData()">🗑️ حذف الكل</button>
             </div>
         </div>
@@ -1228,63 +1227,6 @@
         const clearBtn = document.querySelector('.clear-btn');
         if (!clearBtn) return;
         clearBtn.textContent = selectedForm ? '🗑️ حذف النوع المحدد' : '🗑️ حذف الكل';
-    }
-
-    function getLocalSubmissionStats() {
-        const localData = JSON.parse(localStorage.getItem('formSubmissions')) || {};
-        let total = 0;
-        Object.values(localData).forEach(items => {
-            if (Array.isArray(items)) total += items.length;
-        });
-        return { localData, total };
-    }
-
-    async function migrateLocalStorageToFirestore() {
-        if (!db) {
-            alert('⚠️ Firebase غير مفعّل بعد. تأكد من إعداد FIREBASE_CONFIG أولاً.');
-            return;
-        }
-
-        const { localData, total } = getLocalSubmissionStats();
-        if (!total) {
-            alert('ℹ️ لا توجد بيانات في localStorage للترحيل.');
-            return;
-        }
-
-        const proceed = confirm(`سيتم ترحيل ${total} طلب من localStorage إلى Firestore. هل تريد المتابعة؟`);
-        if (!proceed) return;
-
-        let migrated = 0;
-        let failed = 0;
-
-        for (const [formType, submissions] of Object.entries(localData)) {
-            if (!Array.isArray(submissions)) continue;
-
-            for (const submission of submissions) {
-                try {
-                    const sourceId = String(submission.id || Date.now());
-                    const docId = `${formType}_${sourceId}`.replace(/[^a-zA-Z0-9_-]/g, '_');
-                    const payload = { ...submission, formType: submission.formType || formType };
-                    await db.collection('formSubmissions').doc(docId).set(payload, { merge: true });
-                    migrated++;
-                } catch (err) {
-                    console.error('فشل ترحيل سجل:', submission, err);
-                    failed++;
-                }
-            }
-        }
-
-        const backupKey = `formSubmissions_backup_${Date.now()}`;
-        localStorage.setItem(backupKey, JSON.stringify(localData));
-
-        if (migrated > 0 && failed === 0) {
-            if (confirm('✅ تم ترحيل جميع السجلات بنجاح. هل تريد حذف البيانات المحلية الآن؟')) {
-                localStorage.removeItem('formSubmissions');
-            }
-        }
-
-        await loadSubmissions();
-        alert(`✅ اكتمل الترحيل\n- تم ترحيل: ${migrated}\n- فشل: ${failed}\n- نسخة احتياطية: ${backupKey}`);
     }
 
     async function clearAllData() {
