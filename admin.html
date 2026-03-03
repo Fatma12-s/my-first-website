@@ -302,6 +302,7 @@
         </header>
 
         <div id="emailConfigAlert" class="config-alert" style="display:none;"></div>
+        <div id="dataSourceIndicator" class="config-alert" style="display:none; margin-top:10px;"></div>
 
         <div class="filters">
             <div class="filter-group">
@@ -418,6 +419,22 @@
         alertEl.textContent = ready
             ? '✅ إشعارات البريد مفعّلة: سيتم إرسال قرار الموافقة/الرفض للمتقدمين.'
             : '⚠️ إشعارات البريد غير مفعّلة: أضف endpoint آمن أو EmailJS (emailjsServiceId + emailjsTemplateId أو emailjsDecisionTemplateId) أو SendGrid API Key صحيح داخل APP_EMAIL_CONFIG في firebase-config.js.';
+    }
+
+    function renderDataSourceIndicator(source) {
+        const indicatorEl = document.getElementById('dataSourceIndicator');
+        if (!indicatorEl) return;
+
+        indicatorEl.style.display = 'block';
+
+        if (source === 'firebase') {
+            indicatorEl.className = 'config-alert success';
+            indicatorEl.textContent = '🟢 مصدر البيانات الحالي: Firebase (Firestore)';
+            return;
+        }
+
+        indicatorEl.className = 'config-alert warning';
+        indicatorEl.textContent = '🟡 مصدر البيانات الحالي: localStorage (بيانات محلية على هذا الجهاز)';
     }
 
     function htmlToText(htmlValue) {
@@ -901,6 +918,9 @@
         const selectedForm = document.getElementById('formFilter').value;
         const searchTerm = document.getElementById('searchInput').value.toLowerCase();
         let filteredData = [];
+        let source = 'localstorage';
+        let firestoreReadOk = false;
+        let firestoreCount = 0;
         
         // محاولة الجلب من Firestore أولاً
         if (db) {
@@ -910,30 +930,46 @@
                     query = query.where('formType', '==', selectedForm);
                 }
                 const snapshot = await query.get();
+                firestoreReadOk = true;
                 snapshot.forEach(doc => {
                     const data = doc.data();
                     data.id = doc.id;
                     filteredData.push(data);
+                    firestoreCount++;
                 });
+                if (firestoreCount > 0) {
+                    source = 'firebase';
+                }
             } catch (err) {
                 console.log('خطأ في Firestore، سيتم استخدام localStorage:', err);
                 filteredData = [];
+                source = 'localstorage';
             }
         }
         
         // إذا لم نجد بيانات في Firestore، أو Firebase غير متاح، استخدم localStorage
         if (filteredData.length === 0) {
             const localData = JSON.parse(localStorage.getItem('formSubmissions')) || {};
+            let localCount = 0;
             Object.entries(localData).forEach(([formType, submissions]) => {
                 if (Array.isArray(submissions)) {
                     submissions.forEach(sub => {
                         if (!selectedForm || formType === selectedForm) {
                             filteredData.push({...sub, formType});
+                            localCount++;
                         }
                     });
                 }
             });
+
+            if (localCount > 0) {
+                source = 'localstorage';
+            } else if (firestoreReadOk) {
+                source = 'firebase';
+            }
         }
+
+        renderDataSourceIndicator(source);
         // البحث
         if (searchTerm) {
             filteredData = filteredData.filter(item => {
