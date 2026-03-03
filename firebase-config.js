@@ -2,12 +2,12 @@
 // ضع بيانات الربط هنا
 
 window.FIREBASE_CONFIG = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyDmNC9-8sRAHGqGSC9r_Zr3mk97tu3RFgc",
+  authDomain: "squh-training.firebaseapp.com",
+  projectId: "squh-training",
+  storageBucket: "squh-training.firebasestorage.app",
+  messagingSenderId: "1064112237940",
+  appId: "1:1064112237940:web:94905f060413b97ad6d021"
 };
 
 // إعدادات البريد لتفعيل إشعارات الإيميل عبر SendGrid

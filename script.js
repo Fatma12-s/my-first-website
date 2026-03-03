@@ -460,6 +460,13 @@ async function saveFormData(formName, formData) {
   // إرسال إشعار بريدي (يعمل بدون انتظار)
   sendNotificationEmail(cleaned, responsible);
 
+  // تأكد من تهيئة Firebase (App + Firestore + Storage) قبل محاولة الحفظ السحابي
+  try {
+    await ensureFirebase();
+  } catch (err) {
+    console.warn('تعذر تهيئة Firebase، سيتم استخدام localStorage:', err);
+  }
+
   // إذا كان Firebase متاحاً، احفظ في Firestore
   if (window.FIREBASE_CONFIG && window.firebase && window.firebase.firestore) {
     try {
@@ -539,6 +546,7 @@ async function loadFirebaseSDK() {
   if (window.firebase && window.firebase.storage) return;
   const scripts = [
     'https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js',
+    'https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js',
     'https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js'
   ];
   for (const src of scripts) {
@@ -562,7 +570,7 @@ async function ensureFirebase() {
       // ignore if already initialized
     }
   }
-  return !!(window.firebase && window.firebase.storage);
+  return !!(window.firebase && window.firebase.storage && window.firebase.firestore);
 }
 
 async function uploadFileToFirebase(file, remotePath) {
