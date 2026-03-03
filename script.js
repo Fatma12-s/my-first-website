@@ -423,7 +423,7 @@ function sendNotificationEmail(applicantData, responsible) {
   }
 }
 
-// ===== حفظ البيانات في localStorage أو Firestore =====
+// ===== حفظ البيانات في Firestore فقط =====
 async function saveFormData(formName, formData) {
   // استنسخ البيانات ونظف أي حقول ملفات إلى أسماء الملفات قبل التخزين
   const sanitize = (data) => {
@@ -460,14 +460,14 @@ async function saveFormData(formName, formData) {
   // إرسال إشعار بريدي (يعمل بدون انتظار)
   sendNotificationEmail(cleaned, responsible);
 
-  // تأكد من تهيئة Firebase (App + Firestore + Storage) قبل محاولة الحفظ السحابي
+  // تأكد من تهيئة Firebase (App + Firestore + Storage) قبل محاولة الحفظ
   try {
     await ensureFirebase();
   } catch (err) {
-    console.warn('تعذر تهيئة Firebase، سيتم استخدام localStorage:', err);
+    console.warn('تعذر تهيئة Firebase:', err);
   }
 
-  // إذا كان Firebase متاحاً، احفظ في Firestore
+  // الحفظ في Firestore فقط
   if (window.FIREBASE_CONFIG && window.firebase && window.firebase.firestore) {
     try {
       const result = await window.firebase.firestore().collection('formSubmissions').add(cleaned);
@@ -475,16 +475,11 @@ async function saveFormData(formName, formData) {
       return { success: true, data: cleaned };
     } catch (e) {
       console.error('Firebase Error:', e);
-      // المتابعة مع localStorage كبديل
+      return { success: false, error: 'تعذر الحفظ في Firebase (Firestore)' };
     }
   }
 
-  // احفظ محلياً (Firebase متعطل أو غير متوفر)
-  let allSubmissions = JSON.parse(localStorage.getItem('formSubmissions')) || {};
-  if (!allSubmissions[formName]) allSubmissions[formName] = [];
-  allSubmissions[formName].push(cleaned);
-  localStorage.setItem('formSubmissions', JSON.stringify(allSubmissions));
-  return { success: true, data: cleaned, local: true };
+  return { success: false, error: 'Firebase غير مفعّل أو Firestore غير متاح' };
 }
 
 // ===== استمارة تدريب الطلاب والخريجين =====
@@ -684,10 +679,10 @@ async function handleFormSubmit(formEl, formName) {
     // حفظ الطلب
     const result = await saveFormData(formName, obj);
     if (result.success) {
-      showSuccessMessage(formName, result.data, result.local);
+      showSuccessMessage(formName, result.data, false);
       formEl.reset();
     } else {
-      throw new Error('فشل حفظ البيانات');
+      throw new Error(result.error || 'فشل حفظ البيانات');
     }
   } catch (error) {
     showErrorMessage(error.message || 'حدث خطأ غير متوقع');

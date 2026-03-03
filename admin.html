@@ -350,7 +350,7 @@
             db = firebase.firestore();
         }
     } catch (err) {
-        console.log('Firebase غير متاح، سيتم استخدام localStorage');
+        console.log('Firebase غير متاح');
     }
 
     // ===== إعدادات إرسال إشعار قرار الموافقة للمتقدم =====
@@ -434,7 +434,7 @@
         }
 
         indicatorEl.className = 'config-alert warning';
-        indicatorEl.textContent = '🟡 مصدر البيانات الحالي: localStorage (بيانات محلية على هذا الجهاز)';
+        indicatorEl.textContent = '🔴 مصدر البيانات الحالي: Firebase غير متاح';
     }
 
     function htmlToText(htmlValue) {
@@ -912,15 +912,28 @@
         return sent ? { sent: true } : { sent: false, skipped: 'send-failed' };
     }
 
-    // ===== تحميل وعرض البيانات من Firestore أو localStorage =====
+    // ===== تحميل وعرض البيانات من Firestore فقط =====
     async function loadSubmissions() {
         const container = document.getElementById('submissionsContainer');
         const selectedForm = document.getElementById('formFilter').value;
         const searchTerm = document.getElementById('searchInput').value.toLowerCase();
         let filteredData = [];
-        let source = 'localstorage';
+        let source = 'firebase-unavailable';
         let firestoreReadOk = false;
         let firestoreCount = 0;
+
+        if (!db) {
+            renderDataSourceIndicator(source);
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">⚠️</div>
+                    <h3>Firebase غير متاح</h3>
+                    <p>لا يمكن تحميل الطلبات بدون اتصال Firestore.</p>
+                </div>
+            `;
+            updateStats([]);
+            return;
+        }
         
         // محاولة الجلب من Firestore أولاً
         if (db) {
@@ -941,32 +954,14 @@
                     source = 'firebase';
                 }
             } catch (err) {
-                console.log('خطأ في Firestore، سيتم استخدام localStorage:', err);
+                console.log('خطأ في Firestore:', err);
                 filteredData = [];
-                source = 'localstorage';
+                source = 'firebase-unavailable';
             }
         }
-        
-        // إذا لم نجد بيانات في Firestore، أو Firebase غير متاح، استخدم localStorage
-        if (filteredData.length === 0) {
-            const localData = JSON.parse(localStorage.getItem('formSubmissions')) || {};
-            let localCount = 0;
-            Object.entries(localData).forEach(([formType, submissions]) => {
-                if (Array.isArray(submissions)) {
-                    submissions.forEach(sub => {
-                        if (!selectedForm || formType === selectedForm) {
-                            filteredData.push({...sub, formType});
-                            localCount++;
-                        }
-                    });
-                }
-            });
 
-            if (localCount > 0) {
-                source = 'localstorage';
-            } else if (firestoreReadOk) {
-                source = 'firebase';
-            }
+        if (firestoreReadOk) {
+            source = 'firebase';
         }
 
         renderDataSourceIndicator(source);
@@ -1301,30 +1296,27 @@
 
         if (!confirm(confirmationMsg)) return;
 
-        if (db) {
-            try {
-                let query = db.collection('formSubmissions');
-                if (isSpecific) {
-                    query = query.where('formType', '==', selectedForm);
-                }
-                const snapshot = await query.get();
-                const batch = db.batch();
-                snapshot.forEach(doc => batch.delete(doc.ref));
-                if (!snapshot.empty) {
-                    await batch.commit();
-                }
-            } catch (err) {
-                console.log('تعذر حذف البيانات من Firestore:', err);
-            }
+        if (!db) {
+            alert('⚠️ Firebase غير متاح. لا يمكن حذف البيانات.');
+            return;
         }
 
-        const localData = JSON.parse(localStorage.getItem('formSubmissions')) || {};
-        if (isSpecific) {
-            delete localData[selectedForm];
-        } else {
-            Object.keys(localData).forEach(key => delete localData[key]);
+        try {
+            let query = db.collection('formSubmissions');
+            if (isSpecific) {
+                query = query.where('formType', '==', selectedForm);
+            }
+            const snapshot = await query.get();
+            const batch = db.batch();
+            snapshot.forEach(doc => batch.delete(doc.ref));
+            if (!snapshot.empty) {
+                await batch.commit();
+            }
+        } catch (err) {
+            console.log('تعذر حذف البيانات من Firestore:', err);
+            alert('⚠️ تعذر حذف البيانات من Firebase.');
+            return;
         }
-        localStorage.setItem('formSubmissions', JSON.stringify(localData));
 
         await loadSubmissions();
         alert(isSpecific ? '✅ تم حذف الطلبات المعروضة لهذا النوع.' : '✅ تم حذف جميع الطلبات.');
@@ -1376,6 +1368,11 @@
         const selectedForm = document.getElementById('formFilter').value;
         const searchTerm = document.getElementById('searchInput').value.toLowerCase();
         let filteredData = [];
+
+        if (!db) {
+            alert('⚠️ Firebase غير متاح. لا يمكن تصدير البيانات.');
+            return;
+        }
         
         // جمع البيانات المعروضة حاليًا
         if (db) {
@@ -1394,19 +1391,6 @@
                 console.log('خطأ في Firestore:', err);
                 filteredData = [];
             }
-        }
-        
-        if (filteredData.length === 0) {
-            const localData = JSON.parse(localStorage.getItem('formSubmissions')) || {};
-            Object.entries(localData).forEach(([formType, submissions]) => {
-                if (Array.isArray(submissions)) {
-                    submissions.forEach(sub => {
-                        if (!selectedForm || formType === selectedForm) {
-                            filteredData.push({...sub, formType});
-                        }
-                    });
-                }
-            });
         }
         
         // تطبيق البحث
@@ -1488,35 +1472,18 @@
 
 
     async function updateSubmissionRecord(submissionId, updates) {
-        let updated = false;
-
-        if (db && typeof submissionId === 'string') {
-            try {
-                await db.collection('formSubmissions').doc(submissionId).update(updates);
-                updated = true;
-            } catch (err) {
-                console.log('تعذر تحديث Firestore، سيتم محاولة localStorage:', err);
-            }
+        if (!db || typeof submissionId !== 'string') {
+            console.log('تعذر تحديث السجل: Firebase غير متاح أو معرف غير صالح.');
+            return false;
         }
 
-        const formSubmissions = JSON.parse(localStorage.getItem('formSubmissions')) || {};
-        Object.keys(formSubmissions).forEach(formType => {
-            if (Array.isArray(formSubmissions[formType])) {
-                formSubmissions[formType].forEach((sub, idx) => {
-                    if (String(sub.id) === String(submissionId)) {
-                        formSubmissions[formType][idx] = {
-                            ...formSubmissions[formType][idx],
-                            ...updates,
-                            updatedAt: new Date().toISOString()
-                        };
-                        updated = true;
-                    }
-                });
-            }
-        });
-        localStorage.setItem('formSubmissions', JSON.stringify(formSubmissions));
-
-        return updated;
+        try {
+            await db.collection('formSubmissions').doc(submissionId).update(updates);
+            return true;
+        } catch (err) {
+            console.log('تعذر تحديث Firestore:', err);
+            return false;
+        }
     }
 
     // ===== تحديث حالة الطلب =====
