@@ -1,25 +1,19 @@
 {
-  "functions": {
-    "source": "functions"
-  },
-  "firestore": {
-    "rules": "firestore.rules"
-  },
-  "hosting": {
-    "public": ".",
-    "redirects": [
-      {
-        "source": "/",
-        "destination": "/index.html",
-        "type": 302
-      }
-    ],
-    "ignore": [
-      "firebase.json",
-      "deploy.log",
-      ".git/**",
-      "**/.*",
-      "**/node_modules/**"
-    ]
-  }
+	"hosting": {
+		"public": ".",
+		"redirects": [
+			{
+				"source": "/",
+				"destination": "/index.html",
+				"type": 302
+			}
+		],
+		"ignore": [
+			"firebase.json",
+			"deploy.log",
+			".git/**",
+			"**/.*",
+			"**/node_modules/**"
+		]
+	}
 }
