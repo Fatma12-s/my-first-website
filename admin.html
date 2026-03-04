@@ -7,11 +7,57 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <script>
-        // لم يعد هناك أي منطق دخول أو رمز أو مربع حوار
-        // لوحة التحكم متاحة للجميع بدون أي رمز أو مربع حوار
+        (function guardAdminAccess() {
+            const SESSION_KEY = 'adminSession';
+            const LEGACY_TOKEN_KEY = 'adminToken';
+            const REDIRECT_KEY = 'redirectTo';
+            const SESSION_MAX_AGE_MS = 12 * 60 * 60 * 1000;
+
+            let session = null;
+            try {
+                const raw = sessionStorage.getItem(SESSION_KEY);
+                if (raw) session = JSON.parse(raw);
+            } catch (err) {
+                session = null;
+            }
+
+            if (!session) {
+                const legacyToken = sessionStorage.getItem(LEGACY_TOKEN_KEY);
+                if (legacyToken) {
+                    session = { employeeId: legacyToken, loginAt: Date.now() };
+                    sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+                }
+            }
+
+            const admins = JSON.parse(localStorage.getItem('admins') || '{}');
+            const hasValidUser = !!(session && session.employeeId && admins[session.employeeId]);
+            const isExpired = !!(session && session.loginAt && (Date.now() - Number(session.loginAt) > SESSION_MAX_AGE_MS));
+
+            if (!hasValidUser || isExpired) {
+                sessionStorage.removeItem(SESSION_KEY);
+                sessionStorage.removeItem(LEGACY_TOKEN_KEY);
+                sessionStorage.setItem(REDIRECT_KEY, 'admin.html');
+                window.location.href = 'admin-login.html';
+                return;
+            }
+
+            window.__ADMIN_SESSION__ = session;
+        })();
+
         document.addEventListener('DOMContentLoaded', () => {
             const nameElement = document.getElementById('adminName');
-            if (nameElement) nameElement.textContent = 'لوحة التحكم';
+            if (nameElement) {
+                nameElement.textContent = (window.__ADMIN_SESSION__ && window.__ADMIN_SESSION__.employeeId) || 'Admin';
+            }
+
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', () => {
+                    sessionStorage.removeItem('adminSession');
+                    sessionStorage.removeItem('adminToken');
+                    window.location.href = 'admin-login.html';
+                });
+            }
         });
     </script>
     <style>
@@ -295,7 +341,10 @@
         <header>
             <h1>📊 لوحة التحكم - دائرة التدريب والتطوير المهني المستمر</h1>
             <p>عرض وإدارة جميع طلبات المشاركين والمتدربين</p>
-            <p style="font-size: 12px; color: #999; margin-top: 8px;">مرحباً بك: <strong id="adminName">Admin</strong></p>
+            <p style="font-size: 12px; color: #999; margin-top: 8px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                <span>مرحباً بك: <strong id="adminName">Admin</strong></span>
+                <button id="logoutBtn" type="button" style="background:#555; color:#fff; border:none; border-radius:6px; padding:4px 10px; font-size:12px; cursor:pointer;">تسجيل الخروج</button>
+            </p>
             <div class="header-info" id="stats">
                 <!-- سيتم ملؤها بـ JavaScript -->
             </div>

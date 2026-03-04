@@ -172,30 +172,31 @@
     </div>
 
     <script>
+        function resetAdminAccount() {
+            const employeeId = prompt('أدخل الرقم الوظيفي الذي تريد إعادة تعيينه:');
+            if (!employeeId) return;
+
+            const admins = JSON.parse(localStorage.getItem('admins')) || {};
+            if (!admins[employeeId]) {
+                alert('لا يوجد حساب بهذا الرقم الوظيفي.');
+                return;
+            }
+
+            if (!confirm('هل أنت متأكد أنك تريد حذف الحساب وإعادة تعيين كلمة المرور؟')) return;
+            delete admins[employeeId];
+            localStorage.setItem('admins', JSON.stringify(admins));
+            alert('تم حذف الحساب. يمكنك الآن إنشاء كلمة مرور جديدة من صفحة التسجيل.');
+        }
+
         function handleLogin(event) {
-                    function resetAdminAccount() {
-                        const employeeId = prompt('أدخل الرقم الوظيفي الذي تريد إعادة تعيينه:');
-                        if (!employeeId) return;
-                        const admins = JSON.parse(localStorage.getItem('admins')) || {};
-                        if (!admins[employeeId]) {
-                            alert('لا يوجد حساب بهذا الرقم الوظيفي.');
-                            return;
-                        }
-                        if (!confirm('هل أنت متأكد أنك تريد حذف الحساب وإعادة تعيين كلمة المرور؟')) return;
-                        delete admins[employeeId];
-                        localStorage.setItem('admins', JSON.stringify(admins));
-                        alert('تم حذف الحساب. يمكنك الآن إنشاء كلمة مرور جديدة من صفحة التسجيل.');
-                    }
             event.preventDefault();
+
             const employeeId = document.getElementById('employeeId').value.trim();
             const password = document.getElementById('password').value;
             const errorMsg = document.getElementById('error');
-
             errorMsg.style.display = 'none';
 
-            // قراءة بيانات المستخدمين
             const admins = JSON.parse(localStorage.getItem('admins')) || {};
-
             if (!admins[employeeId]) {
                 errorMsg.textContent = 'الرقم الوظيفي غير موجود';
                 errorMsg.style.display = 'block';
@@ -203,10 +204,8 @@
                 return;
             }
 
-            // التحقق من كلمة المرور
             const storedPassword = admins[employeeId].password;
             const encryptedInput = btoa(password);
-
             if (encryptedInput !== storedPassword) {
                 errorMsg.textContent = 'كلمة المرور غير صحيحة';
                 errorMsg.style.display = 'block';
@@ -215,8 +214,14 @@
                 return;
             }
 
-            // تسجيل الدخول الناجح
+            const session = {
+                employeeId,
+                loginAt: Date.now()
+            };
+
             sessionStorage.setItem('adminToken', employeeId);
+            sessionStorage.setItem('adminSession', JSON.stringify(session));
+
             const redirectTo = sessionStorage.getItem('redirectTo') || 'admin.html';
             sessionStorage.removeItem('redirectTo');
             window.location.href = redirectTo;
