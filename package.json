@@ -1,13 +1,10 @@
 {
   "name": "my-first-website",
   "version": "1.0.0",
-  "description": "Static training portal website with automated form submission smoke test",
-  "private": true,
-  "main": "test_submit.js",
+  "description": "",
+  "main": "firebase-config.example.js",
   "scripts": {
-    "test:e2e": "node test_submit.js",
-    "test:e2e:local": "node test_submit.js",
-    "test:e2e:prod": "node -e \"process.env.TARGET_URL='https://squh-training.web.app/graduates.html'; require('./test_submit.js')\""
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
@@ -21,7 +18,7 @@
     "url": "https://github.com/fatma12-s/my-first-website/issues"
   },
   "homepage": "https://github.com/fatma12-s/my-first-website#readme",
-  "devDependencies": {
+  "dependencies": {
     "puppeteer": "^24.37.5"
   }
 }
