@@ -8,32 +8,29 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <style>
-        /* Form-specific overrides */
-        .back-link {
-            display: inline-block;
-            margin-bottom: var(--space-lg);
-            color: var(--brand-main);
-            font-weight: 600;
-            text-decoration: underline;
-        }
-
-        .back-link:hover {
-            color: #1d3c2e;
-        }
-
-        @media (max-width: 768px) {
-            nav ul {
-                flex-direction: column;
-                gap: var(--space-sm);
-            }
-        }
+        .back-link{display:inline-block;margin:12px 0;color:var(--brand-main);text-decoration:underline}
+        form{max-width:720px;margin:30px auto;display:grid;gap:16px}
+        label{font-weight:700}
+        input,select,textarea{padding:10px;border:1px solid #cfd8d6;border-radius:12px;font-family:"Cairo",ui-sans-serif,system-ui,"Noto Sans Arabic",Segoe UI,Tahoma,Arial,sans-serif}
+        fieldset{border:1px solid #dbe5e2;border-radius:12px;padding:16px;background:#f9fcfb}
+        legend{font-weight:800;color:#1f5b46;padding:0 8px}
+        .notice{max-width:720px;margin:20px auto 0;background:#f1f8f6;border:1px solid #d7ebe5;border-radius:12px;padding:14px;line-height:1.8}
+        .two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        .check-row{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+        .check-row label{font-weight:600}
+        .pledge-list{margin:0;padding-inline-start:20px;line-height:1.8}
+        .form-btn{padding:12px;border-radius:12px;background:var(--brand-main);color:#fff;border:none;font-weight:800;cursor:pointer}
+        .upload-icon{font-size:14px;vertical-align:middle;margin-inline-end:6px}
+        .field-hint{font-size:12px;color:#5f6f6a;margin-top:6px;line-height:1.6}
+        .photo-upload{background:#f7fbfa;border:1px dashed #cfded9;border-radius:12px;padding:12px}
+        @media (max-width:768px){.two-col{grid-template-columns:1fr} nav ul{flex-direction:column;gap:var(--space-sm)}}
     </style>
 </head>
 <body>
     <header class="site-header">
         <div class="container header-center">
             <a href="index.html" style="display: flex; flex-direction: column; align-items: center; gap: 0.2em; text-align: center;">
-                <img src="./assets/squh-header-logo.jpg" alt="شعار الدائرة" class="brand-logo">
+                <img src="./assets/logo2.png.png" alt="شعار الدائرة" class="brand-logo">
             </a>
 
             <nav>
@@ -51,63 +48,187 @@
         <div class="container">
             <a href="programs.html" class="back-link">← العودة للبرامج</a>
             <h2 class="section-title">تقديم الطلب - تدريب الطلاب والخريجين</h2>
-            
-            <form id="graduates-form" enctype="multipart/form-data" style="max-width: 600px; display: grid; gap: var(--space-lg); margin: 0 auto;">
-                <div class="form-group">
-                    <label for="grad-name">الاسم الكامل</label>
-                    <input type="text" id="grad-name" name="grad-name" required>
-                </div>
 
-                <div class="form-group">
-                    <label for="grad-email">البريد الإلكتروني</label>
-                    <input type="email" id="grad-email" name="grad-email" required>
-                </div>
+            <div class="notice">
+                <div>الرجاء تعبئة استمارة التدريب.</div>
+                <div>Please complete the training application form.</div>
+            </div>
 
-                <div class="form-group">
-                    <label for="grad-phone">رقم الهاتف</label>
-                    <input type="tel" id="grad-phone" name="grad-phone" required>
-                </div>
+            <form id="graduates-form" enctype="multipart/form-data">
+                <fieldset>
+                    <legend>Undertaking / إقرار وتعهد</legend>
+                    <ul class="pledge-list">
+                        <li>Adhere to SQUH regulations and training schedule.</li>
+                        <li>Be fully responsible for behavior during training period.</li>
+                        <li>Follow Dress Code for Medical Students and Doctors in Training (HWP-HDO-IPP-012) if joining medical team.</li>
+                        <li>SQUH is not liable for accidents or harm during training.</li>
+                        <li>Any violation may result in immediate discontinuation and reporting to requesting institute.</li>
+                        <li>Return training ID card on the last day; delay more than 5 days forfeits refundable deposit.</li>
+                        <li>Training card is property of SQUH and misuse/loss may lead to legal action.</li>
+                    </ul>
+                    <div class="check-row">
+                        <input type="checkbox" id="undertakingAgree" name="undertakingAgree" required>
+                        <label for="undertakingAgree">I agree / أوافق على الإقرار والتعهد</label>
+                    </div>
+                </fieldset>
 
-                <div class="form-group">
-                    <label for="grad-university">الجامعة/المعهد</label>
-                    <input type="text" id="grad-university" name="grad-university" required>
-                </div>
+                <fieldset>
+                    <legend>Section 1: Applicant Details</legend>
+                    <div class="two-col">
+                        <div>
+                            <label for="grad-name">Name / الاسم</label>
+                            <input type="text" id="grad-name" name="name" required>
+                        </div>
+                        <div class="photo-upload">
+                            <label for="applicantPhoto">
+                                <span class="upload-icon">📷</span>
+                                صورة المتقدم
+                            </label>
+                            <input type="file" id="applicantPhoto" name="applicantPhoto" accept=".jpg,.jpeg,.png" style="margin-top:6px;">
+                            <div class="field-hint">مقاس صورة الجواز أو البطاقة الشخصية.</div>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="address">Address / العنوان</label>
+                        <textarea id="address" name="address" rows="2" required></textarea>
+                    </div>
+                    <div class="two-col">
+                        <div>
+                            <label for="grad-phone">Telephone/GSM</label>
+                            <input type="tel" id="grad-phone" name="phone" required>
+                        </div>
+                        <div>
+                            <label for="grad-email">Email / البريد الإلكتروني</label>
+                            <input type="email" id="grad-email" name="email" required>
+                        </div>
+                    </div>
+                    <div class="two-col">
+                        <div>
+                            <label for="cardNo">Card No / رقم البطاقة</label>
+                            <input type="text" id="cardNo" name="cardNo" required>
+                        </div>
+                        <div>
+                            <label for="institute">Institute / الجهة</label>
+                            <input type="text" id="institute" name="institute" required>
+                        </div>
+                    </div>
+                    <div>
+                        <label>Program Requirement</label>
+                        <div class="check-row">
+                            <input type="radio" id="clinicalAttachment" name="programRequirement" value="CLINICAL ATTACHMENT" required>
+                            <label for="clinicalAttachment">CLINICAL ATTACHMENT</label>
+                            <input type="radio" id="nonClinicalAttachment" name="programRequirement" value="NON-CLINICAL ATTACHMENT" required>
+                            <label for="nonClinicalAttachment">NON-CLINICAL ATTACHMENT</label>
+                        </div>
+                    </div>
+                    <div class="two-col">
+                        <div>
+                            <label for="specialty">Specialty / Department</label>
+                            <select id="specialty" name="specialtyDepartment" required style="padding:10px;border:1px solid #cfd8d6;border-radius:12px;font-family:inherit;width:100%;">
+                                <option value="">-- اختر القسم --</option>
+                                <option value="Administration Affairs">Administration Affairs</option>
+                                <option value="Anesthesia and Intensive Care">Anesthesia and Intensive Care</option>
+                                <option value="Behavioral Medicine">Behavioral Medicine</option>
+                                <option value="Biochemistry">Biochemistry</option>
+                                <option value="Child Health">Child Health</option>
+                                <option value="Clinical Physiology">Clinical Physiology</option>
+                                <option value="Dental and Maxillofacial Surgery">Dental and Maxillofacial Surgery</option>
+                                <option value="Deputy for Affaires & Finance">Deputy for Affaires & Finance</option>
+                                <option value="Development & Quality">Development & Quality</option>
+                                <option value="Emergency Medicine">Emergency Medicine</option>
+                                <option value="Finance">Finance</option>
+                                <option value="Genetics">Genetics</option>
+                                <option value="Hematology">Hematology</option>
+                                <option value="Hospital Information Systems">Hospital Information Systems</option>
+                                <option value="Hospital Director General Office">Hospital Director General Office</option>
+                                <option value="Infection Control">Infection Control</option>
+                                <option value="Medical Supplies Directorate">Medical Supplies Directorate</option>
+                                <option value="Medical Record">Medical Record</option>
+                                <option value="Medicine">Medicine</option>
+                                <option value="Microbiology">Microbiology</option>
+                                <option value="Nursing">Nursing</option>
+                                <option value="Nutrition & Dietetics">Nutrition & Dietetics</option>
+                                <option value="Obstetrics & Gynecology">Obstetrics & Gynecology</option>
+                                <option value="Ophthalmology">Ophthalmology</option>
+                                <option value="Pathology">Pathology</option>
+                                <option value="Patients Service">Patients Service</option>
+                                <option value="Personnel Affairs Directorate">Personnel Affairs Directorate</option>
+                                <option value="Pharmacy">Pharmacy</option>
+                                <option value="Physiotherapy & Rehabilitation">Physiotherapy & Rehabilitation</option>
+                                <option value="Procurement">Procurement</option>
+                                <option value="Radiology & Molecular Imaging">Radiology & Molecular Imaging</option>
+                                <option value="Statistics & Health Information">Statistics & Health Information</option>
+                                <option value="Surgery">Surgery</option>
+                                <option value="Technical Affaires">Technical Affaires</option>
+                                <option value="Training & CPD">Training & CPD</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="two-col">
+                        <div>
+                            <label for="durationFrom">Duration From</label>
+                            <input type="date" id="durationFrom" name="durationFrom" required>
+                        </div>
+                        <div>
+                            <label for="durationTo">Duration To</label>
+                            <input type="date" id="durationTo" name="durationTo" required>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="objective1">Specific Training Objective 1</label>
+                        <textarea id="objective1" name="objective1" rows="2" required></textarea>
+                    </div>
+                    <div>
+                        <label for="objective2">Specific Training Objective 2</label>
+                        <textarea id="objective2" name="objective2" rows="2"></textarea>
+                    </div>
+                </fieldset>
 
-                <div class="form-group">
-                    <label for="grad-major">التخصص</label>
-                    <input type="text" id="grad-major" name="grad-major" required>
-                </div>
+                <fieldset>
+                    <legend>Attachments / المرفقات</legend>
+                    <div>
+                        <label for="cvFile">1) CV</label>
+                        <input type="file" id="cvFile" name="cvFile" accept=".pdf,.jpg,.jpeg,.png" required>
+                    </div>
+                    <div>
+                        <label for="universityLetter">2) University/College Letter</label>
+                        <input type="file" id="universityLetter" name="universityLetter" accept=".pdf,.jpg,.jpeg,.png" required>
+                    </div>
+                    <div>
+                        <label for="idCardCopy">3) ID Card</label>
+                        <input type="file" id="idCardCopy" name="idCardCopy" accept=".pdf,.jpg,.jpeg,.png" required>
+                    </div>
+                    <div>
+                        <label for="otherAttachments">4) Others</label>
+                        <input type="file" id="otherAttachments" name="otherAttachments" accept=".pdf,.jpg,.jpeg,.png">
+                    </div>
+                </fieldset>
 
-                <div class="form-group">
-                    <label for="grad-graduation">تاريخ التخرج</label>
-                    <input type="date" id="grad-graduation" name="grad-graduation" required>
-                </div>
+                <fieldset>
+                    <legend>Declaration</legend>
+                    <div class="check-row">
+                        <input type="checkbox" id="idCardDeclaration" name="idCardDeclaration" required>
+                        <label for="idCardDeclaration">I will return the ID card on the last day and accept card replacement fees if lost.</label>
+                    </div>
+                    <div>
+                        <label for="applicantSignature">Applicant Signature (Type Full Name)</label>
+                        <input type="text" id="applicantSignature" name="applicantSignature" required>
+                    </div>
+                </fieldset>
 
-                <div class="form-group">
-                    <label for="grad-message">ملاحظات إضافية</label>
-                    <textarea id="grad-message" name="grad-message" rows="4"></textarea>
-                </div>
+                <fieldset>
+                    <legend>Fees & Notes</legend>
+                    <ul class="pledge-list">
+                        <li>Clinical Attachment Access / Observer ship: OR.23 (OR.20 refundable + OR.3 card cost).</li>
+                        <li>Non-Clinical Attachment: OR.13 (OR.10 refundable + OR.3 card cost).</li>
+                        <li>No facility/provision for transport, food, and accommodation.</li>
+                        <li>Non-government doctors (clinical access/observer ship): OR.100 per month.</li>
+                        <li>Non-government nurses/allied professionals (clinical access/observer ship): OR.75 per month.</li>
+                        <li>Completed form should be submitted at least 4 weeks before proposed attachment date.</li>
+                    </ul>
+                </fieldset>
 
-                <hr style="border: none; border-top: 2px solid var(--brand-main); margin: var(--space-2xl) 0;">
-                <h4 style="color: var(--brand-main); margin-bottom: var(--space-lg);">📎 المرفقات المطلوبة</h4>
-
-                <div class="form-group">
-                    <label for="grad-certificate" style="display: flex; flex-direction: column; gap: var(--space-sm);">
-                        📄 نسخة من الشهادة الجامعية (للخريجين) أو رسالة من المؤسسة التعليمية (للطلاب)
-                    </label>
-                    <input type="file" id="grad-certificate" name="grad-certificate" accept=".pdf,.jpg,.jpeg,.png" required>
-                    <small style="color: #666;">أنواع الملفات المقبولة: PDF, JPG, PNG</small>
-                </div>
-
-                <div class="form-group">
-                    <label for="grad-id" style="display: flex; flex-direction: column; gap: var(--space-sm);">
-                        🪪 نسخة من البطاقة الشخصية
-                    </label>
-                    <input type="file" id="grad-id" name="grad-id" accept=".pdf,.jpg,.jpeg,.png" required>
-                    <small style="color: #666;">أنواع الملفات المقبولة: PDF, JPG, PNG</small>
-                </div>
-
-                <button type="submit" class="btn primary" style="width: 100%; font-size: 1.1rem;">تقديم الطلب</button>
+                <button type="submit" class="form-btn">تقديم الطلب</button>
             </form>
         </div>
     </section>
@@ -117,5 +238,11 @@
         <div style="margin-top: var(--space-md);">
             <a href="admin.html" target="_blank" style="color: var(--brand-main); text-decoration: underline; font-weight: 600;">📊 عرض لوحة التحكم والطلبات</a>
         </div>
-        <div style="width: 100%; margin-top: var(--space-sm); background: linear-gradient(120deg, var(--brand-light) 0%, #fafdff 100%); padding: var(--space-sm) 0;">
+        <div style="width: 100%; margin-top: var(--space-2xs); background: linear-gradient(120deg, var(--brand-light) 0%, #fafdff 100%); padding: var(--space-2xs) 0;">
             <img src="./assets/logo2.png.png" alt="الشعار الثاني">
+        </div>
+    </footer>
+    <script src="firebase-config.js?v=20260303a"></script>
+    <script src="script.js"></script>
+</body>
+</html>
