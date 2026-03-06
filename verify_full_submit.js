@@ -72,7 +72,7 @@ const path = require('path');
     await page.type('#objective2', 'obj 2');
     await page.type('#applicantSignature', 'اختبار نهائي');
 
-    const assetPath = path.resolve(__dirname, 'assets', 'logo.png');
+    const assetPath = path.resolve(__dirname, 'assets', 'squh-header-logo.jpg');
     await (await page.$('#cvFile')).uploadFile(assetPath);
     await (await page.$('#universityLetter')).uploadFile(assetPath);
     await (await page.$('#idCardCopy')).uploadFile(assetPath);
