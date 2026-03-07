@@ -297,6 +297,16 @@ async function saveFormData(formName, formData) {
   cleaned.submittedAtISO = new Date().toISOString();
   cleaned.id = Date.now();
   cleaned.formType = formName;
+
+  // توافق مع النسخة السابقة: حفظ حقول Section 2 بأسماء مفهومة للوحة الموافقات.
+  if (formName === 'graduates') {
+    cleaned.department = cleaned.department || cleaned.specialtyDepartment || '';
+    if (!cleaned.duration) {
+      const from = cleaned.durationFrom || '';
+      const to = cleaned.durationTo || '';
+      cleaned.duration = from && to ? `${from} -> ${to}` : from || to || '';
+    }
+  }
   
   // إضافة نظام الحالات والتعيين التلقائي
   cleaned.status = 'Pending'; // Pending, Approved, Rejected
