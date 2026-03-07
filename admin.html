@@ -155,6 +155,52 @@
             font-size: 12px;
         }
 
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            margin-top: 6px;
+        }
+
+        .status-pending {
+            background: #fff4cc;
+            color: #8a6d00;
+        }
+
+        .status-approved {
+            background: #e9f7ef;
+            color: #1c6b3b;
+        }
+
+        .status-rejected {
+            background: #fdeaea;
+            color: #a91f2e;
+        }
+
+        .approval-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .approve-btn {
+            background: #2f9e5b;
+        }
+
+        .approve-btn:hover {
+            background: #277f4a;
+        }
+
+        .reject-btn {
+            background: #c23b3b;
+        }
+
+        .reject-btn:hover {
+            background: #a33131;
+        }
+
         .submission-content {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -268,6 +314,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <script src="firebase-config.js"></script>
+    <script src="email-config.js"></script>
     <script>
     // تهيئة Firebase
     let db = null;
@@ -279,6 +326,117 @@
         }
     } catch (err) {
         console.log('Firebase غير متاح، سيتم استخدام localStorage');
+    }
+
+    function getMailConfig() {
+        const cfg = window.APP_EMAIL_CONFIG || {};
+        return {
+            serviceId: String(cfg.emailjsServiceId || '').trim(),
+            templateId: String(cfg.emailjsTemplateId || '').trim(),
+            publicKey: String(cfg.emailjsPublicKey || '').trim()
+        };
+    }
+
+    async function sendDecisionEmail(submission, decisionStatus, reviewNote = '') {
+        try {
+            if (!submission || !submission.email) return;
+            const cfg = getMailConfig();
+            if (!cfg.serviceId || !cfg.templateId || !cfg.publicKey) return;
+
+            const decisionTitle = decisionStatus === 'Approved' ? '✅ تمت الموافقة على طلبك' : '❌ تم رفض طلبك';
+            const reviewNoteText = reviewNote ? `\nملاحظة المراجعة: ${reviewNote}` : '';
+            const details =
+                `الاسم: ${submission.name || '---'}\n` +
+                `نوع الطلب: ${submission.formType || '---'}\n` +
+                `رقم الطلب: ${submission.id || submission._docId || '---'}\n` +
+                `الحالة الجديدة: ${decisionStatus}\n` +
+                `تاريخ المراجعة: ${new Date().toLocaleString('ar-SA')}` +
+                reviewNoteText;
+
+            await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    service_id: cfg.serviceId,
+                    template_id: cfg.templateId,
+                    user_id: cfg.publicKey,
+                    template_params: {
+                        to_email: submission.email,
+                        to_name: submission.name || 'مقدم الطلب',
+                        subject: decisionTitle,
+                        from_name: 'دائرة التدريب والتطوير المهني المستمر',
+                        applicant_name: submission.name || '---',
+                        applicant_email: submission.email || '---',
+                        applicant_phone: submission.phone || '---',
+                        form_type: submission.formType || '---',
+                        submission_id: submission.id || submission._docId || '---',
+                        submitted_at: submission.submittedAt || '---',
+                        message_text: details,
+                        title: decisionTitle,
+                        name: submission.name || '---',
+                        email: submission.email || '---',
+                        phone: submission.phone || '---',
+                        time: new Date().toLocaleString('ar-SA'),
+                        message: details,
+                        details,
+                        reply_to: submission.email || ''
+                    }
+                })
+            });
+        } catch (err) {
+            console.error('فشل إرسال بريد قرار الطلب:', err);
+        }
+    }
+
+    async function updateSubmissionStatus(index, decisionStatus) {
+        const submission = (window.__currentSubmissions || [])[index];
+        if (!submission) return;
+        if (submission.status === decisionStatus) return;
+
+        const isApprove = decisionStatus === 'Approved';
+        const confirmed = confirm(
+            isApprove
+                ? 'هل أنت متأكد من الموافقة على هذا الطلب؟'
+                : 'هل أنت متأكد من رفض هذا الطلب؟'
+        );
+        if (!confirmed) return;
+
+        let reviewNote = '';
+        if (!isApprove) {
+            const reason = prompt('اكتب سبب الرفض (إجباري):', '');
+            if (reason === null) return;
+            reviewNote = String(reason || '').trim();
+            if (!reviewNote) {
+                alert('سبب الرفض مطلوب.');
+                return;
+            }
+        }
+
+        try {
+            if (submission._source === 'firestore' && db && submission._docId) {
+                await db.collection('formSubmissions').doc(submission._docId).update({
+                    status: decisionStatus,
+                    reviewedAt: new Date().toISOString(),
+                    reviewNote: reviewNote || null
+                });
+            } else {
+                const localData = JSON.parse(localStorage.getItem('formSubmissions')) || {};
+                const arr = localData[submission.formType] || [];
+                const idx = Number(submission._localIndex);
+                if (Array.isArray(arr) && idx >= 0 && idx < arr.length) {
+                    arr[idx].status = decisionStatus;
+                    arr[idx].reviewedAt = new Date().toISOString();
+                    arr[idx].reviewNote = reviewNote || null;
+                    localStorage.setItem('formSubmissions', JSON.stringify(localData));
+                }
+            }
+
+            await sendDecisionEmail(submission, decisionStatus, reviewNote);
+            await loadSubmissions();
+        } catch (err) {
+            alert('تعذر تحديث حالة الطلب.');
+            console.error(err);
+        }
     }
 
     // ===== تحميل وعرض البيانات من Firestore أو localStorage =====
@@ -298,8 +456,7 @@
                 const snapshot = await query.get();
                 snapshot.forEach(doc => {
                     const data = doc.data();
-                    data.id = doc.id;
-                    filteredData.push(data);
+                    filteredData.push({ ...data, _source: 'firestore', _docId: doc.id });
                 });
             } catch (err) {
                 console.log('خطأ في Firestore، سيتم استخدام localStorage:', err);
@@ -312,9 +469,9 @@
             const localData = JSON.parse(localStorage.getItem('formSubmissions')) || {};
             Object.entries(localData).forEach(([formType, submissions]) => {
                 if (Array.isArray(submissions)) {
-                    submissions.forEach(sub => {
+                    submissions.forEach((sub, localIndex) => {
                         if (!selectedForm || formType === selectedForm) {
-                            filteredData.push({...sub, formType});
+                            filteredData.push({ ...sub, formType, _source: 'local', _localIndex: localIndex });
                         }
                     });
                 }
@@ -352,7 +509,9 @@
             if (/^https?:\/\//.test(s)) return `<a href="${s}" target="_blank">${s}</a>`;
             return `<span>${s}</span>`;
         }
-        container.innerHTML = filteredData.map(submission => {
+        window.__currentSubmissions = filteredData;
+
+        container.innerHTML = filteredData.map((submission, index) => {
             const formTypeNames = {
                 'graduates': '👨‍🎓 تدريب الطلاب والخريجين',
                 'internal-employees': '👔 البرامج الداخلية - الموظفين',
@@ -361,17 +520,27 @@
                 'training-others': '📚 البرامج التدريبية - الآخرين',
                 'contact': '💬 رسائل التواصل'
             };
+
+            const status = submission.status || 'Pending';
+            const statusLabel = status === 'Approved' ? 'Approved' : status === 'Rejected' ? 'Rejected' : 'Pending';
+            const statusClass = statusLabel === 'Approved' ? 'status-approved' : statusLabel === 'Rejected' ? 'status-rejected' : 'status-pending';
+
             return `
                 <div class="submission-card">
                     <div class="submission-header">
                         <div>
                             <div class="submission-title">${formTypeNames[submission.formType]}</div>
                             <div class="submission-date">📅 ${submission.submittedAt || 'غير محدد'}</div>
+                            <span class="status-badge ${statusClass}">${statusLabel}</span>
+                        </div>
+                        <div class="approval-actions">
+                            <button class="approve-btn" onclick="updateSubmissionStatus(${index}, 'Approved')">Approve</button>
+                            <button class="reject-btn" onclick="updateSubmissionStatus(${index}, 'Rejected')">Reject</button>
                         </div>
                     </div>
                     <div class="submission-content">
                         ${Object.entries(submission)
-                            .filter(([key]) => key !== 'formType' && key !== 'id' && key !== 'submittedAt')
+                            .filter(([key]) => !['_source', '_docId', '_localIndex'].includes(key))
                             .map(([key, value]) => `
                                 <div class="field">
                                     <div class="field-label">${key}</div>

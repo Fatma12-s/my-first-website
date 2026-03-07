@@ -59,11 +59,13 @@ function getMailConfig() {
   const sendgridApiKey = clean(cfg.sendgridApiKey || cfg.apiKey);
   const sendgridFromEmail = clean(cfg.sendgridFromEmail || cfg.fromEmail);
   const sendgridFromName = clean(cfg.sendgridFromName || cfg.fromName) || 'دائرة التدريب والتطوير المهني';
+  const sendApplicantCopy = cfg.sendApplicantCopy === true || String(cfg.sendApplicantCopy).toLowerCase() === 'true';
 
   return {
     sendgridApiKey,
     sendgridFromEmail,
     sendgridFromName,
+    sendApplicantCopy,
     emailjsServiceId: clean(cfg.emailjsServiceId || cfg.serviceId),
     emailjsTemplateId: clean(cfg.emailjsTemplateId || cfg.templateId),
     emailjsPublicKey: clean(cfg.emailjsPublicKey || cfg.publicKey)
@@ -136,7 +138,6 @@ async function sendNotificationEmail(applicantData, responsible) {
         personalizations: [
           {
             to: [{ email: responsible.email, name: responsible.name }],
-            cc: applicantData.email ? [{ email: applicantData.email }] : [],
             subject: `طلب جديد من ${applicantData.name || 'متقدم'}`
           }
         ],
@@ -232,7 +233,7 @@ async function sendNotificationEmail(applicantData, responsible) {
 
       await sendOne(responsible.email, responsible.name, '🔔 طلب جديد يحتاج مراجعة');
 
-      if (applicantData.email) {
+      if (mailConfig.sendApplicantCopy && applicantData.email) {
         await sendOne(applicantData.email, applicantData.name || 'مقدم الطلب', '✅ تم استلام طلبك');
       }
 
@@ -262,6 +263,16 @@ async function sendNotificationEmail(applicantData, responsible) {
 
 // ===== حفظ البيانات في localStorage أو Firestore =====
 async function saveFormData(formName, formData) {
+  const FIRESTORE_SAVE_TIMEOUT_MS = 5000;
+
+  const withTimeout = (promise, timeoutMs) =>
+    Promise.race([
+      promise,
+      new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Firestore timeout')), timeoutMs);
+      })
+    ]);
+
   // استنسخ البيانات ونظف أي حقول ملفات إلى أسماء الملفات قبل التخزين
   const sanitize = (data) => {
     const out = {};
@@ -300,7 +311,10 @@ async function saveFormData(formName, formData) {
   // إذا كان Firebase متاحاً، احفظ في Firestore
   if (window.FIREBASE_CONFIG && window.firebase && window.firebase.firestore) {
     try {
-      const result = await window.firebase.firestore().collection('formSubmissions').add(cleaned);
+      const result = await withTimeout(
+        window.firebase.firestore().collection('formSubmissions').add(cleaned),
+        FIRESTORE_SAVE_TIMEOUT_MS
+      );
       cleaned.firestoreId = result.id;
       return { success: true, data: cleaned };
     } catch (e) {
@@ -434,15 +448,6 @@ async function uploadFileToFirebase(file, remotePath) {
   }
 }
 
-function fileToDataUrl(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = () => reject(new Error('تعذر قراءة الملف محلياً'));
-    reader.readAsDataURL(file);
-  });
-}
-
 function hasValidFirebaseConfig() {
   const cfg = window.FIREBASE_CONFIG;
   if (!cfg || typeof cfg !== 'object') return false;
@@ -473,17 +478,8 @@ async function buildAttachmentValue(file, formName, useFirebase) {
     }
   }
 
-  try {
-    const dataUrl = await fileToDataUrl(file);
-    return {
-      ...fallbackMeta,
-      source: 'local-dataurl',
-      dataUrl
-    };
-  } catch (error) {
-    console.warn('تعذر حفظ الملف كرابط محلي، سيتم حفظ الاسم فقط:', error);
-    return fallbackMeta;
-  }
+  // للحفاظ على سرعة الإرسال، نكتفي ببيانات الملف الأساسية عند عدم توفر Firebase.
+  return fallbackMeta;
 }
 
 async function handleFormSubmit(formEl, formName) {
@@ -511,11 +507,18 @@ async function handleFormSubmit(formEl, formName) {
       }
     }
 
-    // رفع الملفات أو احفظها محلياً كروابط قابلة للفتح (تجاهل الملفات الفارغة)
-    for (const [k, v] of fd.entries()) {
-      if (v instanceof File && v.name && v.size > 0) {
+    // رفع/معالجة الملفات بالتوازي لتقليل وقت الانتظار
+    const entries = Array.from(fd.entries());
+    const fileTasks = entries
+      .filter(([, v]) => v instanceof File && v.name && v.size > 0)
+      .map(async ([k, v]) => {
         obj[k] = await buildAttachmentValue(v, formName, useFirebase);
-      } else if (!(v instanceof File)) {
+      });
+    await Promise.all(fileTasks);
+
+    // الحقول النصية
+    for (const [k, v] of entries) {
+      if (!(v instanceof File)) {
         obj[k] = v;
       }
     }
