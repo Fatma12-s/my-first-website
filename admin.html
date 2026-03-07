@@ -528,10 +528,13 @@
         const selectedForm = document.getElementById('formFilter').value;
         const searchTerm = document.getElementById('searchInput').value.toLowerCase();
         let filteredData = [];
+        let firestoreFailed = false;
+        let usingFirestore = false;
         
         // محاولة الجلب من Firestore أولاً
         if (db) {
             try {
+                usingFirestore = true;
                 let query = db.collection('formSubmissions');
                 if (selectedForm) {
                     query = query.where('formType', '==', selectedForm);
@@ -543,12 +546,12 @@
                 });
             } catch (err) {
                 console.log('خطأ في Firestore، سيتم استخدام localStorage:', err);
-                filteredData = [];
+                firestoreFailed = true;
             }
         }
         
-        // إذا لم نجد بيانات في Firestore، أو Firebase غير متاح، استخدم localStorage
-        if (filteredData.length === 0) {
+        // استخدم localStorage فقط إذا كان Firebase غير متاح أو فشل الاتصال فعلياً.
+        if (!usingFirestore || firestoreFailed) {
             const localData = JSON.parse(localStorage.getItem('formSubmissions')) || {};
             Object.entries(localData).forEach(([formType, submissions]) => {
                 if (Array.isArray(submissions)) {
