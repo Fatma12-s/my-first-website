@@ -47,38 +47,54 @@ burger?.addEventListener('click', () => {
   navLinks.classList.toggle('open');
 });
 
-// ===== إعدادات SendGrid (ملء البيانات الفعلية هنا) =====
-const SENDGRID_CONFIG = {
-  apiKey: 'SG.YOUR_SENDGRID_API_KEY_HERE', // استبدل بـ API Key من SendGrid
-  fromEmail: 'noreply@hospital.com', // استبدل ببريد المرسل
-  fromName: 'دائرة التدريب والتطوير المهني'
-};
+// ===== إعدادات البريد (EmailJS أساسي + SendGrid احتياطي) =====
+function getMailConfig() {
+  const cfg = window.APP_EMAIL_CONFIG || window.EMAILJS_CONFIG || {};
+
+  const clean = (value) => {
+    const str = String(value || '').trim();
+    return str && !str.includes('YOUR_') ? str : '';
+  };
+
+  const sendgridApiKey = clean(cfg.sendgridApiKey || cfg.apiKey);
+  const sendgridFromEmail = clean(cfg.sendgridFromEmail || cfg.fromEmail);
+  const sendgridFromName = clean(cfg.sendgridFromName || cfg.fromName) || 'دائرة التدريب والتطوير المهني';
+
+  return {
+    sendgridApiKey,
+    sendgridFromEmail,
+    sendgridFromName,
+    emailjsServiceId: clean(cfg.emailjsServiceId || cfg.serviceId),
+    emailjsTemplateId: clean(cfg.emailjsTemplateId || cfg.templateId),
+    emailjsPublicKey: clean(cfg.emailjsPublicKey || cfg.publicKey)
+  };
+}
 
 // ===== قائمة المسؤولين (ملء البيانات الفعلية هنا) =====
 const RESPONSIBLE_CONTACTS = {
   'graduates': { 
     name: 'مدير الموارد البشرية', 
-    email: 'hr@hospital.com' // استبدل ببريد HR
+    email: 'fsalim@squ.edu.om'
   },
   'internal-employees': { 
     name: 'مدير الموارد البشرية', 
-    email: 'hr.director@hospital.com' // استبدل ببريد مدير HR
+    email: 'fsalim@squ.edu.om'
   },
   'internal-others': { 
     name: 'الموظف الإداري', 
-    email: 'admin@hospital.com' // استبدل ببريد الإدارة
+    email: 'fsalim@squ.edu.om'
   },
   'training-employees': { 
     name: 'منسق التدريب', 
-    email: 'training@hospital.com' // استبدل ببريد التدريب
+    email: 'fsalim@squ.edu.om'
   },
   'training-others': { 
     name: 'منسق التدريب', 
-    email: 'training.coord@hospital.com' // استبدل ببريد منسق التدريب
+    email: 'fsalim@squ.edu.om'
   },
   'contact': { 
     name: 'الإدارة العامة', 
-    email: 'info@hospital.com' // استبدل ببريد الاستقبال
+    email: 'fsalim@squ.edu.om'
   }
 };
 
@@ -86,105 +102,158 @@ const RESPONSIBLE_CONTACTS = {
 function assignResponsible(formName) {
   return RESPONSIBLE_CONTACTS[formName] || { 
     name: 'الإدارة', 
-    email: 'admin@hospital.com' 
+    email: 'fsalim@squ.edu.om'
   };
 }
 
-// ===== إرسال إشعار بريدي عبر SendGrid =====
+// ===== إرسال إشعار بريدي (EmailJS أساسي) =====
 async function sendNotificationEmail(applicantData, responsible) {
   try {
-    // إذا لم يكن API Key مكتوب، فقط سجل في Console
-    if (!SENDGRID_CONFIG.apiKey.includes('YOUR_SENDGRID_API_KEY')) {
-      // استخدم SendGrid API
+    const mailConfig = getMailConfig();
+    const applicantName = applicantData.name || applicantData.fullName || applicantData.applicantName || 'متقدم';
+    const applicantEmail = applicantData.email || applicantData.applicantEmail || '---';
+    const applicantPhone = applicantData.phone || applicantData.mobile || applicantData.telephone || '---';
+    const submittedAt = applicantData.submittedAt || '---';
+    const formType = applicantData.formType || '---';
+    const submissionId = applicantData.id || '---';
+    const freeTextMessage = applicantData.message || applicantData.notes || applicantData.objective1 || '';
+
+    const detailsText =
+      `الاسم: ${applicantName}\n` +
+      `البريد: ${applicantEmail}\n` +
+      `الهاتف: ${applicantPhone}\n` +
+      `نوع الطلب: ${formType}\n` +
+      `رقم الطلب: ${submissionId}\n` +
+      `التاريخ: ${submittedAt}\n` +
+      (freeTextMessage ? `الرسالة/الملاحظات: ${freeTextMessage}` : '');
+
+    const sendViaSendGrid = async () => {
+      if (!mailConfig.sendgridApiKey || !mailConfig.sendgridFromEmail) {
+        return false;
+      }
+
       const emailPayload = {
         personalizations: [
           {
             to: [{ email: responsible.email, name: responsible.name }],
             cc: applicantData.email ? [{ email: applicantData.email }] : [],
-            subject: `🔔 طلب جديد من ${applicantData.name || 'متقدم'}`
+            subject: `طلب جديد من ${applicantData.name || 'متقدم'}`
           }
         ],
         from: {
-          email: SENDGRID_CONFIG.fromEmail,
-          name: SENDGRID_CONFIG.fromName
+          email: mailConfig.sendgridFromEmail,
+          name: mailConfig.sendgridFromName
         },
         content: [
           {
-            type: 'text/html',
-            value: `
-              <div dir="rtl" style="font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; border-radius: 8px;">
-                <h2 style="color: #295c4a;">🔔 طلب جديد يحتاج موافقتك</h2>
-                <div style="background: white; padding: 20px; border-radius: 8px; margin-top: 20px;">
-                  <h3 style="color: #41726a; border-bottom: 2px solid #e6f7f4; padding-bottom: 10px;">بيانات المتقدم</h3>
-                  <table style="width: 100%; margin-top: 15px;">
-                    <tr>
-                      <td style="padding: 8px; font-weight: 600; width: 30%;">الاسم:</td>
-                      <td style="padding: 8px;">${applicantData.name || '---'}</td>
-                    </tr>
-                    <tr style="background: #f9f9f9;">
-                      <td style="padding: 8px; font-weight: 600;">البريد الإلكتروني:</td>
-                      <td style="padding: 8px;">${applicantData.email || '---'}</td>
-                    </tr>
-                    <tr>
-                      <td style="padding: 8px; font-weight: 600;">رقم الهاتف:</td>
-                      <td style="padding: 8px;">${applicantData.phone || '---'}</td>
-                    </tr>
-                    <tr style="background: #f9f9f9;">
-                      <td style="padding: 8px; font-weight: 600;">التاريخ:</td>
-                      <td style="padding: 8px;">${applicantData.submittedAt || '---'}</td>
-                    </tr>
-                    <tr>
-                      <td style="padding: 8px; font-weight: 600;">نوع الطلب:</td>
-                      <td style="padding: 8px;">${applicantData.formType || '---'}</td>
-                    </tr>
-                    <tr style="background: #f9f9f9;">
-                      <td style="padding: 8px; font-weight: 600;">رقم الطلب:</td>
-                      <td style="padding: 8px;"><strong>${applicantData.id}</strong></td>
-                    </tr>
-                  </table>
-                  <div style="margin-top: 20px; padding: 15px; background: #e6f7f4; border-right: 4px solid #295c4a; border-radius: 4px;">
-                    <p style="margin: 0; color: #41726a;">
-                      ⚠️ <strong>برجاء مراجعة الطلب في لوحة التحكم وتقديم الموافقة أو الرفض في أقرب وقت.</strong>
-                    </p>
-                  </div>
-                </div>
-                <div style="margin-top: 20px; text-align: center; color: #999; font-size: 12px;">
-                  <p>هذا البريد تم إرساله تلقائياً من نظام إدارة الطلبات</p>
-                </div>
-              </div>
-            `
+            type: 'text/plain',
+            value:
+              `تم استلام طلب جديد\n` +
+              `الاسم: ${applicantData.name || '---'}\n` +
+              `البريد: ${applicantData.email || '---'}\n` +
+              `الهاتف: ${applicantData.phone || '---'}\n` +
+              `نوع الطلب: ${applicantData.formType || '---'}\n` +
+              `رقم الطلب: ${applicantData.id || '---'}\n` +
+              `التاريخ: ${applicantData.submittedAt || '---'}`
           }
         ]
       };
 
-      // إرسال البريد عبر SendGrid API
       const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${SENDGRID_CONFIG.apiKey}`
+          'Authorization': `Bearer ${mailConfig.sendgridApiKey}`
         },
         body: JSON.stringify(emailPayload)
       });
 
-      if (response.status === 202) {
-        console.log('✅ تم إرسال البريد بفضل:', responsible.email);
-        return true;
-      } else {
-        const error = await response.text();
-        console.warn('⚠️ خطأ في إرسال البريد:', error);
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`SendGrid ${response.status}: ${errorText}`);
+      }
+
+      console.log('✅ تم إرسال البريد عبر SendGrid');
+      return true;
+    };
+
+    const sendViaEmailJs = async () => {
+      if (!mailConfig.emailjsServiceId || !mailConfig.emailjsTemplateId || !mailConfig.emailjsPublicKey) {
         return false;
       }
-    } else {
-      // API Key لم يكن مكتوب، فقط سجل في Console
-      console.log('📧 الإشعار (وضع اختبار - لم يتم إرسال بريد فعلي):', {
-        to: responsible.email,
-        from: SENDGRID_CONFIG.fromEmail,
-        applicant: applicantData.name,
-        submissionId: applicantData.id
+
+      const sendOne = async (targetEmail, targetName, subjectPrefix) => {
+      const finalSubject = `${subjectPrefix} - ${applicantName}`;
+      const payload = {
+        service_id: mailConfig.emailjsServiceId,
+        template_id: mailConfig.emailjsTemplateId,
+        user_id: mailConfig.emailjsPublicKey,
+        template_params: {
+          // مفاتيح أساسية
+          to_email: targetEmail,
+          to_name: targetName,
+          subject: finalSubject,
+          from_name: 'دائرة التدريب والتطوير المهني',
+
+          // مفاتيح المشروع الحالية
+          applicant_name: applicantName,
+          applicant_email: applicantEmail,
+          applicant_phone: applicantPhone,
+          form_type: formType,
+          submission_id: submissionId,
+          submitted_at: submittedAt,
+          message_text: detailsText,
+
+          // مفاتيح fallback لقوالب EmailJS الافتراضية
+          title: finalSubject,
+          name: applicantName,
+          email: applicantEmail,
+          phone: applicantPhone,
+          time: submittedAt,
+          message: detailsText,
+          details: detailsText,
+          reply_to: applicantEmail
+        }
+      };
+
+      const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
       });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`EmailJS ${response.status}: ${errorText}`);
+      }
+      };
+
+      await sendOne(responsible.email, responsible.name, '🔔 طلب جديد يحتاج مراجعة');
+
+      if (applicantData.email) {
+        await sendOne(applicantData.email, applicantData.name || 'مقدم الطلب', '✅ تم استلام طلبك');
+      }
+
+      console.log('✅ تم إرسال البريد عبر EmailJS إلى المسؤول ومقدم الطلب');
+      return true;
+    };
+
+    const sentByEmailJs = await sendViaEmailJs();
+    if (sentByEmailJs) return true;
+
+    // احتياطي: SendGrid (مفيد فقط إن كان هناك endpoint/Proxy مناسب)
+    const sentBySendGrid = await sendViaSendGrid();
+    if (sentBySendGrid) return true;
+
+    if (!mailConfig.sendgridApiKey && !mailConfig.emailjsPublicKey) {
+      console.log('📧 لم يتم ضبط إعدادات البريد بعد - سيتم حفظ الطلب بدون إرسال بريد');
       return true;
     }
+
+    console.warn('⚠️ تم توفير إعدادات بريد جزئية فقط، يرجى استكمال التهيئة');
+    return false;
   } catch (error) {
     console.error('❌ خطأ في إرسال البريد:', error);
     return false;
@@ -374,6 +443,16 @@ function fileToDataUrl(file) {
   });
 }
 
+function hasValidFirebaseConfig() {
+  const cfg = window.FIREBASE_CONFIG;
+  if (!cfg || typeof cfg !== 'object') return false;
+  const required = ['apiKey', 'projectId', 'storageBucket', 'appId'];
+  return required.every((key) => {
+    const value = String(cfg[key] || '').trim();
+    return value && !value.includes('YOUR_');
+  });
+}
+
 async function buildAttachmentValue(file, formName, useFirebase) {
   const fallbackMeta = {
     name: file.name,
@@ -420,7 +499,7 @@ async function handleFormSubmit(formEl, formName) {
   try {
     const fd = new FormData(formEl);
     const obj = {};
-    const useFirebase = !!window.FIREBASE_CONFIG;
+    const useFirebase = hasValidFirebaseConfig();
     
     // تحقق من الملفات أولاً (تجاهل الملفات الفارغة والاختيارية)
     for (const [k, v] of fd.entries()) {

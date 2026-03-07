@@ -123,11 +123,8 @@
         </footer>
     </main>
 
-        <script>
-            (async function(){
-                try{ const res = await fetch('firebase-config.js', {method:'HEAD'}); if(res.ok){ const s=document.createElement('script'); s.src='firebase-config.js'; document.head.appendChild(s);} }catch(e){}
-                const s2=document.createElement('script'); s2.src='script.js'; document.body.appendChild(s2);
-            })();
-        </script>
+    <script src="firebase-config.js"></script>
+    <script src="email-config.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
