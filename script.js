@@ -568,6 +568,261 @@ function validateFile(file) {
   return { valid: true };
 }
 
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function getPrintableLabel(key) {
+  const labels = {
+    id: 'رقم الطلب',
+    submittedAt: 'تاريخ الإرسال',
+    name: 'الاسم',
+    email: 'البريد الإلكتروني',
+    phone: 'الهاتف',
+    address: 'العنوان',
+    cardNo: 'رقم البطاقة',
+    institute: 'الجهة',
+    programRequirement: 'نوع البرنامج',
+    specialtyDepartment: 'القسم',
+    durationFrom: 'مدة التدريب من',
+    durationTo: 'مدة التدريب إلى',
+    objective1: 'هدف التدريب 1',
+    objective2: 'هدف التدريب 2',
+    applicantSignature: 'توقيع مقدم الطلب',
+    undertakingAgree: 'الإقرار والتعهد',
+    idCardDeclaration: 'تعهد البطاقة',
+    applicantPhoto: 'صورة المتقدم',
+    cvFile: 'السيرة الذاتية',
+    universityLetter: 'خطاب الجامعة',
+    idCardCopy: 'نسخة البطاقة',
+    otherAttachments: 'مرفقات أخرى',
+    status: 'حالة الطلب'
+  };
+  return labels[key] || key;
+}
+
+function getPrintableValue(value) {
+  if (value === undefined || value === null || value === '') return '---';
+  if (typeof value === 'object') {
+    if (value.name) return value.name;
+    if (value.url) return value.url;
+    try {
+      return JSON.stringify(value);
+    } catch (err) {
+      return String(value);
+    }
+  }
+  if (String(value).toLowerCase() === 'on') return 'نعم';
+  return String(value);
+}
+
+function printHtmlWithIframe(html) {
+  const iframe = document.createElement('iframe');
+  iframe.style.position = 'fixed';
+  iframe.style.right = '0';
+  iframe.style.bottom = '0';
+  iframe.style.width = '0';
+  iframe.style.height = '0';
+  iframe.style.border = '0';
+  document.body.appendChild(iframe);
+
+  const doc = iframe.contentWindow.document;
+  doc.open();
+  doc.write(html);
+  doc.close();
+
+  iframe.onload = () => {
+    setTimeout(() => {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+      setTimeout(() => iframe.remove(), 3000);
+    }, 250);
+  };
+}
+
+function getFormTitle(formName) {
+  const titles = {
+    graduates: 'استمارة تدريب الطلاب والخريجين',
+    'internal-employees': 'استمارة البرامج الداخلية - الموظفين',
+    'internal-others': 'استمارة البرامج الداخلية - غير الموظفين',
+    'training-employees': 'استمارة البرامج التدريبية - الموظفين',
+    'training-others': 'استمارة البرامج التدريبية - غير الموظفين',
+    contact: 'استمارة تواصل'
+  };
+  return titles[formName] || 'استمارة الطلب';
+}
+
+function getSquhHeaderLogoUrl() {
+  try {
+    return new URL('./assets/squh-header-logo.jpg', window.location.href).href;
+  } catch (err) {
+    return './assets/squh-header-logo.jpg';
+  }
+}
+
+function openSubmissionPrintPreview(formName, data) {
+  const excluded = new Set([
+    'submittedAtISO',
+    'createdAt',
+    'assignedEmail',
+    'assignedTo',
+    'reviewedAt',
+    'managerSection2',
+    'firestoreId'
+  ]);
+
+  const entries = Object.entries(data || {}).filter(([key]) => !excluded.has(key));
+  const rows = entries
+    .map(([key, value]) => {
+      const label = escapeHtml(getPrintableLabel(key));
+      const val = escapeHtml(getPrintableValue(value));
+      return `<tr><th>${label}</th><td>${val}</td></tr>`;
+    })
+    .join('') || `<tr><th>بيانات الطلب</th><td>لا توجد بيانات متاحة للطباعة</td></tr>`;
+
+  const printWindow = window.open('', '_blank', 'noopener,noreferrer');
+  const logoUrl = escapeHtml(getSquhHeaderLogoUrl());
+
+  const html = `<!DOCTYPE html>
+  <html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${escapeHtml(getFormTitle(formName))}</title>
+    <style>
+      @page { size: A4; margin: 12mm; }
+      * { box-sizing: border-box; }
+      body {
+        font-family: Tahoma, Arial, sans-serif;
+        margin: 0;
+        color: #1f2937;
+        background: #fff;
+      }
+      .paper {
+        width: 210mm;
+        min-height: 297mm;
+        margin: 0 auto;
+        padding: 10mm;
+      }
+      .squh-header {
+        text-align: center;
+        margin-bottom: 10px;
+      }
+      .squh-header img {
+        width: 220px;
+        max-width: 100%;
+        height: auto;
+        display: inline-block;
+      }
+      .header {
+        border: 2px solid #2a6f60;
+        border-radius: 8px;
+        padding: 10px 14px;
+        margin-bottom: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .title {
+        margin: 0;
+        color: #1b5e4f;
+        font-size: 18px;
+        font-weight: 700;
+      }
+      .subtitle {
+        margin-top: 4px;
+        color: #4b5563;
+        font-size: 13px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th, td {
+        border: 1px solid #d1d5db;
+        padding: 8px 10px;
+        vertical-align: top;
+        font-size: 13px;
+      }
+      th {
+        width: 34%;
+        text-align: right;
+        background: #f0f7f5;
+        color: #1f4f45;
+      }
+      .footer {
+        margin-top: 14px;
+        font-size: 12px;
+        color: #6b7280;
+      }
+      .no-print {
+        margin: 12px auto;
+        width: 210mm;
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+      }
+      .no-print button {
+        padding: 8px 14px;
+        border: none;
+        border-radius: 6px;
+        background: #2a6f60;
+        color: #fff;
+        cursor: pointer;
+      }
+      @media print {
+        .no-print { display: none !important; }
+        body { background: #fff; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="no-print">
+      <button onclick="window.print()">حفظ كـ PDF / طباعة</button>
+      <button onclick="window.close()" style="background:#6b7280;">إغلاق</button>
+    </div>
+    <div class="paper">
+      <div class="squh-header">
+        <img src="${logoUrl}" alt="SQUH Header Logo">
+      </div>
+      <div class="header">
+        <div>
+          <h1 class="title">${escapeHtml(getFormTitle(formName))}</h1>
+          <div class="subtitle">دائرة التدريب والتطوير المهني المستمر</div>
+        </div>
+        <div style="font-size:12px;color:#374151;">رقم الطلب: ${escapeHtml(getPrintableValue(data.id || '---'))}</div>
+      </div>
+      <table>
+        <tbody>
+          ${rows}
+        </tbody>
+      </table>
+      <div class="footer">تم إنشاء هذه النسخة تلقائيا من النظام لغرض الحفظ والأرشفة.</div>
+    </div>
+    <script>
+      window.addEventListener('load', function () {
+        setTimeout(function () { window.print(); }, 250);
+      });
+    </script>
+  </body>
+  </html>`;
+
+  if (printWindow) {
+    printWindow.document.open();
+    printWindow.document.write(html);
+    printWindow.document.close();
+  } else {
+    // fallback إذا كانت النوافذ المنبثقة محجوبة
+    printHtmlWithIframe(html);
+    alert('تم فتح نافذة الطباعة داخل الصفحة. اختَر Save as PDF للحفظ.');
+  }
+}
+
 // ===== عرض رسالة النجاح =====
 function showSuccessMessage(formName, data, isLocal) {
   const container = document.body;
@@ -595,9 +850,7 @@ function showSuccessMessage(formName, data, isLocal) {
   message += `رقم الطلب: ${data.id}\n`;
   message += `التاريخ: ${data.submittedAt}\n`;
   
-  if (formName === 'graduates') {
-    message += `\nحالة الطلب: في انتظار الموافقة\nسيتم التواصل معك قريباً`;
-  }
+  message += `\nحالة الطلب: في انتظار الموافقة\nسيتم التواصل معك قريباً`;
   
   if (isLocal) {
     message += `\n\n⚠️ نُباه: تم حفظ طلبك محلياً`;
@@ -606,9 +859,12 @@ function showSuccessMessage(formName, data, isLocal) {
   content.textContent = message;
   content.style.cssText = 'white-space: pre-line; line-height: 1.6; margin-bottom: 20px;';
   
-  const button = document.createElement('button');
-  button.textContent = 'إغلاق';
-  button.style.cssText = `
+  const actions = document.createElement('div');
+  actions.style.cssText = 'display:flex; gap:10px; justify-content:center; flex-wrap:wrap;';
+
+  const closeButton = document.createElement('button');
+  closeButton.textContent = 'إغلاق';
+  closeButton.style.cssText = `
     padding: 10px 24px;
     background: #295c4a;
     color: white;
@@ -618,15 +874,34 @@ function showSuccessMessage(formName, data, isLocal) {
     font-size: 16px;
     transition: opacity 0.2s;
   `;
-  button.onmouseover = () => button.style.opacity = '0.9';
-  button.onmouseout = () => button.style.opacity = '1';
-  button.onclick = () => {
+  closeButton.onmouseover = () => closeButton.style.opacity = '0.9';
+  closeButton.onmouseout = () => closeButton.style.opacity = '1';
+  closeButton.onclick = () => {
     modal.remove();
     overlay.remove();
   };
 
+  actions.appendChild(closeButton);
+
+  const printButton = document.createElement('button');
+  printButton.textContent = 'تنزيل الاستمارة (PDF)';
+  printButton.style.cssText = `
+    padding: 10px 24px;
+    background: #1f7a8c;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: opacity 0.2s;
+  `;
+  printButton.onmouseover = () => printButton.style.opacity = '0.9';
+  printButton.onmouseout = () => printButton.style.opacity = '1';
+  printButton.onclick = () => openSubmissionPrintPreview(formName, data);
+  actions.appendChild(printButton);
+
   modal.appendChild(content);
-  modal.appendChild(button);
+  modal.appendChild(actions);
   
   const overlay = document.createElement('div');
   overlay.style.cssText = `

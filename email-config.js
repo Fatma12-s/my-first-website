@@ -5,7 +5,7 @@ window.APP_EMAIL_CONFIG = {
   emailjsServiceId: "service_bzfkj3q",
   emailjsTemplateId: "template_ihph0ia",
   emailjsPublicKey: "XIbn_hYrfaNHp7Z0F",
-  sendApplicantCopy: false,
+  sendApplicantCopy: true,
 
   // اختياري (Legacy): لا تستخدميه إلا إذا كان لديكم endpoint آمن في الخلفية.
   sendgridApiKey: "",

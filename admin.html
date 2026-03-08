@@ -233,6 +233,14 @@
             background: #a33131;
         }
 
+        .pdf-btn {
+            background: #1f7a8c;
+        }
+
+        .pdf-btn:hover {
+            background: #186272;
+        }
+
         .submission-content {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -366,6 +374,196 @@
             serviceId: String(cfg.emailjsServiceId || '').trim(),
             templateId: String(cfg.emailjsTemplateId || '').trim(),
             publicKey: String(cfg.emailjsPublicKey || '').trim()
+        };
+    }
+
+    function escapeHtml(value) {
+        return String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function formatPrintValue(value) {
+        if (value === undefined || value === null || value === '') return '---';
+        if (typeof value === 'object') {
+            if (value.name) return value.name;
+            if (value.url) return value.url;
+            try { return JSON.stringify(value); } catch (err) { return String(value); }
+        }
+        if (String(value).toLowerCase() === 'on') return 'نعم';
+        return String(value);
+    }
+
+    function getSubmissionLabel(key) {
+        const labels = {
+            id: 'رقم الطلب',
+            submittedAt: 'تاريخ الإرسال',
+            name: 'الاسم',
+            email: 'البريد الإلكتروني',
+            phone: 'رقم الهاتف',
+            address: 'العنوان',
+            cardNo: 'رقم البطاقة',
+            institute: 'الجهة',
+            formType: 'نوع الاستمارة',
+            status: 'الحالة',
+            department: 'القسم',
+            specialtyDepartment: 'القسم (من مقدم الطلب)',
+            durationFrom: 'مدة التدريب من',
+            durationTo: 'مدة التدريب إلى',
+            duration: 'المدة',
+            reviewNote: 'ملاحظة المراجعة'
+        };
+        return labels[key] || key;
+    }
+
+    function getSquhHeaderLogoUrl() {
+        try {
+            return new URL('./assets/squh-header-logo.jpg', window.location.href).href;
+        } catch (err) {
+            return './assets/squh-header-logo.jpg';
+        }
+    }
+
+    function downloadPrintHtmlFallback(html, submissionId) {
+        try {
+            const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `review-${submissionId || 'submission'}.html`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+            alert('تم تنزيل ملف المعاينة. افتح الملف ثم اختر طباعة / حفظ PDF.');
+        } catch (err) {
+            console.error(err);
+            alert('تعذر فتح المعاينة تلقائيًا. الرجاء السماح بالنوافذ المنبثقة.');
+        }
+    }
+
+    function openSubmissionPdfPreview(index) {
+        const submission = (window.__currentSubmissions || [])[index];
+        if (!submission) return;
+        const logoUrl = escapeHtml(getSquhHeaderLogoUrl());
+
+        const managerSection2 = collectManagerSection2(index, submission);
+        const effective = { ...submission };
+        if (managerSection2) {
+            effective.managerSection2 = managerSection2;
+            effective.department = managerSection2.department;
+            effective.durationFrom = managerSection2.durationFrom;
+            effective.durationTo = managerSection2.durationTo;
+            effective.duration = managerSection2.duration;
+        }
+
+        const excluded = new Set(['_source', '_docId', '_localIndex', 'managerSection2']);
+        const rows = Object.entries(effective)
+            .filter(([key]) => !excluded.has(key))
+            .map(([key, value]) => {
+                const label = escapeHtml(getSubmissionLabel(key));
+                const val = escapeHtml(formatPrintValue(value));
+                return `<tr><th>${label}</th><td>${val}</td></tr>`;
+            })
+            .join('');
+
+        const html = `<!DOCTYPE html>
+        <html lang="ar" dir="rtl">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>معاينة طلب للمراجعة</title>
+            <style>
+                @page { size: A4; margin: 12mm; }
+                * { box-sizing: border-box; }
+                body { font-family: Tahoma, Arial, sans-serif; margin: 0; color: #1f2937; }
+                .toolbar { width: 210mm; margin: 10px auto 0; display: flex; gap: 8px; justify-content: flex-end; }
+                .toolbar button { border: none; border-radius: 6px; padding: 8px 14px; cursor: pointer; color: white; background: #1f7a8c; }
+                .toolbar button.secondary { background: #6b7280; }
+                .paper { width: 210mm; min-height: 297mm; margin: 0 auto; padding: 10mm; }
+                .squh-header { text-align: center; margin-bottom: 10px; }
+                .squh-header img { width: 220px; max-width: 100%; height: auto; display: inline-block; }
+                .header { border: 2px solid #2a6f60; border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; }
+                .title { margin: 0; color: #1b5e4f; font-size: 18px; font-weight: 700; }
+                .sub { color: #4b5563; margin-top: 4px; font-size: 13px; }
+                table { width: 100%; border-collapse: collapse; }
+                th, td { border: 1px solid #d1d5db; padding: 8px 10px; vertical-align: top; font-size: 13px; }
+                th { width: 34%; background: #f0f7f5; color: #1f4f45; text-align: right; }
+                @media print { .toolbar { display: none !important; } }
+            </style>
+        </head>
+        <body>
+            <div class="toolbar">
+                <button onclick="window.print()">حفظ كـ PDF / طباعة</button>
+                <button class="secondary" onclick="window.close()">إغلاق</button>
+            </div>
+            <div class="paper">
+                <div class="squh-header">
+                    <img src="${logoUrl}" alt="SQUH Header Logo">
+                </div>
+                <div class="header">
+                    <h1 class="title">نسخة مراجعة الطلب قبل الموافقة</h1>
+                    <div class="sub">نوع الطلب: ${escapeHtml(formatPrintValue(effective.formType || '---'))}</div>
+                    <div class="sub">رقم الطلب: ${escapeHtml(formatPrintValue(effective.id || effective._docId || '---'))}</div>
+                </div>
+                <table>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>
+        </body>
+        </html>`;
+
+        const w = window.open('', '_blank', 'noopener,noreferrer');
+        if (!w) {
+            const iframe = document.createElement('iframe');
+            iframe.style.position = 'fixed';
+            iframe.style.width = '1px';
+            iframe.style.height = '1px';
+            iframe.style.right = '0';
+            iframe.style.bottom = '0';
+            iframe.style.opacity = '0';
+            iframe.style.pointerEvents = 'none';
+            document.body.appendChild(iframe);
+
+            const cleanup = () => {
+                setTimeout(() => {
+                    try { iframe.remove(); } catch (_) {}
+                }, 1200);
+            };
+
+            iframe.onload = () => {
+                try {
+                    const iw = iframe.contentWindow;
+                    if (!iw) throw new Error('iframe window unavailable');
+                    iw.focus();
+                    iw.print();
+                } catch (err) {
+                    console.error(err);
+                    downloadPrintHtmlFallback(html, effective.id || effective._docId);
+                } finally {
+                    cleanup();
+                }
+            };
+
+            iframe.srcdoc = html;
+            return;
+        }
+        w.document.open();
+        w.document.write(html);
+        w.document.close();
+        w.onload = () => {
+            setTimeout(() => {
+                try {
+                    w.focus();
+                    w.print();
+                } catch (err) {
+                    console.error(err);
+                    downloadPrintHtmlFallback(html, effective.id || effective._docId);
+                }
+            }, 250);
         };
     }
 
@@ -670,6 +868,7 @@
                             <span class="status-badge ${statusClass}">${statusLabel}</span>
                         </div>
                         <div class="approval-actions">
+                            <button class="pdf-btn" onclick="openSubmissionPdfPreview(${index})">PDF للمراجعة</button>
                             <button class="approve-btn" onclick="updateSubmissionStatus(${index}, 'Approved')">Approve</button>
                             <button class="reject-btn" onclick="updateSubmissionStatus(${index}, 'Rejected')">Reject</button>
                         </div>
