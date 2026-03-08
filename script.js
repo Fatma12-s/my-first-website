@@ -75,11 +75,11 @@ function getMailConfig() {
 // ===== قائمة المسؤولين (ملء البيانات الفعلية هنا) =====
 const RESPONSIBLE_CONTACTS = {
   'graduates': { 
-    name: 'مدير الموارد البشرية', 
+    name: 'قسم التدريب', 
     email: 'fsalim@squ.edu.om'
   },
   'internal-employees': { 
-    name: 'مدير الموارد البشرية', 
+    name: 'قسم التدريب', 
     email: 'fsalim@squ.edu.om'
   },
   'internal-others': { 
