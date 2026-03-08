@@ -427,6 +427,56 @@
         }
     }
 
+    function getApplicantPhotoSrc(submission) {
+        const photo = submission && submission.applicantPhoto;
+        if (photo && typeof photo === 'object' && photo.url && /^https?:\/\//i.test(String(photo.url))) {
+            return String(photo.url);
+        }
+        if (typeof photo === 'string' && /^https?:\/\//i.test(photo)) {
+            return photo;
+        }
+        return '';
+    }
+
+    function printWhenImagesReady(targetWindow, fallback) {
+        try {
+            const doc = targetWindow && targetWindow.document;
+            if (!doc) throw new Error('window document unavailable');
+            const images = Array.from(doc.images || []);
+            if (!images.length) {
+                targetWindow.focus();
+                targetWindow.print();
+                return;
+            }
+
+            let done = 0;
+            const trigger = () => {
+                done += 1;
+                if (done >= images.length) {
+                    setTimeout(() => {
+                        try {
+                            targetWindow.focus();
+                            targetWindow.print();
+                        } catch (err) {
+                            if (typeof fallback === 'function') fallback(err);
+                        }
+                    }, 260);
+                }
+            };
+
+            images.forEach((img) => {
+                if (img.complete) {
+                    trigger();
+                } else {
+                    img.addEventListener('load', trigger, { once: true });
+                    img.addEventListener('error', trigger, { once: true });
+                }
+            });
+        } catch (err) {
+            if (typeof fallback === 'function') fallback(err);
+        }
+    }
+
     function downloadPrintHtmlFallback(html, submissionId) {
         try {
             const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
@@ -449,6 +499,7 @@
         const submission = (window.__currentSubmissions || [])[index];
         if (!submission) return;
         const logoUrl = escapeHtml(getSquhHeaderLogoUrl());
+        const applicantPhotoSrc = escapeHtml(getApplicantPhotoSrc(submission));
 
         const managerSection2 = collectManagerSection2(index, submission);
         const effective = { ...submission };
@@ -465,10 +516,41 @@
             .filter(([key]) => !excluded.has(key))
             .map(([key, value]) => {
                 const label = escapeHtml(getSubmissionLabel(key));
+                if (key === 'applicantPhoto' && applicantPhotoSrc) {
+                    return `<tr><th>${label}</th><td>مرفقة (معروضة في أعلى الاستمارة)</td></tr>`;
+                }
                 const val = escapeHtml(formatPrintValue(value));
                 return `<tr><th>${label}</th><td>${val}</td></tr>`;
             })
             .join('');
+
+        const section2Department = escapeHtml(formatPrintValue(
+            effective.managerSection2?.department || effective.department || effective.specialtyDepartment || '---'
+        ));
+        const section2From = escapeHtml(formatPrintValue(
+            effective.managerSection2?.durationFrom || effective.durationFrom || '---'
+        ));
+        const section2To = escapeHtml(formatPrintValue(
+            effective.managerSection2?.durationTo || effective.durationTo || '---'
+        ));
+
+        const section2Html = effective.formType === 'graduates'
+            ? `
+                <div class="section2-card">
+                    <div class="section2-title">Section 2 (Manager Approval Form) - اعتماد المسؤول</div>
+                    <div class="section2-grid">
+                        <div class="section2-item"><span>Department</span><strong>${section2Department}</strong></div>
+                        <div class="section2-item"><span>Duration From</span><strong>${section2From}</strong></div>
+                        <div class="section2-item"><span>Duration To</span><strong>${section2To}</strong></div>
+                        <div class="section2-item"><span>Decision</span><strong>☐ Approved   ☐ Rejected</strong></div>
+                        <div class="section2-item wide"><span>Manager Notes</span><strong>...............................................................</strong></div>
+                        <div class="section2-item"><span>Manager Name</span><strong>................................</strong></div>
+                        <div class="section2-item"><span>Signature</span><strong>................................</strong></div>
+                        <div class="section2-item"><span>Date</span><strong>................................</strong></div>
+                    </div>
+                </div>
+            `
+            : '';
 
         const html = `<!DOCTYPE html>
         <html lang="ar" dir="rtl">
@@ -484,14 +566,24 @@
                 .toolbar button { border: none; border-radius: 6px; padding: 8px 14px; cursor: pointer; color: white; background: #1f7a8c; }
                 .toolbar button.secondary { background: #6b7280; }
                 .paper { width: 210mm; min-height: 297mm; margin: 0 auto; padding: 10mm; }
-                .squh-header { text-align: center; margin-bottom: 10px; }
-                .squh-header img { width: 220px; max-width: 100%; height: auto; display: inline-block; }
+                .branding { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; padding: 8px 10px; border: 1px solid #d7e4e1; border-radius: 8px; background: #f8fcfb; }
+                .brand-logo { width: 210px; max-width: 100%; height: auto; display: block; }
+                .photo-box { width: 115px; min-width: 115px; height: 135px; border: 1px solid #cfd8d6; border-radius: 8px; background: #fff; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+                .photo-box img { width: 100%; height: 100%; object-fit: cover; }
+                .photo-placeholder { font-size: 11px; color: #6b7280; text-align: center; padding: 8px; }
                 .header { border: 2px solid #2a6f60; border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; }
                 .title { margin: 0; color: #1b5e4f; font-size: 18px; font-weight: 700; }
                 .sub { color: #4b5563; margin-top: 4px; font-size: 13px; }
                 table { width: 100%; border-collapse: collapse; }
                 th, td { border: 1px solid #d1d5db; padding: 8px 10px; vertical-align: top; font-size: 13px; }
                 th { width: 34%; background: #f0f7f5; color: #1f4f45; text-align: right; }
+                .section2-card { margin-top: 16px; border: 1px solid #cddbd8; border-radius: 8px; padding: 10px; background: #f9fcfb; }
+                .section2-title { font-size: 14px; font-weight: 700; color: #1f4f45; margin-bottom: 8px; }
+                .section2-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+                .section2-item { border: 1px solid #d1d5db; border-radius: 6px; padding: 8px; background: #fff; }
+                .section2-item.wide { grid-column: 1 / -1; }
+                .section2-item span { display: block; font-size: 11px; color: #6b7280; margin-bottom: 4px; }
+                .section2-item strong { font-size: 13px; color: #1f2937; font-weight: 600; }
                 @media print { .toolbar { display: none !important; } }
             </style>
         </head>
@@ -501,8 +593,13 @@
                 <button class="secondary" onclick="window.close()">إغلاق</button>
             </div>
             <div class="paper">
-                <div class="squh-header">
-                    <img src="${logoUrl}" alt="SQUH Header Logo">
+                <div class="branding">
+                    <img class="brand-logo" src="${logoUrl}" alt="شعار المؤسسة">
+                    <div class="photo-box">
+                        ${applicantPhotoSrc
+                            ? `<img src="${applicantPhotoSrc}" alt="صورة المتقدم">`
+                            : `<div class="photo-placeholder">لا توجد صورة متقدم مرفقة</div>`}
+                    </div>
                 </div>
                 <div class="header">
                     <h1 class="title">نسخة مراجعة الطلب قبل الموافقة</h1>
@@ -512,6 +609,7 @@
                 <table>
                     <tbody>${rows}</tbody>
                 </table>
+                ${section2Html}
             </div>
         </body>
         </html>`;
@@ -538,8 +636,7 @@
                 try {
                     const iw = iframe.contentWindow;
                     if (!iw) throw new Error('iframe window unavailable');
-                    iw.focus();
-                    iw.print();
+                    printWhenImagesReady(iw, () => downloadPrintHtmlFallback(html, effective.id || effective._docId));
                 } catch (err) {
                     console.error(err);
                     downloadPrintHtmlFallback(html, effective.id || effective._docId);
@@ -555,15 +652,7 @@
         w.document.write(html);
         w.document.close();
         w.onload = () => {
-            setTimeout(() => {
-                try {
-                    w.focus();
-                    w.print();
-                } catch (err) {
-                    console.error(err);
-                    downloadPrintHtmlFallback(html, effective.id || effective._docId);
-                }
-            }, 250);
+            printWhenImagesReady(w, () => downloadPrintHtmlFallback(html, effective.id || effective._docId));
         };
     }
 

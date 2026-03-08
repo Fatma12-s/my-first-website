@@ -277,6 +277,7 @@ async function saveFormData(formName, formData) {
   const sanitize = (data) => {
     const out = {};
     for (const [k, v] of Object.entries(data)) {
+      if (String(k).startsWith('__')) continue;
       try {
         if (typeof File !== 'undefined' && v instanceof File) {
           out[k] = v.name;
@@ -492,6 +493,19 @@ async function buildAttachmentValue(file, formName, useFirebase) {
   return fallbackMeta;
 }
 
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    try {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ''));
+      reader.onerror = () => reject(new Error('تعذر قراءة ملف الصورة.'));
+      reader.readAsDataURL(file);
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
+
 async function handleFormSubmit(formEl, formName) {
   const submitBtn = formEl.querySelector('button[type="submit"]');
   const originalBtnText = submitBtn?.textContent || 'إرسال';
@@ -522,6 +536,13 @@ async function handleFormSubmit(formEl, formName) {
     const fileTasks = entries
       .filter(([, v]) => v instanceof File && v.name && v.size > 0)
       .map(async ([k, v]) => {
+        if (k === 'applicantPhoto' && /^image\//i.test(v.type || '')) {
+          try {
+            obj.__applicantPhotoDataUrl = await fileToDataUrl(v);
+          } catch (err) {
+            console.warn('تعذر تجهيز معاينة صورة المتقدم:', err);
+          }
+        }
         obj[k] = await buildAttachmentValue(v, formName, useFirebase);
       });
     await Promise.all(fileTasks);
@@ -536,7 +557,11 @@ async function handleFormSubmit(formEl, formName) {
     // حفظ الطلب
     const result = await saveFormData(formName, obj);
     if (result.success) {
-      showSuccessMessage(formName, result.data, result.local);
+      const previewData = {
+        ...result.data,
+        __applicantPhotoDataUrl: obj.__applicantPhotoDataUrl || ''
+      };
+      showSuccessMessage(formName, previewData, result.local);
       formEl.reset();
     } else {
       throw new Error('فشل حفظ البيانات');
@@ -665,6 +690,24 @@ function getSquhHeaderLogoUrl() {
   }
 }
 
+function getApplicantPhotoSrc(data) {
+  const directPreview = data && data.__applicantPhotoDataUrl;
+  if (directPreview && /^data:image\//i.test(String(directPreview))) {
+    return String(directPreview);
+  }
+
+  const photo = data && data.applicantPhoto;
+  if (photo && typeof photo === 'object' && photo.url && /^https?:\/\//i.test(String(photo.url))) {
+    return String(photo.url);
+  }
+
+  if (typeof photo === 'string' && /^https?:\/\//i.test(photo)) {
+    return photo;
+  }
+
+  return '';
+}
+
 function openSubmissionPrintPreview(formName, data) {
   const excluded = new Set([
     'submittedAtISO',
@@ -673,17 +716,52 @@ function openSubmissionPrintPreview(formName, data) {
     'assignedTo',
     'reviewedAt',
     'managerSection2',
-    'firestoreId'
+    'firestoreId',
+    '__applicantPhotoDataUrl'
   ]);
+
+  const applicantPhotoSrc = getApplicantPhotoSrc(data);
 
   const entries = Object.entries(data || {}).filter(([key]) => !excluded.has(key));
   const rows = entries
     .map(([key, value]) => {
       const label = escapeHtml(getPrintableLabel(key));
+      if (key === 'applicantPhoto' && applicantPhotoSrc) {
+        return `<tr><th>${label}</th><td>مرفقة (معروضة في أعلى الاستمارة)</td></tr>`;
+      }
       const val = escapeHtml(getPrintableValue(value));
       return `<tr><th>${label}</th><td>${val}</td></tr>`;
     })
     .join('') || `<tr><th>بيانات الطلب</th><td>لا توجد بيانات متاحة للطباعة</td></tr>`;
+
+  const section2Department = escapeHtml(
+    getPrintableValue(
+      data?.managerSection2?.department || data?.department || data?.specialtyDepartment || '---'
+    )
+  );
+  const section2From = escapeHtml(
+    getPrintableValue(data?.managerSection2?.durationFrom || data?.durationFrom || '---')
+  );
+  const section2To = escapeHtml(
+    getPrintableValue(data?.managerSection2?.durationTo || data?.durationTo || '---')
+  );
+  const section2Html = formName === 'graduates'
+    ? `
+      <div class="section2-card">
+        <div class="section2-title">Section 2 (Manager Approval Form) - اعتماد المسؤول</div>
+        <div class="section2-grid">
+          <div class="section2-item"><span>Department</span><strong>${section2Department}</strong></div>
+          <div class="section2-item"><span>Duration From</span><strong>${section2From}</strong></div>
+          <div class="section2-item"><span>Duration To</span><strong>${section2To}</strong></div>
+          <div class="section2-item"><span>Decision</span><strong>☐ Approved &nbsp;&nbsp; ☐ Rejected</strong></div>
+          <div class="section2-item wide"><span>Manager Notes</span><strong>...............................................................</strong></div>
+          <div class="section2-item"><span>Manager Name</span><strong>................................</strong></div>
+          <div class="section2-item"><span>Signature</span><strong>................................</strong></div>
+          <div class="section2-item"><span>Date</span><strong>................................</strong></div>
+        </div>
+      </div>
+    `
+    : '';
 
   const printWindow = window.open('', '_blank', 'noopener,noreferrer');
   const logoUrl = escapeHtml(getSquhHeaderLogoUrl());
@@ -709,15 +787,45 @@ function openSubmissionPrintPreview(formName, data) {
         margin: 0 auto;
         padding: 10mm;
       }
-      .squh-header {
-        text-align: center;
+      .branding {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
         margin-bottom: 10px;
+        padding: 8px 10px;
+        border: 1px solid #d7e4e1;
+        border-radius: 8px;
+        background: #f8fcfb;
       }
-      .squh-header img {
-        width: 220px;
+      .brand-logo {
+        width: 210px;
         max-width: 100%;
         height: auto;
-        display: inline-block;
+        display: block;
+      }
+      .photo-box {
+        width: 115px;
+        min-width: 115px;
+        height: 135px;
+        border: 1px solid #cfd8d6;
+        border-radius: 8px;
+        background: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+      }
+      .photo-box img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .photo-placeholder {
+        font-size: 11px;
+        color: #6b7280;
+        text-align: center;
+        padding: 8px;
       }
       .header {
         border: 2px solid #2a6f60;
@@ -760,6 +868,44 @@ function openSubmissionPrintPreview(formName, data) {
         font-size: 12px;
         color: #6b7280;
       }
+      .section2-card {
+        margin-top: 16px;
+        border: 1px solid #cddbd8;
+        border-radius: 8px;
+        padding: 10px;
+        background: #f9fcfb;
+      }
+      .section2-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: #1f4f45;
+        margin-bottom: 8px;
+      }
+      .section2-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+      }
+      .section2-item {
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        padding: 8px;
+        background: #fff;
+      }
+      .section2-item.wide {
+        grid-column: 1 / -1;
+      }
+      .section2-item span {
+        display: block;
+        font-size: 11px;
+        color: #6b7280;
+        margin-bottom: 4px;
+      }
+      .section2-item strong {
+        font-size: 13px;
+        color: #1f2937;
+        font-weight: 600;
+      }
       .no-print {
         margin: 12px auto;
         width: 210mm;
@@ -787,8 +933,13 @@ function openSubmissionPrintPreview(formName, data) {
       <button onclick="window.close()" style="background:#6b7280;">إغلاق</button>
     </div>
     <div class="paper">
-      <div class="squh-header">
-        <img src="${logoUrl}" alt="SQUH Header Logo">
+      <div class="branding">
+        <img class="brand-logo" src="${logoUrl}" alt="شعار المؤسسة">
+        <div class="photo-box">
+          ${applicantPhotoSrc
+            ? `<img src="${escapeHtml(applicantPhotoSrc)}" alt="صورة المتقدم">`
+            : `<div class="photo-placeholder">لا توجد صورة متقدم مرفقة</div>`}
+        </div>
       </div>
       <div class="header">
         <div>
@@ -802,11 +953,33 @@ function openSubmissionPrintPreview(formName, data) {
           ${rows}
         </tbody>
       </table>
+      ${section2Html}
       <div class="footer">تم إنشاء هذه النسخة تلقائيا من النظام لغرض الحفظ والأرشفة.</div>
     </div>
     <script>
       window.addEventListener('load', function () {
-        setTimeout(function () { window.print(); }, 250);
+        var imgs = Array.prototype.slice.call(document.images || []);
+        if (!imgs.length) {
+          setTimeout(function () { window.print(); }, 250);
+          return;
+        }
+
+        var done = 0;
+        var trigger = function () {
+          done += 1;
+          if (done >= imgs.length) {
+            setTimeout(function () { window.print(); }, 300);
+          }
+        };
+
+        imgs.forEach(function (img) {
+          if (img.complete) {
+            trigger();
+          } else {
+            img.addEventListener('load', trigger, { once: true });
+            img.addEventListener('error', trigger, { once: true });
+          }
+        });
       });
     </script>
   </body>
