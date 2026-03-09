@@ -624,6 +624,7 @@ async function handleFormSubmit(formEl, formName) {
         if (k === 'applicantPhoto' && /^image\//i.test(v.type || '')) {
           try {
             obj.__applicantPhotoDataUrl = await fileToDataUrl(v);
+            obj.applicantPhotoDataUrl = obj.__applicantPhotoDataUrl;
           } catch (err) {
             console.warn('تعذر تجهيز معاينة صورة المتقدم:', err);
           }
@@ -644,7 +645,8 @@ async function handleFormSubmit(formEl, formName) {
     if (result.success) {
       const previewData = {
         ...result.data,
-        __applicantPhotoDataUrl: obj.__applicantPhotoDataUrl || ''
+        __applicantPhotoDataUrl: obj.__applicantPhotoDataUrl || '',
+        applicantPhotoDataUrl: obj.applicantPhotoDataUrl || ''
       };
       showSuccessMessage(formName, previewData, result.local);
       formEl.reset();
@@ -781,7 +783,15 @@ function getApplicantPhotoSrc(data) {
     return String(directPreview);
   }
 
+  const storedPreview = data && data.applicantPhotoDataUrl;
+  if (storedPreview && /^data:image\//i.test(String(storedPreview))) {
+    return String(storedPreview);
+  }
+
   const photo = data && data.applicantPhoto;
+  if (photo && typeof photo === 'object' && photo.dataUrl && /^data:image\//i.test(String(photo.dataUrl))) {
+    return String(photo.dataUrl);
+  }
   if (photo && typeof photo === 'object' && photo.url && /^https?:\/\//i.test(String(photo.url))) {
     return String(photo.url);
   }
@@ -836,6 +846,10 @@ function openSubmissionPrintPreview(formName, data) {
         <div class="line-row split">
           <div><span class="line-label">Telephone/GSM:</span><span class="line-value short">${lineValue(data?.phone)}</span></div>
           <div><span class="line-label">Email:</span><span class="line-value short">${lineValue(data?.email)}</span></div>
+        </div>
+        <div class="line-row split">
+          <div><span class="line-label">Card No:</span><span class="line-value short">${lineValue(data?.cardNo)}</span></div>
+          <div><span class="line-label">Institute:</span><span class="line-value short">${lineValue(data?.institute)}</span></div>
         </div>
 
         <div class="line-row requirement-row">
@@ -955,15 +969,13 @@ function openSubmissionPrintPreview(formName, data) {
         padding: 7mm;
       }
       .branding {
-        display: grid;
-        grid-template-columns: 1fr 145px;
-        align-items: start;
-        gap: 14px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
         margin-bottom: 8px;
         padding: 7px 8px;
         border: 1px solid var(--brand-mid);
         background: #fff;
-        direction: ltr;
       }
       .brand-logo {
         width: 320px;
@@ -971,6 +983,14 @@ function openSubmissionPrintPreview(formName, data) {
         height: auto;
         display: block;
         margin: 0 auto;
+      }
+      .photo-row {
+        border: 1px solid var(--brand-mid);
+        border-top: none;
+        display: flex;
+        justify-content: center;
+        padding: 8px;
+        margin-bottom: 10px;
       }
       .photo-box {
         width: 145px;
@@ -1172,6 +1192,9 @@ function openSubmissionPrintPreview(formName, data) {
       <button onclick="window.close()" style="background:#6b7280;">إغلاق</button>
     </div>
     <div class="paper">
+      <div class="branding">
+        <img class="brand-logo" src="${logoUrl}" alt="شعار المؤسسة">
+      </div>
       <div class="header">
         <div>
           <h1 class="title">${escapeHtml(getFormTitle(formName))}</h1>
@@ -1179,18 +1202,17 @@ function openSubmissionPrintPreview(formName, data) {
         </div>
         <div style="font-size:12px;color:#374151;">رقم الطلب: ${escapeHtml(getPrintableValue(data.id || '---'))}</div>
       </div>
-      <div class="branding">
-        <img class="brand-logo" src="${logoUrl}" alt="شعار المؤسسة">
+      <div class="photo-row">
         <div class="photo-box">
           ${applicantPhotoSrc
             ? `<img src="${escapeHtml(applicantPhotoSrc)}" alt="صورة المتقدم">`
             : `<div class="photo-placeholder">لا توجد صورة متقدم مرفقة</div>`}
         </div>
       </div>
+      ${graduatesDeclarationsHtml}
       ${isGraduates
         ? graduatesSection1Html
         : `<table><tbody>${rows}</tbody></table>`}
-      ${graduatesDeclarationsHtml}
       ${section2Html}
       <div class="footer">تم إنشاء هذه النسخة تلقائيا من النظام لغرض الحفظ والأرشفة.</div>
     </div>
