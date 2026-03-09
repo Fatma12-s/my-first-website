@@ -460,7 +460,7 @@
         const submission = (window.__currentSubmissions || [])[index];
         if (!submission) return;
         const logoUrl = escapeHtml(getSquhHeaderLogoUrl());
-        const applicantPhotoSrc = escapeHtml(getApplicantPhotoSrc(submission));
+        const applicantPhotoSrc = getApplicantPhotoSrc(submission);
 
         const managerSection2 = collectManagerSection2(index, submission);
         const effective = { ...submission };
@@ -473,6 +473,17 @@
         }
 
         const excluded = new Set(['_source', '_docId', '_localIndex', 'managerSection2']);
+        const isGraduates = effective.formType === 'graduates';
+        const lineValue = (value) => {
+            if (value === undefined || value === null) return '';
+            if (typeof value === 'object') {
+                if (value.name) return escapeHtml(String(value.name));
+                if (value.url) return escapeHtml(String(value.url));
+                return '';
+            }
+            return escapeHtml(String(value));
+        };
+
         const rows = Object.entries(effective)
             .filter(([key]) => !excluded.has(key))
             .map(([key, value]) => {
@@ -483,7 +494,11 @@
                 const val = escapeHtml(formatPrintValue(value));
                 return `<tr><th>${label}</th><td>${val}</td></tr>`;
             })
-            .join('');
+            .join('') || `<tr><th>بيانات الطلب</th><td>لا توجد بيانات متاحة</td></tr>`;
+
+        const reqValue = String(effective.programRequirement || '').toUpperCase();
+        const isClinical = reqValue.includes('CLINICAL') && !reqValue.includes('NON-CLINICAL');
+        const isNonClinical = reqValue.includes('NON-CLINICAL');
 
         const section2Department = escapeHtml(formatPrintValue(
             effective.managerSection2?.department || effective.department || effective.specialtyDepartment || '---'
@@ -495,23 +510,67 @@
             effective.managerSection2?.durationTo || effective.durationTo || '---'
         ));
 
-        const section2Html = effective.formType === 'graduates'
+        const graduatesSection1Html = isGraduates
             ? `
-                <div class="section2-card">
-                    <div class="section2-title">Section 2 (Manager Approval Form) - اعتماد المسؤول</div>
-                    <div class="section2-grid">
-                        <div class="section2-item"><span>Department</span><strong>${section2Department}</strong></div>
-                        <div class="section2-item"><span>Duration From</span><strong>${section2From}</strong></div>
-                        <div class="section2-item"><span>Duration To</span><strong>${section2To}</strong></div>
-                        <div class="section2-item"><span>Decision</span><strong>☐ Approved   ☐ Rejected</strong></div>
-                        <div class="section2-item wide"><span>Manager Notes</span><strong>...............................................................</strong></div>
-                        <div class="section2-item"><span>Manager Name</span><strong>................................</strong></div>
-                        <div class="section2-item"><span>Signature</span><strong>................................</strong></div>
-                        <div class="section2-item"><span>Date</span><strong>................................</strong></div>
+                <div class="section-block">
+                    <div class="section-head">Section 1: To be filled by the applicant</div>
+                    <div class="sub-head">Personal details of applicant:</div>
+
+                    <div class="line-row"><span class="line-label">Name:</span><span class="line-value">${lineValue(effective.name)}</span></div>
+                    <div class="line-row"><span class="line-label">Address:</span><span class="line-value">${lineValue(effective.address)}</span></div>
+                    <div class="line-row split">
+                        <div><span class="line-label">Telephone/GSM:</span><span class="line-value short">${lineValue(effective.phone)}</span></div>
+                        <div><span class="line-label">Email:</span><span class="line-value short">${lineValue(effective.email)}</span></div>
                     </div>
+
+                    <div class="line-row requirement-row">
+                        <span class="line-label underline">Program Requirement:</span>
+                        <span class="check-box">${isClinical ? '&#10003;' : ''}</span>
+                        <span class="check-text">CLINICAL ATTACHMENT</span>
+                        <span class="check-box">${isNonClinical ? '&#10003;' : ''}</span>
+                        <span class="check-text">NON-CLINICAL ATTACHMENT <em>(please tick)</em></span>
+                    </div>
+
+                    <div class="line-row"><span class="line-label">Specialty / Department:</span><span class="line-value">${lineValue(effective.specialtyDepartment || effective.department)}</span></div>
+                    <div class="line-row duration-row"><span class="line-label">DURATION: From</span><span class="line-value short">${lineValue(effective.durationFrom)}</span><span class="line-label small">to</span><span class="line-value short">${lineValue(effective.durationTo)}</span></div>
+
+                    <div class="line-row"><span class="line-label underline">SPECIFIC OBJECTIVES FOR THE TRAINING:</span></div>
+                    <div class="objective-line">${lineValue(effective.objective1)}</div>
+                    <div class="objective-line">${lineValue(effective.objective2)}</div>
                 </div>
             `
             : '';
+
+        const section2Html = isGraduates
+            ? `
+                <div class="section-block section2-block">
+                    <div class="section-head">Section 2: To be filled by supervisor / manager</div>
+                    <div class="line-row"><span class="line-label">Department:</span><span class="line-value">${section2Department}</span></div>
+                    <div class="line-row duration-row"><span class="line-label">DURATION: From</span><span class="line-value short">${section2From}</span><span class="line-label small">to</span><span class="line-value short">${section2To}</span></div>
+                    <div class="line-row requirement-row">
+                        <span class="line-label">Decision:</span>
+                        <span class="check-box"></span><span class="check-text">Approved</span>
+                        <span class="check-box"></span><span class="check-text">Rejected</span>
+                    </div>
+                    <div class="line-row"><span class="line-label">Manager Notes:</span><span class="line-value">&nbsp;</span></div>
+                    <div class="line-row split">
+                        <div><span class="line-label">Manager Name:</span><span class="line-value short">&nbsp;</span></div>
+                        <div><span class="line-label">Signature:</span><span class="line-value short">&nbsp;</span></div>
+                    </div>
+                    <div class="line-row"><span class="line-label">Date:</span><span class="line-value short">&nbsp;</span></div>
+                </div>
+            `
+            : '';
+
+        const formTypeTitles = {
+            graduates: 'استمارة تدريب الطلاب والخريجين',
+            'internal-employees': 'استمارة البرامج الداخلية - الموظفين',
+            'internal-others': 'استمارة البرامج الداخلية - غير الموظفين',
+            'training-employees': 'استمارة البرامج التدريبية - الموظفين',
+            'training-others': 'استمارة البرامج التدريبية - غير الموظفين',
+            contact: 'استمارة تواصل'
+        };
+        const formTitle = formTypeTitles[effective.formType] || 'استمارة الطلب';
 
         const html = `<!DOCTYPE html>
         <html lang="ar" dir="rtl">
@@ -522,47 +581,60 @@
             <style>
                 @page { size: A4; margin: 12mm; }
                 * { box-sizing: border-box; }
-                body { font-family: Tahoma, Arial, sans-serif; margin: 0; color: #1f2937; }
-                .paper { width: 210mm; min-height: 297mm; margin: 0 auto; padding: 10mm; }
-                .branding { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; padding: 8px 10px; border: 1px solid #d7e4e1; border-radius: 8px; background: #f8fcfb; }
-                .brand-logo { width: 210px; max-width: 100%; height: auto; display: block; }
-                .photo-box { width: 115px; min-width: 115px; height: 135px; border: 1px solid #cfd8d6; border-radius: 8px; background: #fff; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+                body { font-family: "Times New Roman", Tahoma, serif; margin: 0; color: #111; background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                .paper { width: 210mm; min-height: 297mm; margin: 0 auto; padding: 7mm; }
+                .branding { display: grid; grid-template-columns: 1fr 145px; align-items: start; gap: 14px; margin-bottom: 8px; padding: 7px 8px; border: 1px solid #111; background: #fff; direction: ltr; }
+                .brand-logo { width: 320px; max-width: 100%; height: auto; display: block; margin: 0 auto; }
+                .photo-box { width: 145px; min-width: 145px; height: 182px; border: 2px solid #111; padding: 3px; background: #fff; display: flex; align-items: center; justify-content: center; overflow: hidden; justify-self: end; }
                 .photo-box img { width: 100%; height: 100%; object-fit: cover; }
-                .photo-placeholder { font-size: 11px; color: #6b7280; text-align: center; padding: 8px; }
-                .header { border: 2px solid #2a6f60; border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; }
-                .title { margin: 0; color: #1b5e4f; font-size: 18px; font-weight: 700; }
-                .sub { color: #4b5563; margin-top: 4px; font-size: 13px; }
+                .photo-placeholder { font-size: 10px; color: #111; text-align: center; padding: 8px; }
+                .header { border: 1px solid #111; padding: 6px 10px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
+                .title { margin: 0; color: #111; font-size: 17px; font-weight: 700; }
+                .sub { color: #111; margin-top: 2px; font-size: 12px; }
                 table { width: 100%; border-collapse: collapse; }
                 th, td { border: 1px solid #d1d5db; padding: 8px 10px; vertical-align: top; font-size: 13px; }
                 th { width: 34%; background: #f0f7f5; color: #1f4f45; text-align: right; }
-                .section2-card { margin-top: 16px; border: 1px solid #cddbd8; border-radius: 8px; padding: 10px; background: #f9fcfb; }
-                .section2-title { font-size: 14px; font-weight: 700; color: #1f4f45; margin-bottom: 8px; }
-                .section2-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-                .section2-item { border: 1px solid #d1d5db; border-radius: 6px; padding: 8px; background: #fff; }
-                .section2-item.wide { grid-column: 1 / -1; }
-                .section2-item span { display: block; font-size: 11px; color: #6b7280; margin-bottom: 4px; }
-                .section2-item strong { font-size: 13px; color: #1f2937; font-weight: 600; }
+                .section-block { border: 1px solid #111; margin-bottom: 10px; }
+                .section-head { font-size: 17px; font-weight: 800; padding: 6px 12px; border-bottom: 1px solid #111; background: #efefef; color: #111; direction: ltr; text-align: left; }
+                .sub-head { font-size: 14px; font-weight: 700; padding: 7px 12px 4px; color: #111; direction: ltr; text-align: left; }
+                .line-row { padding: 6px 12px; direction: ltr; text-align: left; color: #111; display: flex; align-items: flex-end; gap: 6px; }
+                .line-label { font-size: 14px; font-weight: 700; display: inline-block; min-width: 118px; }
+                .line-label.small { font-size: 13px; min-width: auto; margin: 0; }
+                .line-label.underline { text-decoration: underline; }
+                .line-value { display: inline-flex; flex: 1; border-bottom: 1.5px solid #111; padding: 0 4px 2px; font-size: 14px; vertical-align: baseline; min-height: 20px; }
+                .line-value.short { flex: 0 0 185px; }
+                .line-row.split { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+                .line-row.split > div { display: flex; align-items: flex-end; gap: 6px; }
+                .requirement-row { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+                .check-box { width: 18px; height: 18px; border: 1.5px solid #111; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; line-height: 1; }
+                .check-text { font-size: 14px; font-weight: 700; }
+                .duration-row .line-value.short { flex-basis: 170px; }
+                .objective-line { min-height: 28px; border-bottom: 1.5px solid #111; margin: 0 12px 8px; font-size: 14px; color: #111; direction: ltr; text-align: left; padding: 2px 4px; }
+                .section2-block { margin-top: 8px; }
+                .section2-block .line-label { min-width: 130px; }
+                .footer { margin-top: 14px; font-size: 11px; color: #111; text-align: center; }
             </style>
         </head>
         <body>
             <div class="paper">
+                <div class="header">
+                    <div>
+                        <h1 class="title">${escapeHtml(formTitle)}</h1>
+                        <div class="sub">دائرة التدريب والتطوير المهني المستمر</div>
+                    </div>
+                    <div style="font-size:12px;color:#374151;">رقم الطلب: ${escapeHtml(formatPrintValue(effective.id || effective._docId || '---'))}</div>
+                </div>
                 <div class="branding">
                     <img class="brand-logo" src="${logoUrl}" alt="شعار المؤسسة">
                     <div class="photo-box">
                         ${applicantPhotoSrc
-                            ? `<img src="${applicantPhotoSrc}" alt="صورة المتقدم">`
+                            ? `<img src="${escapeHtml(applicantPhotoSrc)}" alt="صورة المتقدم">`
                             : `<div class="photo-placeholder">لا توجد صورة متقدم مرفقة</div>`}
                     </div>
                 </div>
-                <div class="header">
-                    <h1 class="title">نسخة مراجعة الطلب قبل الموافقة</h1>
-                    <div class="sub">نوع الطلب: ${escapeHtml(formatPrintValue(effective.formType || '---'))}</div>
-                    <div class="sub">رقم الطلب: ${escapeHtml(formatPrintValue(effective.id || effective._docId || '---'))}</div>
-                </div>
-                <table>
-                    <tbody>${rows}</tbody>
-                </table>
+                ${isGraduates ? graduatesSection1Html : `<table><tbody>${rows}</tbody></table>`}
                 ${section2Html}
+                <div class="footer">تم إنشاء هذه النسخة تلقائيا من النظام لغرض الحفظ والأرشفة.</div>
             </div>
         </body>
         </html>`;

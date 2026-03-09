@@ -421,7 +421,6 @@ if (graduatesForm) {
   const previewDemoPdfBtn = document.getElementById('previewDemoPdfBtn');
   if (previewDemoPdfBtn) {
     previewDemoPdfBtn.addEventListener('click', () => {
-      fillGraduatesDemoData();
       const previewData = buildGraduatesDemoPreviewData();
       openSubmissionPrintPreview('graduates', previewData);
     });
@@ -914,31 +913,35 @@ function openSubmissionPrintPreview(formName, data) {
         padding: 7mm;
       }
       .branding {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 10px;
+        display: grid;
+        grid-template-columns: 1fr 145px;
+        align-items: start;
+        gap: 14px;
         margin-bottom: 8px;
         padding: 7px 8px;
         border: 1px solid #111;
         background: #fff;
+        direction: ltr;
       }
       .brand-logo {
-        width: 245px;
+        width: 320px;
         max-width: 100%;
         height: auto;
         display: block;
+        margin: 0 auto;
       }
       .photo-box {
-        width: 110px;
-        min-width: 110px;
-        height: 130px;
-        border: 1px solid #111;
+        width: 145px;
+        min-width: 145px;
+        height: 182px;
+        border: 2px solid #111;
+        padding: 3px;
         background: #fff;
         display: flex;
         align-items: center;
         justify-content: center;
         overflow: hidden;
+        justify-self: end;
       }
       .photo-box img {
         width: 100%;
@@ -1121,6 +1124,13 @@ function openSubmissionPrintPreview(formName, data) {
       <button onclick="window.close()" style="background:#6b7280;">إغلاق</button>
     </div>
     <div class="paper">
+      <div class="header">
+        <div>
+          <h1 class="title">${escapeHtml(getFormTitle(formName))}</h1>
+          <div class="subtitle">دائرة التدريب والتطوير المهني المستمر</div>
+        </div>
+        <div style="font-size:12px;color:#374151;">رقم الطلب: ${escapeHtml(getPrintableValue(data.id || '---'))}</div>
+      </div>
       <div class="branding">
         <img class="brand-logo" src="${logoUrl}" alt="شعار المؤسسة">
         <div class="photo-box">
@@ -1128,13 +1138,6 @@ function openSubmissionPrintPreview(formName, data) {
             ? `<img src="${escapeHtml(applicantPhotoSrc)}" alt="صورة المتقدم">`
             : `<div class="photo-placeholder">لا توجد صورة متقدم مرفقة</div>`}
         </div>
-      </div>
-      <div class="header">
-        <div>
-          <h1 class="title">${escapeHtml(getFormTitle(formName))}</h1>
-          <div class="subtitle">دائرة التدريب والتطوير المهني المستمر</div>
-        </div>
-        <div style="font-size:12px;color:#374151;">رقم الطلب: ${escapeHtml(getPrintableValue(data.id || '---'))}</div>
       </div>
       ${isGraduates
         ? graduatesSection1Html
