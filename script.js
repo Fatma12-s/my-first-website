@@ -349,6 +349,83 @@ if (graduatesForm) {
     e.preventDefault();
     await handleFormSubmit(graduatesForm, 'graduates');
   });
+
+  const fillGraduatesDemoData = () => {
+    const now = new Date();
+    const from = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const to = new Date(now.getFullYear(), now.getMonth() + 1, 21);
+    const toDateInputValue = (d) => d.toISOString().slice(0, 10);
+
+    const setValue = (id, value) => {
+      const el = document.getElementById(id);
+      if (el) el.value = value;
+    };
+    const setChecked = (id, value = true) => {
+      const el = document.getElementById(id);
+      if (el) el.checked = value;
+    };
+
+    setChecked('undertakingAgree', true);
+    setValue('grad-name', 'Fatma Salim (Demo)');
+    setValue('address', 'Muscat - Oman (Demo Address)');
+    setValue('grad-phone', '92512260');
+    setValue('grad-email', 'demo.applicant@squ.edu.om');
+    setValue('cardNo', '1214422');
+    setValue('institute', 'Sultan Qaboos University (Demo)');
+    setChecked('clinicalAttachment', true);
+    setValue('specialty', 'Training & CPD');
+    setValue('durationFrom', toDateInputValue(from));
+    setValue('durationTo', toDateInputValue(to));
+    setValue('objective1', 'Improve practical exposure in hospital training workflows.');
+    setValue('objective2', 'Understand department reporting and patient communication process.');
+    setChecked('idCardDeclaration', true);
+    setValue('applicantSignature', 'Fatma Salim');
+  };
+
+  const buildGraduatesDemoPreviewData = () => {
+    const fd = new FormData(graduatesForm);
+    const data = {
+      id: `DEMO-${Date.now()}`,
+      formType: 'graduates',
+      submittedAt: new Date().toLocaleString('ar-SA'),
+      status: 'Pending'
+    };
+
+    for (const [k, v] of fd.entries()) {
+      if (v instanceof File) {
+        if (v && v.name) data[k] = { name: v.name, source: 'demo-file' };
+      } else {
+        data[k] = v;
+      }
+    }
+
+    // التوافق مع حقول الطباعة/المراجعة
+    data.department = data.department || data.specialtyDepartment || '';
+    if (!data.duration) {
+      const from = data.durationFrom || '';
+      const to = data.durationTo || '';
+      data.duration = from && to ? `${from} -> ${to}` : from || to || '';
+    }
+
+    return data;
+  };
+
+  const fillDemoBtn = document.getElementById('fillDemoBtn');
+  if (fillDemoBtn) {
+    fillDemoBtn.addEventListener('click', () => {
+      fillGraduatesDemoData();
+      alert('تمت تعبئة البيانات التجريبية. يمكنك تعديل أي حقل قبل الإرسال أو المعاينة.');
+    });
+  }
+
+  const previewDemoPdfBtn = document.getElementById('previewDemoPdfBtn');
+  if (previewDemoPdfBtn) {
+    previewDemoPdfBtn.addEventListener('click', () => {
+      fillGraduatesDemoData();
+      const previewData = buildGraduatesDemoPreviewData();
+      openSubmissionPrintPreview('graduates', previewData);
+    });
+  }
 }
 
 // ===== استمارة البرامج الداخلية - الموظفين =====
@@ -723,6 +800,51 @@ function openSubmissionPrintPreview(formName, data) {
   const applicantPhotoSrc = getApplicantPhotoSrc(data);
 
   const entries = Object.entries(data || {}).filter(([key]) => !excluded.has(key));
+  const isGraduates = formName === 'graduates';
+
+  const lineValue = (value) => {
+    if (value === undefined || value === null) return '';
+    if (typeof value === 'object') {
+      if (value.name) return escapeHtml(String(value.name));
+      if (value.url) return escapeHtml(String(value.url));
+      return '';
+    }
+    return escapeHtml(String(value));
+  };
+  const reqValue = String(data?.programRequirement || '').toUpperCase();
+  const isClinical = reqValue.includes('CLINICAL') && !reqValue.includes('NON-CLINICAL');
+  const isNonClinical = reqValue.includes('NON-CLINICAL');
+
+  const graduatesSection1Html = isGraduates
+    ? `
+      <div class="section-block">
+        <div class="section-head">Section 1: To be filled by the applicant</div>
+        <div class="sub-head">Personal details of applicant:</div>
+
+        <div class="line-row"><span class="line-label">Name:</span><span class="line-value">${lineValue(data?.name)}</span></div>
+        <div class="line-row"><span class="line-label">Address:</span><span class="line-value">${lineValue(data?.address)}</span></div>
+        <div class="line-row split">
+          <div><span class="line-label">Telephone/GSM:</span><span class="line-value short">${lineValue(data?.phone)}</span></div>
+          <div><span class="line-label">Email:</span><span class="line-value short">${lineValue(data?.email)}</span></div>
+        </div>
+
+        <div class="line-row requirement-row">
+          <span class="line-label underline">Program Requirement:</span>
+          <span class="check-box">${isClinical ? '&#10003;' : ''}</span>
+          <span class="check-text">CLINICAL ATTACHMENT</span>
+          <span class="check-box">${isNonClinical ? '&#10003;' : ''}</span>
+          <span class="check-text">NON-CLINICAL ATTACHMENT <em>(please tick)</em></span>
+        </div>
+
+        <div class="line-row"><span class="line-label">Specialty / Department:</span><span class="line-value">${lineValue(data?.specialtyDepartment || data?.department)}</span></div>
+        <div class="line-row duration-row"><span class="line-label">DURATION: From</span><span class="line-value short">${lineValue(data?.durationFrom)}</span><span class="line-label small">to</span><span class="line-value short">${lineValue(data?.durationTo)}</span></div>
+
+        <div class="line-row"><span class="line-label underline">SPECIFIC OBJECTIVES FOR THE TRAINING:</span></div>
+        <div class="objective-line">${lineValue(data?.objective1)}</div>
+        <div class="objective-line">${lineValue(data?.objective2)}</div>
+      </div>
+    `
+    : '';
   const rows = entries
     .map(([key, value]) => {
       const label = escapeHtml(getPrintableLabel(key));
@@ -745,25 +867,27 @@ function openSubmissionPrintPreview(formName, data) {
   const section2To = escapeHtml(
     getPrintableValue(data?.managerSection2?.durationTo || data?.durationTo || '---')
   );
-  const section2Html = formName === 'graduates'
+  const section2Html = isGraduates
     ? `
-      <div class="section2-card">
-        <div class="section2-title">Section 2 (Manager Approval Form) - اعتماد المسؤول</div>
-        <div class="section2-grid">
-          <div class="section2-item"><span>Department</span><strong>${section2Department}</strong></div>
-          <div class="section2-item"><span>Duration From</span><strong>${section2From}</strong></div>
-          <div class="section2-item"><span>Duration To</span><strong>${section2To}</strong></div>
-          <div class="section2-item"><span>Decision</span><strong>☐ Approved &nbsp;&nbsp; ☐ Rejected</strong></div>
-          <div class="section2-item wide"><span>Manager Notes</span><strong>...............................................................</strong></div>
-          <div class="section2-item"><span>Manager Name</span><strong>................................</strong></div>
-          <div class="section2-item"><span>Signature</span><strong>................................</strong></div>
-          <div class="section2-item"><span>Date</span><strong>................................</strong></div>
+      <div class="section-block section2-block">
+        <div class="section-head">Section 2: To be filled by supervisor / manager</div>
+        <div class="line-row"><span class="line-label">Department:</span><span class="line-value">${section2Department}</span></div>
+        <div class="line-row duration-row"><span class="line-label">DURATION: From</span><span class="line-value short">${section2From}</span><span class="line-label small">to</span><span class="line-value short">${section2To}</span></div>
+        <div class="line-row requirement-row">
+          <span class="line-label">Decision:</span>
+          <span class="check-box"></span><span class="check-text">Approved</span>
+          <span class="check-box"></span><span class="check-text">Rejected</span>
         </div>
+        <div class="line-row"><span class="line-label">Manager Notes:</span><span class="line-value">&nbsp;</span></div>
+        <div class="line-row split">
+          <div><span class="line-label">Manager Name:</span><span class="line-value short">&nbsp;</span></div>
+          <div><span class="line-label">Signature:</span><span class="line-value short">&nbsp;</span></div>
+        </div>
+        <div class="line-row"><span class="line-label">Date:</span><span class="line-value short">&nbsp;</span></div>
       </div>
     `
     : '';
 
-  const printWindow = window.open('', '_blank', 'noopener,noreferrer');
   const logoUrl = escapeHtml(getSquhHeaderLogoUrl());
 
   const html = `<!DOCTYPE html>
@@ -776,40 +900,40 @@ function openSubmissionPrintPreview(formName, data) {
       @page { size: A4; margin: 12mm; }
       * { box-sizing: border-box; }
       body {
-        font-family: Tahoma, Arial, sans-serif;
+        font-family: "Times New Roman", Tahoma, serif;
         margin: 0;
-        color: #1f2937;
+        color: #111;
         background: #fff;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
       }
       .paper {
         width: 210mm;
         min-height: 297mm;
         margin: 0 auto;
-        padding: 10mm;
+        padding: 7mm;
       }
       .branding {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 12px;
-        margin-bottom: 10px;
-        padding: 8px 10px;
-        border: 1px solid #d7e4e1;
-        border-radius: 8px;
-        background: #f8fcfb;
+        gap: 10px;
+        margin-bottom: 8px;
+        padding: 7px 8px;
+        border: 1px solid #111;
+        background: #fff;
       }
       .brand-logo {
-        width: 210px;
+        width: 245px;
         max-width: 100%;
         height: auto;
         display: block;
       }
       .photo-box {
-        width: 115px;
-        min-width: 115px;
-        height: 135px;
-        border: 1px solid #cfd8d6;
-        border-radius: 8px;
+        width: 110px;
+        min-width: 110px;
+        height: 130px;
+        border: 1px solid #111;
         background: #fff;
         display: flex;
         align-items: center;
@@ -822,30 +946,29 @@ function openSubmissionPrintPreview(formName, data) {
         object-fit: cover;
       }
       .photo-placeholder {
-        font-size: 11px;
-        color: #6b7280;
+        font-size: 10px;
+        color: #111;
         text-align: center;
         padding: 8px;
       }
       .header {
-        border: 2px solid #2a6f60;
-        border-radius: 8px;
-        padding: 10px 14px;
-        margin-bottom: 14px;
+        border: 1px solid #111;
+        padding: 6px 10px;
+        margin-bottom: 8px;
         display: flex;
         align-items: center;
         justify-content: space-between;
       }
       .title {
         margin: 0;
-        color: #1b5e4f;
-        font-size: 18px;
+        color: #111;
+        font-size: 17px;
         font-weight: 700;
       }
       .subtitle {
-        margin-top: 4px;
-        color: #4b5563;
-        font-size: 13px;
+        margin-top: 2px;
+        color: #111;
+        font-size: 12px;
       }
       table {
         width: 100%;
@@ -865,47 +988,113 @@ function openSubmissionPrintPreview(formName, data) {
       }
       .footer {
         margin-top: 14px;
-        font-size: 12px;
-        color: #6b7280;
+        font-size: 11px;
+        color: #111;
+        text-align: center;
       }
-      .section2-card {
-        margin-top: 16px;
-        border: 1px solid #cddbd8;
-        border-radius: 8px;
-        padding: 10px;
-        background: #f9fcfb;
+      .section-block {
+        border: 1px solid #111;
+        margin-bottom: 10px;
       }
-      .section2-title {
+      .section-head {
+        font-size: 17px;
+        font-weight: 800;
+        padding: 6px 12px;
+        border-bottom: 1px solid #111;
+        background: #efefef;
+        color: #111;
+        direction: ltr;
+        text-align: left;
+      }
+      .sub-head {
         font-size: 14px;
         font-weight: 700;
-        color: #1f4f45;
-        margin-bottom: 8px;
+        padding: 7px 12px 4px;
+        color: #111;
+        direction: ltr;
+        text-align: left;
       }
-      .section2-grid {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 8px;
+      .line-row {
+        padding: 6px 12px;
+        direction: ltr;
+        text-align: left;
+        color: #111;
+        display: flex;
+        align-items: flex-end;
+        gap: 6px;
       }
-      .section2-item {
-        border: 1px solid #d1d5db;
-        border-radius: 6px;
-        padding: 8px;
-        background: #fff;
+      .line-label {
+        font-size: 14px;
+        font-weight: 700;
+        display: inline-block;
+        min-width: 118px;
       }
-      .section2-item.wide {
-        grid-column: 1 / -1;
-      }
-      .section2-item span {
-        display: block;
-        font-size: 11px;
-        color: #6b7280;
-        margin-bottom: 4px;
-      }
-      .section2-item strong {
+      .line-label.small {
         font-size: 13px;
-        color: #1f2937;
-        font-weight: 600;
+        min-width: auto;
+        margin: 0;
       }
+      .line-label.underline {
+        text-decoration: underline;
+      }
+      .line-value {
+        display: inline-flex;
+        flex: 1;
+        border-bottom: 1.5px solid #111;
+        padding: 0 4px 2px;
+        font-size: 14px;
+        vertical-align: baseline;
+        min-height: 20px;
+      }
+      .line-value.short {
+        flex: 0 0 185px;
+      }
+      .line-row.split {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .line-row.split > div {
+        display: flex;
+        align-items: flex-end;
+        gap: 6px;
+      }
+      .requirement-row {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        flex-wrap: wrap;
+      }
+      .check-box {
+        width: 18px;
+        height: 18px;
+        border: 1.5px solid #111;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 700;
+        line-height: 1;
+      }
+      .check-text {
+        font-size: 14px;
+        font-weight: 700;
+      }
+      .duration-row .line-value.short {
+        flex-basis: 170px;
+      }
+      .objective-line {
+        min-height: 28px;
+        border-bottom: 1.5px solid #111;
+        margin: 0 12px 8px;
+        font-size: 14px;
+        color: #111;
+        direction: ltr;
+        text-align: left;
+        padding: 2px 4px;
+      }
+      .section2-block { margin-top: 8px; }
+      .section2-block .line-label { min-width: 130px; }
       .no-print {
         margin: 12px auto;
         width: 210mm;
@@ -915,10 +1104,9 @@ function openSubmissionPrintPreview(formName, data) {
       }
       .no-print button {
         padding: 8px 14px;
-        border: none;
-        border-radius: 6px;
-        background: #2a6f60;
-        color: #fff;
+        border: 1px solid #111;
+        background: #fff;
+        color: #111;
         cursor: pointer;
       }
       @media print {
@@ -948,51 +1136,32 @@ function openSubmissionPrintPreview(formName, data) {
         </div>
         <div style="font-size:12px;color:#374151;">رقم الطلب: ${escapeHtml(getPrintableValue(data.id || '---'))}</div>
       </div>
-      <table>
-        <tbody>
-          ${rows}
-        </tbody>
-      </table>
+      ${isGraduates
+        ? graduatesSection1Html
+        : `<table><tbody>${rows}</tbody></table>`}
       ${section2Html}
       <div class="footer">تم إنشاء هذه النسخة تلقائيا من النظام لغرض الحفظ والأرشفة.</div>
     </div>
-    <script>
-      window.addEventListener('load', function () {
-        var imgs = Array.prototype.slice.call(document.images || []);
-        if (!imgs.length) {
-          setTimeout(function () { window.print(); }, 250);
-          return;
-        }
-
-        var done = 0;
-        var trigger = function () {
-          done += 1;
-          if (done >= imgs.length) {
-            setTimeout(function () { window.print(); }, 300);
-          }
-        };
-
-        imgs.forEach(function (img) {
-          if (img.complete) {
-            trigger();
-          } else {
-            img.addEventListener('load', trigger, { once: true });
-            img.addEventListener('error', trigger, { once: true });
-          }
-        });
-      });
-    </script>
   </body>
   </html>`;
 
-  if (printWindow) {
-    printWindow.document.open();
-    printWindow.document.write(html);
-    printWindow.document.close();
-  } else {
-    // fallback إذا كانت النوافذ المنبثقة محجوبة
+  const previewToken = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const previewStorageKey = `printPreviewHtml:${previewToken}`;
+
+  try {
+    sessionStorage.setItem(previewStorageKey, html);
+    const previewUrl = `print-preview.html?token=${encodeURIComponent(previewToken)}`;
+    const previewWindow = window.open(previewUrl, '_blank');
+
+    if (!previewWindow) {
+      sessionStorage.removeItem(previewStorageKey);
+      printHtmlWithIframe(html);
+      alert('تعذر فتح صفحة المعاينة في تبويب جديد. تم فتح المعاينة داخل الصفحة الحالية.');
+    }
+  } catch (err) {
+    console.error('تعذر تجهيز صفحة المعاينة المنفصلة:', err);
     printHtmlWithIframe(html);
-    alert('تم فتح نافذة الطباعة داخل الصفحة. اختَر Save as PDF للحفظ.');
+    alert('تعذر فتح صفحة المعاينة المنفصلة. تم فتح المعاينة داخل الصفحة الحالية.');
   }
 }
 

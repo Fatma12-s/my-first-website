@@ -438,45 +438,6 @@
         return '';
     }
 
-    function printWhenImagesReady(targetWindow, fallback) {
-        try {
-            const doc = targetWindow && targetWindow.document;
-            if (!doc) throw new Error('window document unavailable');
-            const images = Array.from(doc.images || []);
-            if (!images.length) {
-                targetWindow.focus();
-                targetWindow.print();
-                return;
-            }
-
-            let done = 0;
-            const trigger = () => {
-                done += 1;
-                if (done >= images.length) {
-                    setTimeout(() => {
-                        try {
-                            targetWindow.focus();
-                            targetWindow.print();
-                        } catch (err) {
-                            if (typeof fallback === 'function') fallback(err);
-                        }
-                    }, 260);
-                }
-            };
-
-            images.forEach((img) => {
-                if (img.complete) {
-                    trigger();
-                } else {
-                    img.addEventListener('load', trigger, { once: true });
-                    img.addEventListener('error', trigger, { once: true });
-                }
-            });
-        } catch (err) {
-            if (typeof fallback === 'function') fallback(err);
-        }
-    }
-
     function downloadPrintHtmlFallback(html, submissionId) {
         try {
             const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
@@ -562,9 +523,6 @@
                 @page { size: A4; margin: 12mm; }
                 * { box-sizing: border-box; }
                 body { font-family: Tahoma, Arial, sans-serif; margin: 0; color: #1f2937; }
-                .toolbar { width: 210mm; margin: 10px auto 0; display: flex; gap: 8px; justify-content: flex-end; }
-                .toolbar button { border: none; border-radius: 6px; padding: 8px 14px; cursor: pointer; color: white; background: #1f7a8c; }
-                .toolbar button.secondary { background: #6b7280; }
                 .paper { width: 210mm; min-height: 297mm; margin: 0 auto; padding: 10mm; }
                 .branding { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; padding: 8px 10px; border: 1px solid #d7e4e1; border-radius: 8px; background: #f8fcfb; }
                 .brand-logo { width: 210px; max-width: 100%; height: auto; display: block; }
@@ -584,14 +542,9 @@
                 .section2-item.wide { grid-column: 1 / -1; }
                 .section2-item span { display: block; font-size: 11px; color: #6b7280; margin-bottom: 4px; }
                 .section2-item strong { font-size: 13px; color: #1f2937; font-weight: 600; }
-                @media print { .toolbar { display: none !important; } }
             </style>
         </head>
         <body>
-            <div class="toolbar">
-                <button onclick="window.print()">حفظ كـ PDF / طباعة</button>
-                <button class="secondary" onclick="window.close()">إغلاق</button>
-            </div>
             <div class="paper">
                 <div class="branding">
                     <img class="brand-logo" src="${logoUrl}" alt="شعار المؤسسة">
@@ -614,46 +567,22 @@
         </body>
         </html>`;
 
-        const w = window.open('', '_blank', 'noopener,noreferrer');
-        if (!w) {
-            const iframe = document.createElement('iframe');
-            iframe.style.position = 'fixed';
-            iframe.style.width = '1px';
-            iframe.style.height = '1px';
-            iframe.style.right = '0';
-            iframe.style.bottom = '0';
-            iframe.style.opacity = '0';
-            iframe.style.pointerEvents = 'none';
-            document.body.appendChild(iframe);
+        const previewToken = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        const previewStorageKey = `printPreviewHtml:${previewToken}`;
 
-            const cleanup = () => {
-                setTimeout(() => {
-                    try { iframe.remove(); } catch (_) {}
-                }, 1200);
-            };
+        try {
+            sessionStorage.setItem(previewStorageKey, html);
+            const previewUrl = `print-preview.html?token=${encodeURIComponent(previewToken)}`;
+            const previewWindow = window.open(previewUrl, '_blank');
 
-            iframe.onload = () => {
-                try {
-                    const iw = iframe.contentWindow;
-                    if (!iw) throw new Error('iframe window unavailable');
-                    printWhenImagesReady(iw, () => downloadPrintHtmlFallback(html, effective.id || effective._docId));
-                } catch (err) {
-                    console.error(err);
-                    downloadPrintHtmlFallback(html, effective.id || effective._docId);
-                } finally {
-                    cleanup();
-                }
-            };
-
-            iframe.srcdoc = html;
-            return;
+            if (!previewWindow) {
+                sessionStorage.removeItem(previewStorageKey);
+                downloadPrintHtmlFallback(html, effective.id || effective._docId);
+            }
+        } catch (err) {
+            console.error(err);
+            downloadPrintHtmlFallback(html, effective.id || effective._docId);
         }
-        w.document.open();
-        w.document.write(html);
-        w.document.close();
-        w.onload = () => {
-            printWhenImagesReady(w, () => downloadPrintHtmlFallback(html, effective.id || effective._docId));
-        };
     }
 
     function collectManagerSection2(index, submission) {

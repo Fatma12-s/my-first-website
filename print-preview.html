@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>معاينة الاستمارة قبل الحفظ</title>
+  <style>
+    :root {
+      --brand: #1f4f45;
+      --bg: #f4f7f6;
+      --panel: #ffffff;
+      --line: #d8e2df;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Cairo", Tahoma, Arial, sans-serif;
+      background: var(--bg);
+      color: #1f2937;
+    }
+    .page {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 14px;
+    }
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      margin-bottom: 10px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+    }
+    .toolbar button {
+      border: 1px solid #1f2937;
+      border-radius: 8px;
+      background: #fff;
+      color: #111;
+      padding: 8px 12px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .toolbar button.primary {
+      background: var(--brand);
+      border-color: var(--brand);
+      color: #fff;
+    }
+    .preview-wrap {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      overflow: hidden;
+      min-height: 78vh;
+    }
+    iframe {
+      width: 100%;
+      min-height: 78vh;
+      border: 0;
+      background: #fff;
+    }
+    .msg {
+      padding: 14px;
+      border: 1px dashed #d1d5db;
+      background: #fff;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      color: #374151;
+      line-height: 1.7;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div id="message" class="msg" style="display:none"></div>
+
+    <div class="toolbar">
+      <button id="refreshBtn" type="button">معاينة</button>
+      <button id="saveBtn" class="primary" type="button">حفظ كـ PDF / طباعة</button>
+      <button id="closeBtn" type="button">إغلاق</button>
+    </div>
+
+    <div class="preview-wrap">
+      <iframe id="previewFrame" title="معاينة الاستمارة"></iframe>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const msgEl = document.getElementById('message');
+      const frame = document.getElementById('previewFrame');
+      const refreshBtn = document.getElementById('refreshBtn');
+      const saveBtn = document.getElementById('saveBtn');
+      const closeBtn = document.getElementById('closeBtn');
+
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get('token') || '';
+      const key = token ? `printPreviewHtml:${token}` : '';
+
+      function showMessage(text) {
+        msgEl.style.display = 'block';
+        msgEl.textContent = text;
+      }
+
+      function getHtmlFromStorage() {
+        if (!key) return '';
+        try {
+          return sessionStorage.getItem(key) || '';
+        } catch (err) {
+          return '';
+        }
+      }
+
+      function renderPreview() {
+        const html = getHtmlFromStorage();
+        if (!html) {
+          showMessage('تعذر تحميل المعاينة. الرجاء العودة للصفحة السابقة ثم الضغط على زر المعاينة مرة أخرى.');
+          frame.srcdoc = '<!doctype html><html><body style="font-family:Tahoma; padding:20px;">لا توجد بيانات للمعاينة.</body></html>';
+          return false;
+        }
+
+        frame.srcdoc = html;
+        msgEl.style.display = 'none';
+        return true;
+      }
+
+      function waitForImagesAndPrint() {
+        const doc = frame.contentWindow && frame.contentWindow.document;
+        if (!doc) return;
+        const images = Array.from(doc.images || []);
+
+        const doPrint = function () {
+          try {
+            frame.contentWindow.focus();
+            frame.contentWindow.print();
+          } catch (err) {
+            showMessage('تعذر تنفيذ أمر الطباعة.');
+          }
+        };
+
+        if (!images.length) {
+          doPrint();
+          return;
+        }
+
+        let done = 0;
+        const trigger = function () {
+          done += 1;
+          if (done >= images.length) {
+            setTimeout(doPrint, 220);
+          }
+        };
+
+        images.forEach(function (img) {
+          if (img.complete) {
+            trigger();
+          } else {
+            img.addEventListener('load', trigger, { once: true });
+            img.addEventListener('error', trigger, { once: true });
+          }
+        });
+      }
+
+      refreshBtn.addEventListener('click', renderPreview);
+      saveBtn.addEventListener('click', waitForImagesAndPrint);
+      closeBtn.addEventListener('click', function () { window.close(); });
+
+      frame.addEventListener('load', function () {
+        // Keep last preview payload available while this tab remains open.
+      });
+
+      renderPreview();
+    })();
+  </script>
+</body>
+</html>
