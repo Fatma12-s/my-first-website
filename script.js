@@ -973,9 +973,9 @@ function openSubmissionPrintPreview(formName, data) {
         justify-content: center;
         align-items: center;
         margin-bottom: 8px;
-        padding: 10px 10px;
-        background: linear-gradient(180deg, #f8fcfb 0%, #ffffff 100%);
-        border-radius: 14px;
+        padding: 7px 8px;
+        border: 1px solid var(--brand-mid);
+        background: #fff;
       }
       .brand-logo {
         width: 320px;
@@ -985,17 +985,18 @@ function openSubmissionPrintPreview(formName, data) {
         margin: 0 auto;
       }
       .photo-row {
+        border: 1px solid var(--brand-mid);
+        border-top: none;
         display: flex;
         justify-content: center;
-        padding: 10px;
+        padding: 8px;
         margin-bottom: 10px;
-        background: #f8fcfb;
-        border-radius: 14px;
       }
       .photo-box {
         width: 145px;
         min-width: 145px;
         height: 182px;
+        border: 2px solid var(--brand-mid);
         padding: 3px;
         background: #fff;
         display: flex;
@@ -1003,8 +1004,6 @@ function openSubmissionPrintPreview(formName, data) {
         justify-content: center;
         overflow: hidden;
         justify-self: end;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
       }
       .photo-box img {
         width: 100%;
@@ -1018,13 +1017,12 @@ function openSubmissionPrintPreview(formName, data) {
         padding: 8px;
       }
       .header {
-        padding: 10px 12px;
+        border: 1px solid var(--brand-mid);
+        padding: 6px 10px;
         margin-bottom: 8px;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        background: var(--brand-soft);
-        border-radius: 12px;
       }
       .title {
         margin: 0;
@@ -1042,8 +1040,8 @@ function openSubmissionPrintPreview(formName, data) {
         border-collapse: collapse;
       }
       th, td {
-        border: none;
-        padding: 9px 10px;
+        border: 1px solid #b9d8d3;
+        padding: 8px 10px;
         vertical-align: top;
         font-size: 13px;
       }
@@ -1052,9 +1050,7 @@ function openSubmissionPrintPreview(formName, data) {
         text-align: right;
         background: var(--brand-soft);
         color: var(--brand-ink);
-        border-radius: 8px;
       }
-      td { background: #fff; }
       .footer {
         margin-top: 14px;
         font-size: 11px;
@@ -1062,21 +1058,18 @@ function openSubmissionPrintPreview(formName, data) {
         text-align: center;
       }
       .section-block {
-        border: none;
+        border: 1px solid var(--brand-mid);
         margin-bottom: 10px;
-        background: #f8fcfb;
-        border-radius: 12px;
-        padding-bottom: 6px;
       }
       .section-head {
         font-size: 17px;
         font-weight: 800;
         padding: 6px 12px;
+        border-bottom: 1px solid var(--brand-mid);
         background: var(--brand-soft);
         color: var(--brand-ink);
         direction: ltr;
         text-align: left;
-        border-radius: 12px 12px 0 0;
       }
       .sub-head {
         font-size: 14px;
@@ -1107,17 +1100,16 @@ function openSubmissionPrintPreview(formName, data) {
         margin: 0;
       }
       .line-label.underline {
-        text-decoration: none;
+        text-decoration: underline;
       }
       .line-value {
         display: inline-flex;
         flex: 1;
-        padding: 3px 8px;
+        border-bottom: 1.5px solid var(--brand-mid);
+        padding: 0 4px 2px;
         font-size: 14px;
         vertical-align: baseline;
         min-height: 20px;
-        background: #fff;
-        border-radius: 8px;
       }
       .line-value.short {
         flex: 0 0 185px;
@@ -1141,15 +1133,13 @@ function openSubmissionPrintPreview(formName, data) {
       .check-box {
         width: 18px;
         height: 18px;
-        border: none;
-        background: #dcece8;
+        border: 1.5px solid var(--brand-mid);
         display: inline-flex;
         align-items: center;
         justify-content: center;
         font-size: 13px;
         font-weight: 700;
         line-height: 1;
-        border-radius: 4px;
       }
       .check-text {
         font-size: 14px;
@@ -1160,14 +1150,13 @@ function openSubmissionPrintPreview(formName, data) {
       }
       .objective-line {
         min-height: 28px;
+        border-bottom: 1.5px solid var(--brand-mid);
         margin: 0 12px 8px;
         font-size: 14px;
         color: var(--brand-ink);
         direction: ltr;
         text-align: left;
-        padding: 6px 8px;
-        background: #fff;
-        border-radius: 8px;
+        padding: 2px 4px;
       }
       .section2-block { margin-top: 8px; }
       .section2-block .line-label { min-width: 130px; }
@@ -1182,12 +1171,10 @@ function openSubmissionPrintPreview(formName, data) {
       }
       .no-print button {
         padding: 8px 14px;
-        border: none;
+        border: 1px solid var(--brand-mid);
         background: var(--brand-soft-2);
         color: var(--brand-ink);
         cursor: pointer;
-        border-radius: 8px;
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
       }
       @media print {
         .no-print { display: none !important; }
