@@ -212,6 +212,26 @@ nav a.active::after {
   min-height: 220px;
 }
 
+/* Extra compact layout for homepage header area */
+.home-header .header-center {
+  padding: var(--space-md) 0 var(--space-xs) 0;
+  gap: var(--space-xs);
+}
+
+.home-header .brand-logo {
+  width: 220px;
+  margin-bottom: 0;
+}
+
+.home-header nav ul {
+  margin-bottom: 0;
+}
+
+.home-hero {
+  padding: var(--space-lg) 0 var(--space-md) 0;
+  min-height: 150px;
+}
+
 .hero .section-title {
   color: var(--brand-main);
   font-size: 2.1em;
@@ -310,6 +330,7 @@ nav a.active::after {
   font-size: 2rem;
   font-weight: 800;
   color: var(--brand-main);
+  margin-top: 0;
   margin-bottom: var(--space-xl);
   text-align: center;
 }

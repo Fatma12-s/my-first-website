@@ -899,21 +899,22 @@ function openSubmissionPrintPreview(formName, data) {
       @page { size: A4; margin: 12mm; }
       * { box-sizing: border-box; }
       :root {
-        --brand-ink: #1f6f67;
-        --brand-mid: #2f8a81;
-        --brand-soft: #eaf6f4;
-        --brand-soft-2: #f4fbfa;
+        --brand-ink: #111;
+        --brand-mid: #111;
+        --brand-soft: #f2f2f2;
+        --brand-soft-2: #ffffff;
       }
       body {
         font-family: "Times New Roman", Tahoma, serif;
         margin: 0;
         color: var(--brand-ink);
         background: #fff;
+        padding: 12px 0;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
       }
       .paper {
-        width: 210mm;
+        width: min(210mm, calc(100vw - 24px));
         min-height: 297mm;
         margin: 0 auto;
         padding: 7mm;
@@ -1120,7 +1121,11 @@ function openSubmissionPrintPreview(formName, data) {
       }
       @media print {
         .no-print { display: none !important; }
-        body { background: #fff; }
+        body { background: #fff; padding: 0; }
+        .paper {
+          width: 210mm;
+          margin: 0 auto;
+        }
       }
     </style>
   </head>
