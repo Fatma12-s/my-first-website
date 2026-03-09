@@ -581,38 +581,39 @@
             <style>
                 @page { size: A4; margin: 12mm; }
                 * { box-sizing: border-box; }
-                body { font-family: "Times New Roman", Tahoma, serif; margin: 0; color: #111; background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                :root { --brand-ink: #1f6f67; --brand-mid: #2f8a81; --brand-soft: #eaf6f4; --brand-soft-2: #f4fbfa; }
+                body { font-family: "Times New Roman", Tahoma, serif; margin: 0; color: var(--brand-ink); background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
                 .paper { width: 210mm; min-height: 297mm; margin: 0 auto; padding: 7mm; }
-                .branding { display: grid; grid-template-columns: 1fr 145px; align-items: start; gap: 14px; margin-bottom: 8px; padding: 7px 8px; border: 1px solid #111; background: #fff; direction: ltr; }
+                .branding { display: grid; grid-template-columns: 1fr 145px; align-items: start; gap: 14px; margin-bottom: 8px; padding: 7px 8px; border: 1px solid var(--brand-mid); background: #fff; direction: ltr; }
                 .brand-logo { width: 320px; max-width: 100%; height: auto; display: block; margin: 0 auto; }
-                .photo-box { width: 145px; min-width: 145px; height: 182px; border: 2px solid #111; padding: 3px; background: #fff; display: flex; align-items: center; justify-content: center; overflow: hidden; justify-self: end; }
+                .photo-box { width: 145px; min-width: 145px; height: 182px; border: 2px solid var(--brand-mid); padding: 3px; background: #fff; display: flex; align-items: center; justify-content: center; overflow: hidden; justify-self: end; }
                 .photo-box img { width: 100%; height: 100%; object-fit: cover; }
-                .photo-placeholder { font-size: 10px; color: #111; text-align: center; padding: 8px; }
-                .header { border: 1px solid #111; padding: 6px 10px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
-                .title { margin: 0; color: #111; font-size: 17px; font-weight: 700; }
-                .sub { color: #111; margin-top: 2px; font-size: 12px; }
+                .photo-placeholder { font-size: 10px; color: var(--brand-ink); text-align: center; padding: 8px; }
+                .header { border: 1px solid var(--brand-mid); padding: 6px 10px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
+                .title { margin: 0; color: var(--brand-ink); font-size: 17px; font-weight: 700; }
+                .sub { color: var(--brand-ink); margin-top: 2px; font-size: 12px; }
                 table { width: 100%; border-collapse: collapse; }
-                th, td { border: 1px solid #d1d5db; padding: 8px 10px; vertical-align: top; font-size: 13px; }
-                th { width: 34%; background: #f0f7f5; color: #1f4f45; text-align: right; }
-                .section-block { border: 1px solid #111; margin-bottom: 10px; }
-                .section-head { font-size: 17px; font-weight: 800; padding: 6px 12px; border-bottom: 1px solid #111; background: #efefef; color: #111; direction: ltr; text-align: left; }
-                .sub-head { font-size: 14px; font-weight: 700; padding: 7px 12px 4px; color: #111; direction: ltr; text-align: left; }
-                .line-row { padding: 6px 12px; direction: ltr; text-align: left; color: #111; display: flex; align-items: flex-end; gap: 6px; }
+                th, td { border: 1px solid #b9d8d3; padding: 8px 10px; vertical-align: top; font-size: 13px; }
+                th { width: 34%; background: var(--brand-soft); color: var(--brand-ink); text-align: right; }
+                .section-block { border: 1px solid var(--brand-mid); margin-bottom: 10px; }
+                .section-head { font-size: 17px; font-weight: 800; padding: 6px 12px; border-bottom: 1px solid var(--brand-mid); background: var(--brand-soft); color: var(--brand-ink); direction: ltr; text-align: left; }
+                .sub-head { font-size: 14px; font-weight: 700; padding: 7px 12px 4px; color: var(--brand-ink); direction: ltr; text-align: left; }
+                .line-row { padding: 6px 12px; direction: ltr; text-align: left; color: var(--brand-ink); display: flex; align-items: flex-end; gap: 6px; }
                 .line-label { font-size: 14px; font-weight: 700; display: inline-block; min-width: 118px; }
                 .line-label.small { font-size: 13px; min-width: auto; margin: 0; }
                 .line-label.underline { text-decoration: underline; }
-                .line-value { display: inline-flex; flex: 1; border-bottom: 1.5px solid #111; padding: 0 4px 2px; font-size: 14px; vertical-align: baseline; min-height: 20px; }
+                .line-value { display: inline-flex; flex: 1; border-bottom: 1.5px solid var(--brand-mid); padding: 0 4px 2px; font-size: 14px; vertical-align: baseline; min-height: 20px; }
                 .line-value.short { flex: 0 0 185px; }
                 .line-row.split { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
                 .line-row.split > div { display: flex; align-items: flex-end; gap: 6px; }
                 .requirement-row { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
-                .check-box { width: 18px; height: 18px; border: 1.5px solid #111; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; line-height: 1; }
+                .check-box { width: 18px; height: 18px; border: 1.5px solid var(--brand-mid); display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; line-height: 1; }
                 .check-text { font-size: 14px; font-weight: 700; }
                 .duration-row .line-value.short { flex-basis: 170px; }
-                .objective-line { min-height: 28px; border-bottom: 1.5px solid #111; margin: 0 12px 8px; font-size: 14px; color: #111; direction: ltr; text-align: left; padding: 2px 4px; }
+                .objective-line { min-height: 28px; border-bottom: 1.5px solid var(--brand-mid); margin: 0 12px 8px; font-size: 14px; color: var(--brand-ink); direction: ltr; text-align: left; padding: 2px 4px; }
                 .section2-block { margin-top: 8px; }
                 .section2-block .line-label { min-width: 130px; }
-                .footer { margin-top: 14px; font-size: 11px; color: #111; text-align: center; }
+                .footer { margin-top: 14px; font-size: 11px; color: var(--brand-ink); text-align: center; }
             </style>
         </head>
         <body>

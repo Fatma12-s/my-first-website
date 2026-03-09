@@ -898,10 +898,16 @@ function openSubmissionPrintPreview(formName, data) {
     <style>
       @page { size: A4; margin: 12mm; }
       * { box-sizing: border-box; }
+      :root {
+        --brand-ink: #1f6f67;
+        --brand-mid: #2f8a81;
+        --brand-soft: #eaf6f4;
+        --brand-soft-2: #f4fbfa;
+      }
       body {
         font-family: "Times New Roman", Tahoma, serif;
         margin: 0;
-        color: #111;
+        color: var(--brand-ink);
         background: #fff;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
@@ -919,7 +925,7 @@ function openSubmissionPrintPreview(formName, data) {
         gap: 14px;
         margin-bottom: 8px;
         padding: 7px 8px;
-        border: 1px solid #111;
+        border: 1px solid var(--brand-mid);
         background: #fff;
         direction: ltr;
       }
@@ -934,7 +940,7 @@ function openSubmissionPrintPreview(formName, data) {
         width: 145px;
         min-width: 145px;
         height: 182px;
-        border: 2px solid #111;
+        border: 2px solid var(--brand-mid);
         padding: 3px;
         background: #fff;
         display: flex;
@@ -950,12 +956,12 @@ function openSubmissionPrintPreview(formName, data) {
       }
       .photo-placeholder {
         font-size: 10px;
-        color: #111;
+        color: var(--brand-ink);
         text-align: center;
         padding: 8px;
       }
       .header {
-        border: 1px solid #111;
+        border: 1px solid var(--brand-mid);
         padding: 6px 10px;
         margin-bottom: 8px;
         display: flex;
@@ -964,13 +970,13 @@ function openSubmissionPrintPreview(formName, data) {
       }
       .title {
         margin: 0;
-        color: #111;
+        color: var(--brand-ink);
         font-size: 17px;
         font-weight: 700;
       }
       .subtitle {
         margin-top: 2px;
-        color: #111;
+        color: var(--brand-ink);
         font-size: 12px;
       }
       table {
@@ -978,7 +984,7 @@ function openSubmissionPrintPreview(formName, data) {
         border-collapse: collapse;
       }
       th, td {
-        border: 1px solid #d1d5db;
+        border: 1px solid #b9d8d3;
         padding: 8px 10px;
         vertical-align: top;
         font-size: 13px;
@@ -986,26 +992,26 @@ function openSubmissionPrintPreview(formName, data) {
       th {
         width: 34%;
         text-align: right;
-        background: #f0f7f5;
-        color: #1f4f45;
+        background: var(--brand-soft);
+        color: var(--brand-ink);
       }
       .footer {
         margin-top: 14px;
         font-size: 11px;
-        color: #111;
+        color: var(--brand-ink);
         text-align: center;
       }
       .section-block {
-        border: 1px solid #111;
+        border: 1px solid var(--brand-mid);
         margin-bottom: 10px;
       }
       .section-head {
         font-size: 17px;
         font-weight: 800;
         padding: 6px 12px;
-        border-bottom: 1px solid #111;
-        background: #efefef;
-        color: #111;
+        border-bottom: 1px solid var(--brand-mid);
+        background: var(--brand-soft);
+        color: var(--brand-ink);
         direction: ltr;
         text-align: left;
       }
@@ -1013,7 +1019,7 @@ function openSubmissionPrintPreview(formName, data) {
         font-size: 14px;
         font-weight: 700;
         padding: 7px 12px 4px;
-        color: #111;
+        color: var(--brand-ink);
         direction: ltr;
         text-align: left;
       }
@@ -1021,7 +1027,7 @@ function openSubmissionPrintPreview(formName, data) {
         padding: 6px 12px;
         direction: ltr;
         text-align: left;
-        color: #111;
+        color: var(--brand-ink);
         display: flex;
         align-items: flex-end;
         gap: 6px;
@@ -1043,7 +1049,7 @@ function openSubmissionPrintPreview(formName, data) {
       .line-value {
         display: inline-flex;
         flex: 1;
-        border-bottom: 1.5px solid #111;
+        border-bottom: 1.5px solid var(--brand-mid);
         padding: 0 4px 2px;
         font-size: 14px;
         vertical-align: baseline;
@@ -1071,7 +1077,7 @@ function openSubmissionPrintPreview(formName, data) {
       .check-box {
         width: 18px;
         height: 18px;
-        border: 1.5px solid #111;
+        border: 1.5px solid var(--brand-mid);
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -1088,10 +1094,10 @@ function openSubmissionPrintPreview(formName, data) {
       }
       .objective-line {
         min-height: 28px;
-        border-bottom: 1.5px solid #111;
+        border-bottom: 1.5px solid var(--brand-mid);
         margin: 0 12px 8px;
         font-size: 14px;
-        color: #111;
+        color: var(--brand-ink);
         direction: ltr;
         text-align: left;
         padding: 2px 4px;
@@ -1107,9 +1113,9 @@ function openSubmissionPrintPreview(formName, data) {
       }
       .no-print button {
         padding: 8px 14px;
-        border: 1px solid #111;
-        background: #fff;
-        color: #111;
+        border: 1px solid var(--brand-mid);
+        background: var(--brand-soft-2);
+        color: var(--brand-ink);
         cursor: pointer;
       }
       @media print {
