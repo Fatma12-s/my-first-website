@@ -382,7 +382,7 @@ if (graduatesForm) {
     setValue('applicantSignature', 'Fatma Salim');
   };
 
-  const buildGraduatesDemoPreviewData = () => {
+  const buildGraduatesDemoPreviewData = async () => {
     const fd = new FormData(graduatesForm);
     const data = {
       id: `DEMO-${Date.now()}`,
@@ -393,7 +393,16 @@ if (graduatesForm) {
 
     for (const [k, v] of fd.entries()) {
       if (v instanceof File) {
-        if (v && v.name) data[k] = { name: v.name, source: 'demo-file' };
+        if (v && v.name) {
+          data[k] = { name: v.name, source: 'demo-file' };
+          if (k === 'applicantPhoto' && /^image\//i.test(v.type || '')) {
+            try {
+              data.__applicantPhotoDataUrl = await fileToDataUrl(v);
+            } catch (err) {
+              console.warn('تعذر تجهيز معاينة صورة المتقدم:', err);
+            }
+          }
+        }
       } else {
         data[k] = v;
       }
@@ -420,8 +429,8 @@ if (graduatesForm) {
 
   const previewDemoPdfBtn = document.getElementById('previewDemoPdfBtn');
   if (previewDemoPdfBtn) {
-    previewDemoPdfBtn.addEventListener('click', () => {
-      const previewData = buildGraduatesDemoPreviewData();
+    previewDemoPdfBtn.addEventListener('click', async () => {
+      const previewData = await buildGraduatesDemoPreviewData();
       openSubmissionPrintPreview('graduates', previewData);
     });
   }
@@ -927,7 +936,7 @@ function openSubmissionPrintPreview(formName, data) {
       :root {
         --brand-ink: #111;
         --brand-mid: #111;
-        --brand-soft: #f2f2f2;
+        --brand-soft: #eaf6f4;
         --brand-soft-2: #ffffff;
       }
       body {
