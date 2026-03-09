@@ -813,6 +813,8 @@ function openSubmissionPrintPreview(formName, data) {
   const reqValue = String(data?.programRequirement || '').toUpperCase();
   const isClinical = reqValue.includes('CLINICAL') && !reqValue.includes('NON-CLINICAL');
   const isNonClinical = reqValue.includes('NON-CLINICAL');
+  const undertakingAgreed = ['on', 'true', 'yes', '1'].includes(String(data?.undertakingAgree || '').toLowerCase());
+  const declarationAgreed = ['on', 'true', 'yes', '1'].includes(String(data?.idCardDeclaration || '').toLowerCase());
 
   const graduatesSection1Html = isGraduates
     ? `
@@ -883,6 +885,30 @@ function openSubmissionPrintPreview(formName, data) {
           <div><span class="line-label">Signature:</span><span class="line-value short">&nbsp;</span></div>
         </div>
         <div class="line-row"><span class="line-label">Date:</span><span class="line-value short">&nbsp;</span></div>
+      </div>
+    `
+    : '';
+
+  const graduatesDeclarationsHtml = isGraduates
+    ? `
+      <div class="section-block">
+        <div class="section-head">Undertaking / Declaration</div>
+        <div class="line-row"><span class="line-label">Undertaking Agreed:</span><span class="line-value">${undertakingAgreed ? 'Yes' : 'No'}</span></div>
+        <div class="line-row"><span class="line-label">ID Card Declaration:</span><span class="line-value">${declarationAgreed ? 'Yes' : 'No'}</span></div>
+        <div class="line-row"><span class="line-label">Applicant Signature:</span><span class="line-value">${lineValue(data?.applicantSignature)}</span></div>
+        <div class="line-row"><span class="line-label">Attachments:</span><span class="line-value">CV: ${lineValue(data?.cvFile)} | University Letter: ${lineValue(data?.universityLetter)} | ID Card: ${lineValue(data?.idCardCopy)} | Others: ${lineValue(data?.otherAttachments)}</span></div>
+      </div>
+
+      <div class="section-block">
+        <div class="section-head">Fees & Notes</div>
+        <ul class="note-list">
+          <li>Clinical Attachment Access / Observer ship: OR.23 (OR.20 refundable + OR.3 card cost).</li>
+          <li>Non-Clinical Attachment: OR.13 (OR.10 refundable + OR.3 card cost).</li>
+          <li>No facility/provision for transport, food, and accommodation.</li>
+          <li>Non-government doctors (clinical access/observer ship): OR.100 per month.</li>
+          <li>Non-government nurses/allied professionals (clinical access/observer ship): OR.75 per month.</li>
+          <li>Completed form should be submitted at least 4 weeks before proposed attachment date.</li>
+        </ul>
       </div>
     `
     : '';
@@ -1105,6 +1131,8 @@ function openSubmissionPrintPreview(formName, data) {
       }
       .section2-block { margin-top: 8px; }
       .section2-block .line-label { min-width: 130px; }
+      .note-list { margin: 6px 16px 10px; padding-left: 18px; direction: ltr; color: var(--brand-ink); }
+      .note-list li { margin-bottom: 6px; font-size: 13px; line-height: 1.5; }
       .no-print {
         margin: 12px auto;
         width: 210mm;
@@ -1153,6 +1181,7 @@ function openSubmissionPrintPreview(formName, data) {
       ${isGraduates
         ? graduatesSection1Html
         : `<table><tbody>${rows}</tbody></table>`}
+      ${graduatesDeclarationsHtml}
       ${section2Html}
       <div class="footer">تم إنشاء هذه النسخة تلقائيا من النظام لغرض الحفظ والأرشفة.</div>
     </div>

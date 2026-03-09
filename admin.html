@@ -499,6 +499,8 @@
         const reqValue = String(effective.programRequirement || '').toUpperCase();
         const isClinical = reqValue.includes('CLINICAL') && !reqValue.includes('NON-CLINICAL');
         const isNonClinical = reqValue.includes('NON-CLINICAL');
+        const undertakingAgreed = ['on', 'true', 'yes', '1'].includes(String(effective.undertakingAgree || '').toLowerCase());
+        const declarationAgreed = ['on', 'true', 'yes', '1'].includes(String(effective.idCardDeclaration || '').toLowerCase());
 
         const section2Department = escapeHtml(formatPrintValue(
             effective.managerSection2?.department || effective.department || effective.specialtyDepartment || '---'
@@ -562,6 +564,30 @@
             `
             : '';
 
+        const graduatesDeclarationsHtml = isGraduates
+            ? `
+                <div class="section-block">
+                    <div class="section-head">Undertaking / Declaration</div>
+                    <div class="line-row"><span class="line-label">Undertaking Agreed:</span><span class="line-value">${undertakingAgreed ? 'Yes' : 'No'}</span></div>
+                    <div class="line-row"><span class="line-label">ID Card Declaration:</span><span class="line-value">${declarationAgreed ? 'Yes' : 'No'}</span></div>
+                    <div class="line-row"><span class="line-label">Applicant Signature:</span><span class="line-value">${lineValue(effective.applicantSignature)}</span></div>
+                    <div class="line-row"><span class="line-label">Attachments:</span><span class="line-value">CV: ${lineValue(effective.cvFile)} | University Letter: ${lineValue(effective.universityLetter)} | ID Card: ${lineValue(effective.idCardCopy)} | Others: ${lineValue(effective.otherAttachments)}</span></div>
+                </div>
+
+                <div class="section-block">
+                    <div class="section-head">Fees & Notes</div>
+                    <ul class="note-list">
+                        <li>Clinical Attachment Access / Observer ship: OR.23 (OR.20 refundable + OR.3 card cost).</li>
+                        <li>Non-Clinical Attachment: OR.13 (OR.10 refundable + OR.3 card cost).</li>
+                        <li>No facility/provision for transport, food, and accommodation.</li>
+                        <li>Non-government doctors (clinical access/observer ship): OR.100 per month.</li>
+                        <li>Non-government nurses/allied professionals (clinical access/observer ship): OR.75 per month.</li>
+                        <li>Completed form should be submitted at least 4 weeks before proposed attachment date.</li>
+                    </ul>
+                </div>
+            `
+            : '';
+
         const formTypeTitles = {
             graduates: 'استمارة تدريب الطلاب والخريجين',
             'internal-employees': 'استمارة البرامج الداخلية - الموظفين',
@@ -614,6 +640,8 @@
                 .section2-block { margin-top: 8px; }
                 .section2-block .line-label { min-width: 130px; }
                 .footer { margin-top: 14px; font-size: 11px; color: var(--brand-ink); text-align: center; }
+                .note-list { margin: 6px 16px 10px; padding-left: 18px; direction: ltr; color: var(--brand-ink); }
+                .note-list li { margin-bottom: 6px; font-size: 13px; line-height: 1.5; }
                 @media print {
                     .paper { width: 210mm; margin: 0 auto; }
                 }
@@ -637,6 +665,7 @@
                     </div>
                 </div>
                 ${isGraduates ? graduatesSection1Html : `<table><tbody>${rows}</tbody></table>`}
+                ${graduatesDeclarationsHtml}
                 ${section2Html}
                 <div class="footer">تم إنشاء هذه النسخة تلقائيا من النظام لغرض الحفظ والأرشفة.</div>
             </div>
