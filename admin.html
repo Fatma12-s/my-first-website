@@ -83,6 +83,22 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
 
+        .source-note {
+            background: #f9fffe;
+            border: 1px solid #cfe3dd;
+            color: #285f53;
+            padding: 10px 14px;
+            border-radius: 8px;
+            margin-bottom: var(--space-lg);
+            font-size: 13px;
+        }
+
+        .source-note.warning {
+            background: #fff7e8;
+            border-color: #f0d7a6;
+            color: #8a5a00;
+        }
+
         .filter-group {
             display: flex;
             gap: var(--space-md);
@@ -429,6 +445,8 @@
                 <button class="clear-btn" onclick="clearAllData()">🗑️ حذف الكل</button>
             </div>
         </div>
+
+        <div id="dataSourceNotice" class="source-note" style="display:none;"></div>
 
         <div id="submissionsContainer" class="submissions">
             <!-- سيتم ملؤها بـ JavaScript -->
@@ -961,16 +979,31 @@
     // ===== تحميل وعرض البيانات من Firestore أو localStorage =====
     async function loadSubmissions() {
         const container = document.getElementById('submissionsContainer');
+        const sourceNotice = document.getElementById('dataSourceNotice');
         const selectedForm = document.getElementById('formFilter').value;
         const searchTerm = document.getElementById('searchInput').value.toLowerCase();
         let filteredData = [];
         let firestoreFailed = false;
-        let usingFirestore = false;
+
+        const setSourceNotice = (message, isWarning = false) => {
+            if (!sourceNotice) return;
+            sourceNotice.style.display = 'block';
+            sourceNotice.textContent = message;
+            sourceNotice.className = isWarning ? 'source-note warning' : 'source-note';
+        };
+
+        const clearSourceNotice = () => {
+            if (!sourceNotice) return;
+            sourceNotice.style.display = 'none';
+            sourceNotice.textContent = '';
+            sourceNotice.className = 'source-note';
+        };
+
+        clearSourceNotice();
         
         // محاولة الجلب من Firestore أولاً
         if (db) {
             try {
-                usingFirestore = true;
                 let query = db.collection('formSubmissions');
                 if (selectedForm) {
                     query = query.where('formType', '==', selectedForm);
@@ -980,14 +1013,13 @@
                     const data = doc.data();
                     filteredData.push({ ...data, _source: 'firestore', _docId: doc.id });
                 });
+                setSourceNotice('مصدر البيانات الحالي: Firebase / Firestore');
             } catch (err) {
-                console.log('خطأ في Firestore، سيتم استخدام localStorage:', err);
+                console.log('خطأ في Firestore، لن يتم عرض البيانات المحلية لتفادي عدم التطابق:', err);
                 firestoreFailed = true;
+                setSourceNotice('تعذر تحميل البيانات من Firebase. تم إيقاف الرجوع التلقائي إلى البيانات المحلية لتجنب ظهور سجلات قديمة غير متطابقة.', true);
             }
-        }
-        
-        // استخدم localStorage فقط إذا كان Firebase غير متاح أو فشل الاتصال فعلياً.
-        if (!usingFirestore || firestoreFailed) {
+        } else {
             const localData = JSON.parse(localStorage.getItem('formSubmissions')) || {};
             Object.entries(localData).forEach(([formType, submissions]) => {
                 if (Array.isArray(submissions)) {
@@ -998,6 +1030,11 @@
                     });
                 }
             });
+            setSourceNotice('مصدر البيانات الحالي: البيانات المحلية في هذا المتصفح (localStorage) لأن Firebase غير مهيأ هنا.', true);
+        }
+
+        if (db && firestoreFailed) {
+            filteredData = [];
         }
         // البحث
         if (searchTerm) {
