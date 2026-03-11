@@ -892,6 +892,64 @@ function openSubmissionPrintPreview(formName, data) {
   const isNonClinical = reqValue.includes('NON-CLINICAL');
   const undertakingAgreed = ['on', 'true', 'yes', '1'].includes(String(data?.undertakingAgree || '').toLowerCase());
   const declarationAgreed = ['on', 'true', 'yes', '1'].includes(String(data?.idCardDeclaration || '').toLowerCase());
+  const isOpenableAsset = (value) => /^(https?:\/\/|data:|blob:|\.\/|\/)/i.test(String(value || '').trim());
+  const getAttachmentSrc = (value) => {
+    if (!value) return '';
+    if (typeof value === 'object') {
+      const candidate = value.dataUrl || value.url || value.preview || '';
+      return isOpenableAsset(candidate) ? String(candidate) : '';
+    }
+    return isOpenableAsset(value) ? String(value) : '';
+  };
+  const getAttachmentName = (value, fallbackLabel) => {
+    if (!value) return fallbackLabel;
+    if (typeof value === 'object' && value.name) return String(value.name);
+    if (typeof value === 'string' && !isOpenableAsset(value)) return String(value);
+    return fallbackLabel;
+  };
+  const getAttachmentKind = (value, src, name) => {
+    const type = typeof value === 'object' ? String(value.type || '').toLowerCase() : '';
+    const lowerName = String(name || '').toLowerCase();
+    const lowerSrc = String(src || '').toLowerCase();
+    if (type.startsWith('image/') || /^data:image\//.test(lowerSrc) || /\.(png|jpe?g|gif|webp|bmp|svg)(\?|#|$)/i.test(lowerName || lowerSrc)) {
+      return 'image';
+    }
+    if (type === 'application/pdf' || /^data:application\/pdf/.test(lowerSrc) || /\.pdf(\?|#|$)/i.test(lowerName || lowerSrc)) {
+      return 'pdf';
+    }
+    return src ? 'link' : 'missing';
+  };
+  const attachmentFields = [
+    { key: 'idCardCopy', label: 'ID Card Copy / نسخة البطاقة الشخصية' },
+    { key: 'cvFile', label: 'CV / السيرة الذاتية' },
+    { key: 'universityLetter', label: 'University Letter / خطاب الجامعة' },
+    { key: 'otherAttachments', label: 'Other Attachments / مرفقات أخرى' }
+  ];
+  const attachmentSectionsHtml = isGraduates
+    ? attachmentFields.map(({ key, label }) => {
+        const value = data?.[key];
+        if (!value) return '';
+        const src = getAttachmentSrc(value);
+        const fileName = getAttachmentName(value, label);
+        const kind = getAttachmentKind(value, src, fileName);
+        const mediaHtml = kind === 'image'
+          ? `<div class="attachment-media attachment-image"><img src="${escapeHtml(src)}" alt="${escapeHtml(fileName)}"></div>`
+          : kind === 'pdf'
+            ? `<div class="attachment-media attachment-pdf"><iframe src="${escapeHtml(src)}#toolbar=0&navpanes=0&scrollbar=0" title="${escapeHtml(fileName)}"></iframe></div>`
+            : src
+              ? `<div class="attachment-media attachment-link"><a href="${escapeHtml(src)}" target="_blank" rel="noopener noreferrer">Open Attachment / فتح المرفق</a></div>`
+              : `<div class="attachment-media attachment-missing">هذا المرفق محفوظ بالاسم فقط ولا يحتوي على محتوى قابل للعرض أو الطباعة.</div>`;
+
+        return `
+          <div class="attachment-section">
+            <div class="attachment-head">Attachment / المرفق</div>
+            <div class="attachment-label">${escapeHtml(label)}</div>
+            <div class="attachment-file">File Name / اسم الملف: ${escapeHtml(fileName)}</div>
+            ${mediaHtml}
+          </div>
+        `;
+      }).filter(Boolean).join('')
+    : '';
 
   const graduatesUndertakingHtml = isGraduates
     ? `
@@ -1323,6 +1381,68 @@ function openSubmissionPrintPreview(formName, data) {
         direction: ltr;
         text-align: left;
       }
+      .attachment-section {
+        page-break-before: always;
+        break-before: page;
+        border: 1px solid var(--brand-mid);
+        padding: 10px;
+      }
+      .attachment-head {
+        font-size: 16px;
+        font-weight: 800;
+        padding: 0 0 6px;
+        margin-bottom: 8px;
+        border-bottom: 1px solid var(--brand-mid);
+        direction: ltr;
+        text-align: left;
+      }
+      .attachment-label {
+        font-size: 13px;
+        font-weight: 700;
+        margin-bottom: 4px;
+      }
+      .attachment-file {
+        font-size: 11.5px;
+        margin-bottom: 10px;
+        color: #333;
+        direction: ltr;
+        text-align: left;
+        word-break: break-word;
+      }
+      .attachment-media {
+        width: 100%;
+      }
+      .attachment-image img {
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+        max-height: 248mm;
+        object-fit: contain;
+        border: 1px solid #cbd5d1;
+        background: #fff;
+      }
+      .attachment-pdf iframe {
+        display: block;
+        width: 100%;
+        height: 245mm;
+        border: 1px solid #cbd5d1;
+        background: #fff;
+      }
+      .attachment-link,
+      .attachment-missing {
+        font-size: 12px;
+        line-height: 1.6;
+        padding: 10px;
+        border: 1px dashed #cbd5d1;
+        background: #fafcfc;
+        direction: ltr;
+        text-align: left;
+      }
+      .attachment-link a {
+        color: #0f766e;
+        text-decoration: underline;
+      }
       .no-print {
         margin: 12px auto;
         width: 194mm;
@@ -1370,6 +1490,7 @@ function openSubmissionPrintPreview(formName, data) {
         : `<table><tbody>${rows}</tbody></table>`}
       ${graduatesDeclarationsHtml}
       ${section2Html}
+      ${attachmentSectionsHtml}
       <div class="footer">تم إنشاء هذه النسخة تلقائيا من النظام لغرض الحفظ والأرشفة.</div>
     </div>
   </body>
