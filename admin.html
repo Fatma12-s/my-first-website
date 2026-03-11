@@ -167,6 +167,85 @@
             border-right: 4px solid #6dbfb1;
         }
 
+        .submission-record {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-right: 4px solid #6dbfb1;
+            overflow: hidden;
+        }
+
+        .record-summary {
+            display: grid;
+            grid-template-columns: 140px minmax(180px, 1.3fr) minmax(170px, 1fr) minmax(130px, 0.9fr) minmax(150px, 1fr) 120px;
+            gap: 12px;
+            align-items: center;
+            padding: 14px 16px;
+            background: #fff;
+        }
+
+        .record-main {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .record-type {
+            color: #41726a;
+            font-weight: 700;
+            font-size: 15px;
+        }
+
+        .record-id,
+        .record-date,
+        .record-meta {
+            color: #667572;
+            font-size: 12px;
+        }
+
+        .record-name {
+            color: #24322f;
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .record-email,
+        .record-phone {
+            color: #33423f;
+            font-size: 13px;
+            word-break: break-word;
+        }
+
+        .record-body {
+            display: none;
+            padding: 0 16px 16px;
+            border-top: 1px solid #edf2f1;
+            background: #fcfefe;
+        }
+
+        .submission-record.expanded .record-body {
+            display: block;
+        }
+
+        .record-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: flex-end;
+            padding: 12px 0;
+        }
+
+        .record-toggle {
+            background: #eef7f4;
+            color: #285f53;
+            border: 1px solid #b9d8d3;
+        }
+
+        .record-toggle:hover {
+            background: #dff1eb;
+        }
+
         .submission-header {
             display: flex;
             justify-content: space-between;
@@ -300,6 +379,11 @@
         @media (max-width: 768px) {
             .header-info {
                 flex-direction: column;
+            }
+
+            .record-summary {
+                grid-template-columns: 1fr;
+                gap: 8px;
             }
 
             .submission-content {
@@ -982,6 +1066,11 @@
             const status = submission.status || 'Pending';
             const statusLabel = status === 'Approved' ? 'Approved' : status === 'Rejected' ? 'Rejected' : 'Pending';
             const statusClass = statusLabel === 'Approved' ? 'status-approved' : statusLabel === 'Rejected' ? 'status-rejected' : 'status-pending';
+            const applicantName = escapeHtml(String(pickValue(submission, ['name', 'fullName']) || 'بدون اسم'));
+            const applicantEmail = escapeHtml(String(pickValue(submission, ['email']) || '---'));
+            const applicantPhone = escapeHtml(String(pickValue(submission, ['phone', 'mobile']) || '---'));
+            const submittedAt = escapeHtml(String(submission.submittedAt || 'غير محدد'));
+            const submissionId = escapeHtml(String(submission.id || submission._docId || '---'));
 
             const managerSection2 = submission.managerSection2 || {};
             const section2Department = managerSection2.department || pickValue(submission, ['department', 'specialtyDepartment']);
@@ -1014,29 +1103,53 @@
                 : '';
 
             return `
-                <div class="submission-card">
-                    <div class="submission-header">
+                <div class="submission-record" id="submission-record-${index}">
+                    <div class="record-summary">
+                        <div class="record-main">
+                            <div class="record-type">${formTypeNames[submission.formType]}</div>
+                            <div class="record-id">رقم الطلب: ${submissionId}</div>
+                        </div>
                         <div>
-                            <div class="submission-title">${formTypeNames[submission.formType]}</div>
-                            <div class="submission-date">📅 ${submission.submittedAt || 'غير محدد'}</div>
+                            <div class="record-name">${applicantName}</div>
+                            <div class="record-meta">الاسم</div>
+                        </div>
+                        <div>
+                            <div class="record-email">${applicantEmail}</div>
+                            <div class="record-meta">البريد الإلكتروني</div>
+                        </div>
+                        <div>
+                            <div class="record-phone">${applicantPhone}</div>
+                            <div class="record-meta">الهاتف</div>
+                        </div>
+                        <div>
+                            <div class="record-date">${submittedAt}</div>
+                            <div class="record-meta">تاريخ الإرسال</div>
+                        </div>
+                        <div>
                             <span class="status-badge ${statusClass}">${statusLabel}</span>
                         </div>
-                        <div class="approval-actions">
-                            <button class="pdf-btn" onclick="openSubmissionPdfPreview(${index})">PDF للمراجعة</button>
-                            <button class="approve-btn" onclick="updateSubmissionStatus(${index}, 'Approved')">Approve</button>
-                            <button class="reject-btn" onclick="updateSubmissionStatus(${index}, 'Rejected')">Reject</button>
-                        </div>
                     </div>
-                    <div class="submission-content">
-                        ${section2Html}
-                        ${Object.entries(submission)
-                            .filter(([key]) => !['_source', '_docId', '_localIndex', 'managerSection2', 'department', 'duration', 'durationFrom', 'durationTo', 'specialtyDepartment', 'objective1', 'objective2'].includes(key))
-                            .map(([key, value]) => `
-                                <div class="field">
-                                    <div class="field-label">${key}</div>
-                                    <div class="field-value">${formatFieldValue(value)}</div>
-                                </div>
-                            `).join('')}
+                    <div class="record-actions" style="padding: 0 16px 14px;">
+                        <button class="record-toggle" onclick="toggleSubmissionRecord(${index})">عرض التفاصيل</button>
+                        <button class="pdf-btn" onclick="openSubmissionPdfPreview(${index})">PDF للمراجعة</button>
+                        <button class="approve-btn" onclick="updateSubmissionStatus(${index}, 'Approved')">Approve</button>
+                        <button class="reject-btn" onclick="updateSubmissionStatus(${index}, 'Rejected')">Reject</button>
+                    </div>
+                    <div class="record-body">
+                        <div class="record-actions">
+                            <button class="record-toggle" onclick="toggleSubmissionRecord(${index})">إغلاق التفاصيل</button>
+                        </div>
+                        <div class="submission-content">
+                            ${section2Html}
+                            ${Object.entries(submission)
+                                .filter(([key]) => !['_source', '_docId', '_localIndex', 'managerSection2', 'department', 'duration', 'durationFrom', 'durationTo', 'specialtyDepartment', 'objective1', 'objective2'].includes(key))
+                                .map(([key, value]) => `
+                                    <div class="field">
+                                        <div class="field-label">${escapeHtml(getSubmissionLabel(key))}</div>
+                                        <div class="field-value">${formatFieldValue(value)}</div>
+                                    </div>
+                                `).join('')}
+                        </div>
                     </div>
                 </div>
             `;
@@ -1136,6 +1249,12 @@
         a.click();
         a.remove();
         URL.revokeObjectURL(url);
+    }
+
+    function toggleSubmissionRecord(index) {
+        const record = document.getElementById(`submission-record-${index}`);
+        if (!record) return;
+        record.classList.toggle('expanded');
     }
 
     document.getElementById('formFilter').addEventListener('change', loadSubmissions);
