@@ -594,7 +594,21 @@ async function buildAttachmentValue(file, formName, useFirebase) {
     }
   }
 
-  // للحفاظ على سرعة الإرسال، نكتفي ببيانات الملف الأساسية عند عدم توفر Firebase.
+  // عند عدم توفر Firebase أو فشل الرفع، نحتفظ بنسخة data URL لتكون قابلة للفتح محلياً من لوحة التحكم.
+  try {
+    const dataUrl = await fileToDataUrl(file);
+    if (dataUrl) {
+      return {
+        ...fallbackMeta,
+        source: 'inline-data',
+        dataUrl,
+        preview: dataUrl
+      };
+    }
+  } catch (error) {
+    console.warn('تعذر إنشاء data URL للمرفق:', error);
+  }
+
   return fallbackMeta;
 }
 
