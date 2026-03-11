@@ -508,7 +508,8 @@
             phone: 'رقم الهاتف',
             address: 'العنوان',
             cardNo: 'رقم البطاقة',
-            institute: 'الجهة',
+            nationalId: 'رقم الهوية / البطاقة',
+            institute: 'الجهة / المعهد',
             formType: 'نوع الاستمارة',
             status: 'الحالة',
             department: 'القسم',
@@ -516,7 +517,22 @@
             durationFrom: 'مدة التدريب من',
             durationTo: 'مدة التدريب إلى',
             duration: 'المدة',
-            reviewNote: 'ملاحظة المراجعة'
+            reviewNote: 'ملاحظة المراجعة',
+            programRequirement: 'نوع البرنامج',
+            objective1: 'هدف التدريب 1',
+            objective2: 'هدف التدريب 2',
+            applicantPhoto: 'صورة المتقدم',
+            applicantSignature: 'توقيع مقدم الطلب',
+            undertakingAgree: 'الإقرار والتعهد',
+            idCardDeclaration: 'تعهد البطاقة',
+            cvFile: 'السيرة الذاتية',
+            universityLetter: 'خطاب الجامعة',
+            idCardCopy: 'نسخة البطاقة',
+            otherAttachments: 'مرفقات أخرى',
+            dateOfBirth: 'تاريخ الميلاد',
+            nationality: 'الجنسية',
+            gender: 'الجنس',
+            passportNo: 'رقم جواز السفر'
         };
         return labels[key] || key;
     }
@@ -1179,13 +1195,16 @@
                         <div class="submission-content">
                             ${section2Html}
                             ${Object.entries(submission)
-                                .filter(([key]) => !['_source', '_docId', '_localIndex', 'managerSection2', 'department', 'duration', 'durationFrom', 'durationTo', 'specialtyDepartment', 'objective1', 'objective2'].includes(key))
-                                .map(([key, value]) => `
+                                .filter(([key]) => !['_source', '_docId', '_localIndex', 'managerSection2', 'department', 'duration', 'durationFrom', 'durationTo', 'specialtyDepartment', 'objective1', 'objective2', 'applicantPhotoDataUrl', '__applicantPhotoDataUrl'].includes(key))
+                                .map(([key, value]) => {
+                                    const displayVal = (['undertakingAgree','idCardDeclaration'].includes(key) && String(value).toLowerCase() === 'on') ? 'نعم ✔' : value;
+                                    return `
                                     <div class="field">
                                         <div class="field-label">${escapeHtml(getSubmissionLabel(key))}</div>
-                                        <div class="field-value">${formatFieldValue(value)}</div>
+                                        <div class="field-value">${formatFieldValue(displayVal)}</div>
                                     </div>
-                                `).join('')}
+                                `;
+                                }).join('')}
                         </div>
                     </div>
                 </div>

@@ -16,7 +16,10 @@
         input,select,textarea{padding:10px;border:1px solid #cfd8d6;border-radius:12px;font-family:"Cairo",ui-sans-serif,system-ui,"Noto Sans Arabic",Segoe UI,Tahoma,Arial,sans-serif}
         fieldset{border:1px solid #dbe5e2;border-radius:12px;padding:16px;background:#f9fcfb}
         legend{font-weight:800;color:#1f5b46;padding:0 8px}
-        .notice{max-width:720px;margin:20px auto 0;background:#f1f8f6;border:1px solid #d7ebe5;border-radius:12px;padding:14px;line-height:1.8}
+        .notice{max-width:720px;margin:20px auto 0;background:linear-gradient(135deg,#f0f9f6 0%,#e6f4f0 100%);border:2px solid #2a7a5c;border-radius:16px;padding:28px 24px;text-align:center;box-shadow:0 4px 18px rgba(31,91,70,0.10)}
+        .notice-ar{font-size:20px;font-weight:800;color:#1f5b46;margin-bottom:6px;letter-spacing:0.01em}
+        .notice-en{font-size:16px;font-weight:600;color:#2a7a5c;font-family:"Times New Roman",serif;letter-spacing:0.02em}
+        .notice-divider{width:60px;height:3px;background:linear-gradient(90deg,#1f5b46,#4aab86);border-radius:2px;margin:10px auto}
         .two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px}
         .check-row{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
         .check-row label{font-weight:600}
@@ -87,8 +90,9 @@
             <h2 class="section-title">تقديم الطلب - تدريب الطلاب والخريجين</h2>
 
             <div class="notice">
-                <div>الرجاء تعبئة استمارة التدريب.</div>
-                <div>Please complete the training application form.</div>
+                <div class="notice-ar">الرجاء تعبئة استمارة التدريب</div>
+                <div class="notice-divider"></div>
+                <div class="notice-en">Please complete the training application form</div>
             </div>
 
             <form id="graduates-form" enctype="multipart/form-data">

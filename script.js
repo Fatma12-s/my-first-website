@@ -1013,7 +1013,7 @@ function openSubmissionPrintPreview(formName, data) {
       .paper {
         width: 100%;
         max-width: 194mm;
-        margin: 0 auto;
+        margin: 8px auto;
         padding: 2mm;
       }
       .branding {
@@ -1032,14 +1032,6 @@ function openSubmissionPrintPreview(formName, data) {
         height: auto;
         display: block;
         margin: 0 auto;
-      }
-      .photo-row {
-        border: 1px solid var(--brand-mid);
-        border-top: none;
-        display: flex;
-        justify-content: center;
-        padding: 8px;
-        margin-bottom: 10px;
       }
       .photo-box {
         width: 120px;
@@ -1109,7 +1101,7 @@ function openSubmissionPrintPreview(formName, data) {
         font-size: 15px;
         font-weight: 700;
       }
-      .subtitle {
+      .sub {
         margin-top: 2px;
         color: var(--brand-ink);
         font-size: 11px;
@@ -1216,7 +1208,7 @@ function openSubmissionPrintPreview(formName, data) {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        font-size: 13px;
+        font-size: 12px;
         font-weight: 700;
         line-height: 1;
       }
@@ -1279,7 +1271,7 @@ function openSubmissionPrintPreview(formName, data) {
       <div class="header">
         <div>
           <h1 class="title">${escapeHtml(getFormTitle(formName))}</h1>
-          <div class="subtitle">دائرة التدريب والتطوير المهني المستمر</div>
+          <div class="sub">دائرة التدريب والتطوير المهني المستمر</div>
         </div>
         <div style="font-size:12px;color:#374151;">رقم الطلب: ${escapeHtml(getPrintableValue(data.id || '---'))}</div>
       </div>
