@@ -1089,8 +1089,8 @@ function openSubmissionPrintPreview(formName, data) {
       }
       .header {
         border: 1px solid var(--brand-mid);
-        padding: 5px 8px;
-        margin-bottom: 6px;
+        padding: 8px 12px;
+        margin-bottom: 8px;
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -1098,16 +1098,18 @@ function openSubmissionPrintPreview(formName, data) {
       .title {
         margin: 0;
         color: var(--brand-ink);
-        font-size: 20px;
+        font-size: 24px;
         font-weight: 800;
+        line-height: 1.2;
       }
       .sub {
         margin-top: 2px;
         color: var(--brand-ink);
-        font-size: 14px;
+        font-size: 16px;
+        line-height: 1.25;
       }
       .request-id {
-        font-size: 14px;
+        font-size: 16px;
         color: #1f2937;
         font-weight: 700;
       }
