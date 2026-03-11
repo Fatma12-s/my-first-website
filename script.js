@@ -877,20 +877,36 @@ function openSubmissionPrintPreview(formName, data) {
   const graduatesSection1Html = isGraduates
     ? `
       <div class="section-block">
-        <div class="section-head">Section 1: To be filled by the applicant</div>
-        <div class="sub-head">Personal details of applicant:</div>
-
-        <div class="line-row"><span class="line-label">Name:</span><span class="line-value">${lineValue(data?.name)}</span></div>
-        <div class="line-row"><span class="line-label">Address:</span><span class="line-value">${lineValue(data?.address)}</span></div>
-        <div class="line-row split">
-          <div><span class="line-label">Telephone/GSM:</span><span class="line-value short">${lineValue(data?.phone)}</span></div>
-          <div><span class="line-label">Email:</span><span class="line-value short">${lineValue(data?.email)}</span></div>
+        <div class="section-head">Section 1: Personal Information</div>
+        <div class="personal-layout">
+          <div class="personal-data-col">
+            <table class="personal-table">
+              <tbody>
+                <tr><th>Full Name</th><td>${lineValue(data?.name || '---')}</td></tr>
+                <tr><th>Date of Birth</th><td>${lineValue(data?.dateOfBirth || data?.dob || data?.birthDate || '---')}</td></tr>
+                <tr><th>Nationality</th><td>${lineValue(data?.nationality || '---')}</td></tr>
+                <tr><th>National ID / Card No</th><td>${lineValue(data?.nationalId || data?.cardNo || '---')}</td></tr>
+                <tr><th>Passport No</th><td>${lineValue(data?.passportNo || '---')}</td></tr>
+                <tr><th>Gender</th><td>${lineValue(data?.gender || '---')}</td></tr>
+                <tr><th>Address</th><td>${lineValue(data?.address || '---')}</td></tr>
+                <tr><th>Telephone / GSM</th><td>${lineValue(data?.phone || '---')}</td></tr>
+                <tr><th>Email</th><td>${lineValue(data?.email || '---')}</td></tr>
+                <tr><th>Institute</th><td>${lineValue(data?.institute || '---')}</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="personal-photo-col">
+            <div class="photo-box">
+              ${applicantPhotoSrc
+                ? `<img src="${escapeHtml(applicantPhotoSrc)}" alt="صورة المتقدم">`
+                : `<div class="photo-placeholder">لا توجد صورة متقدم مرفقة</div>`}
+            </div>
+          </div>
         </div>
-        <div class="line-row split">
-          <div><span class="line-label">Card No:</span><span class="line-value short">${lineValue(data?.cardNo)}</span></div>
-          <div><span class="line-label">Institute:</span><span class="line-value short">${lineValue(data?.institute)}</span></div>
-        </div>
+      </div>
 
+      <div class="section-block">
+        <div class="section-head">Section 2: Training Details</div>
         <div class="line-row requirement-row">
           <span class="line-label underline">Program Requirement:</span>
           <span class="check-box">${isClinical ? '&#10003;' : ''}</span>
@@ -898,13 +914,11 @@ function openSubmissionPrintPreview(formName, data) {
           <span class="check-box">${isNonClinical ? '&#10003;' : ''}</span>
           <span class="check-text">NON-CLINICAL ATTACHMENT <em>(please tick)</em></span>
         </div>
-
-        <div class="line-row"><span class="line-label">Specialty / Department:</span><span class="line-value">${lineValue(data?.specialtyDepartment || data?.department)}</span></div>
-        <div class="line-row duration-row"><span class="line-label">DURATION: From</span><span class="line-value short">${lineValue(data?.durationFrom)}</span><span class="line-label small">to</span><span class="line-value short">${lineValue(data?.durationTo)}</span></div>
-
+        <div class="line-row"><span class="line-label">Specialty / Department:</span><span class="line-value">${lineValue(data?.specialtyDepartment || data?.department || '---')}</span></div>
+        <div class="line-row duration-row"><span class="line-label">DURATION: From</span><span class="line-value short">${lineValue(data?.durationFrom || '---')}</span><span class="line-label small">to</span><span class="line-value short">${lineValue(data?.durationTo || '---')}</span></div>
         <div class="line-row"><span class="line-label underline">SPECIFIC OBJECTIVES FOR THE TRAINING:</span></div>
-        <div class="objective-line">${lineValue(data?.objective1)}</div>
-        <div class="objective-line">${lineValue(data?.objective2)}</div>
+        <div class="objective-line">${lineValue(data?.objective1 || '')}</div>
+        <div class="objective-line">${lineValue(data?.objective2 || '')}</div>
       </div>
     `
     : '';
@@ -933,7 +947,7 @@ function openSubmissionPrintPreview(formName, data) {
   const section2Html = isGraduates
     ? `
       <div class="section-block section2-block">
-        <div class="section-head">Section 2: To be filled by supervisor / manager</div>
+        <div class="section-head">Section 3: To be filled by supervisor / manager</div>
         <div class="line-row"><span class="line-label">Department:</span><span class="line-value">${section2Department}</span></div>
         <div class="line-row duration-row"><span class="line-label">DURATION: From</span><span class="line-value short">${section2From}</span><span class="line-label small">to</span><span class="line-value short">${section2To}</span></div>
         <div class="line-row requirement-row">
@@ -1048,6 +1062,36 @@ function openSubmissionPrintPreview(formName, data) {
         width: 100%;
         height: 100%;
         object-fit: cover;
+      }
+      .personal-layout {
+        direction: ltr;
+        display: grid;
+        grid-template-columns: 1fr 170px;
+        gap: 10px;
+        align-items: start;
+        padding: 10px;
+      }
+      .personal-data-col { min-width: 0; }
+      .personal-photo-col {
+        display: flex;
+        justify-content: flex-end;
+      }
+      .personal-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .personal-table th,
+      .personal-table td {
+        border: 1px solid var(--brand-mid);
+        padding: 6px 8px;
+        font-size: 13px;
+        vertical-align: top;
+      }
+      .personal-table th {
+        width: 34%;
+        background: #f6f8f8;
+        text-align: left;
+        font-weight: 700;
       }
       .photo-placeholder {
         font-size: 10px;
@@ -1241,17 +1285,10 @@ function openSubmissionPrintPreview(formName, data) {
         </div>
         <div style="font-size:12px;color:#374151;">رقم الطلب: ${escapeHtml(getPrintableValue(data.id || '---'))}</div>
       </div>
-      <div class="photo-row">
-        <div class="photo-box">
-          ${applicantPhotoSrc
-            ? `<img src="${escapeHtml(applicantPhotoSrc)}" alt="صورة المتقدم">`
-            : `<div class="photo-placeholder">لا توجد صورة متقدم مرفقة</div>`}
-        </div>
-      </div>
-      ${graduatesDeclarationsHtml}
       ${isGraduates
         ? graduatesSection1Html
         : `<table><tbody>${rows}</tbody></table>`}
+      ${graduatesDeclarationsHtml}
       ${section2Html}
       <div class="footer">تم إنشاء هذه النسخة تلقائيا من النظام لغرض الحفظ والأرشفة.</div>
     </div>
