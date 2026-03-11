@@ -1119,25 +1119,32 @@
         function formatFieldValue(value) {
             if (!value && value !== 0) return '';
 
+            const isOpenableUrl = (v) => /^(https?:\/\/|data:|blob:|\.|\/)/i.test(String(v || '').trim());
+            const toSafeText = (v) => escapeHtml(String(v || ''));
+            const asLink = (url, label) => `<a href="${toSafeText(url)}" target="_blank" rel="noopener noreferrer">${toSafeText(label)}</a>`;
+
             if (typeof value === 'object') {
                 const obj = value || {};
-                if (obj.url && /^https?:\/\//.test(String(obj.url))) {
+                const candidateUrl = obj.url || obj.dataUrl || obj.preview || '';
+                if (candidateUrl && isOpenableUrl(candidateUrl)) {
                     const label = obj.name ? `📎 ${obj.name}` : 'فتح المرفق';
-                    return `<a href="${obj.url}" target="_blank">${label}</a>`;
+                    return asLink(candidateUrl, label);
                 }
-                if (obj.name) return `<span>${obj.name}</span>`;
+                if (obj.name) {
+                    return `<span>📎 ${toSafeText(obj.name)} <small style="color:#6b7280;">(تم حفظ الاسم فقط، لا يوجد رابط للفتح)</small></span>`;
+                }
                 return `<span>${JSON.stringify(obj)}</span>`;
             }
 
             const s = String(value);
             if (s.includes(';')) {
                 return s.split(';').map(part => part.trim()).map(p => {
-                    if (/^https?:\/\//.test(p)) return `<a href="${p}" target="_blank">${p}</a>`;
-                    return `<span>${p}</span>`;
+                    if (isOpenableUrl(p)) return asLink(p, p);
+                    return `<span>${toSafeText(p)}</span>`;
                 }).join('<br>');
             }
-            if (/^https?:\/\//.test(s)) return `<a href="${s}" target="_blank">${s}</a>`;
-            return `<span>${s}</span>`;
+            if (isOpenableUrl(s)) return asLink(s, s);
+            return `<span>${toSafeText(s)}</span>`;
         }
 
         const pickValue = (submission, keys) => {
