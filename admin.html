@@ -634,11 +634,11 @@
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>معاينة طلب للمراجعة</title>
             <style>
-                @page { size: A4; margin: 12mm; }
+                @page { size: A4 portrait; margin: 10mm; }
                 * { box-sizing: border-box; }
                 :root { --brand-ink: #111; --brand-mid: #111; --brand-soft: #eaf6f4; --brand-soft-2: #ffffff; }
                 body { font-family: "Times New Roman", Tahoma, serif; margin: 0; color: var(--brand-ink); background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-                .paper { width: min(210mm, calc(100vw - 24px)); min-height: 297mm; margin: 12px auto; padding: 7mm; }
+                .paper { width: min(190mm, calc(100vw - 24px)); margin: 12px auto; padding: 4mm; }
                 .branding { display: flex; justify-content: center; align-items: center; margin-bottom: 8px; padding: 4px 8px; border: 1px solid var(--brand-mid); background: #fff; min-height: 118px; }
                 .brand-logo { width: 220px; max-width: 100%; height: auto; display: block; margin: 0 auto; }
                 .photo-row { border: 1px solid var(--brand-mid); border-top: none; display: flex; justify-content: center; padding: 8px; margin-bottom: 10px; }
@@ -679,7 +679,7 @@
                 .note-list { margin: 6px 16px 10px; padding-left: 18px; direction: ltr; color: var(--brand-ink); }
                 .note-list li { margin-bottom: 6px; font-size: 13px; line-height: 1.5; }
                 @media print {
-                    .paper { width: 210mm; margin: 0 auto; }
+                    .paper { width: 190mm; margin: 0 auto; padding: 0; }
                 }
             </style>
         </head>

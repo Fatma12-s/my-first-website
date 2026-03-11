@@ -1001,7 +1001,7 @@ function openSubmissionPrintPreview(formName, data) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${escapeHtml(getFormTitle(formName))}</title>
     <style>
-      @page { size: A4; margin: 12mm; }
+      @page { size: A4 portrait; margin: 10mm; }
       * { box-sizing: border-box; }
       :root {
         --brand-ink: #111;
@@ -1019,10 +1019,9 @@ function openSubmissionPrintPreview(formName, data) {
         print-color-adjust: exact;
       }
       .paper {
-        width: min(210mm, calc(100vw - 24px));
-        min-height: 297mm;
+        width: min(190mm, calc(100vw - 24px));
         margin: 0 auto;
-        padding: 7mm;
+        padding: 4mm;
       }
       .branding {
         display: flex;
@@ -1267,8 +1266,9 @@ function openSubmissionPrintPreview(formName, data) {
         .no-print { display: none !important; }
         body { background: #fff; padding: 0; }
         .paper {
-          width: 210mm;
+          width: 190mm;
           margin: 0 auto;
+          padding: 0;
         }
       }
     </style>
