@@ -345,9 +345,37 @@ async function saveFormData(formName, formData) {
 // ===== استمارة تدريب الطلاب والخريجين =====
 const graduatesForm = document.getElementById('graduates-form');
 if (graduatesForm) {
+  const applicantPhotoInput = document.getElementById('applicantPhoto');
+  const applicantPhotoPreview = document.getElementById('applicantPhotoPreview');
+  let applicantPhotoPreviewUrl = '';
+
+  const clearApplicantPhotoPreview = () => {
+    if (applicantPhotoPreviewUrl) {
+      URL.revokeObjectURL(applicantPhotoPreviewUrl);
+      applicantPhotoPreviewUrl = '';
+    }
+    if (applicantPhotoPreview) {
+      applicantPhotoPreview.removeAttribute('src');
+      applicantPhotoPreview.classList.remove('visible');
+    }
+  };
+
+  if (applicantPhotoInput && applicantPhotoPreview) {
+    applicantPhotoInput.addEventListener('change', () => {
+      clearApplicantPhotoPreview();
+      const file = applicantPhotoInput.files && applicantPhotoInput.files[0];
+      if (!file || !isImageLikeFile(file)) return;
+
+      applicantPhotoPreviewUrl = URL.createObjectURL(file);
+      applicantPhotoPreview.src = applicantPhotoPreviewUrl;
+      applicantPhotoPreview.classList.add('visible');
+    });
+  }
+
   graduatesForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     await handleFormSubmit(graduatesForm, 'graduates');
+    clearApplicantPhotoPreview();
   });
 
   const fillGraduatesDemoData = () => {
@@ -395,7 +423,7 @@ if (graduatesForm) {
       if (v instanceof File) {
         if (v && v.name) {
           data[k] = { name: v.name, source: 'demo-file' };
-          if (k === 'applicantPhoto' && /^image\//i.test(v.type || '')) {
+          if (k === 'applicantPhoto' && isImageLikeFile(v)) {
             try {
               data.__applicantPhotoDataUrl = await fileToDataUrl(v);
             } catch (err) {
@@ -621,7 +649,7 @@ async function handleFormSubmit(formEl, formName) {
     const fileTasks = entries
       .filter(([, v]) => v instanceof File && v.name && v.size > 0)
       .map(async ([k, v]) => {
-        if (k === 'applicantPhoto' && /^image\//i.test(v.type || '')) {
+        if (k === 'applicantPhoto' && isImageLikeFile(v)) {
           try {
             obj.__applicantPhotoDataUrl = await fileToDataUrl(v);
             obj.applicantPhotoDataUrl = obj.__applicantPhotoDataUrl;
@@ -663,6 +691,13 @@ async function handleFormSubmit(formEl, formName) {
   }
 }
 
+function isImageLikeFile(file) {
+  if (!file) return false;
+  const type = String(file.type || '').toLowerCase();
+  const name = String(file.name || '').toLowerCase();
+  return type.startsWith('image/') || /\.(jpg|jpeg|png)$/i.test(name);
+}
+
 // ===== التحقق من صحة الملفات =====
 function validateFile(file) {
   const maxSize = 5 * 1024 * 1024; // 5MB
@@ -674,7 +709,11 @@ function validateFile(file) {
   }
   
   if (file.size > maxSize) return { valid: false, message: 'حجم الملف يتجاوز 5MB' };
-  if (!allowedTypes.includes(file.type)) {
+  const type = String(file.type || '').toLowerCase();
+  const name = String(file.name || '').toLowerCase();
+  const extensionAllowed = /\.(pdf|jpg|jpeg|png)$/i.test(name);
+  const mimeAllowed = allowedTypes.includes(type);
+  if (!mimeAllowed && !extensionAllowed) {
     return { valid: false, message: `نوع الملف غير مدعوم: ${file.type}` };
   }
   return { valid: true };
