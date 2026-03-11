@@ -641,6 +641,40 @@
         const undertakingAgreed = ['on', 'true', 'yes', '1'].includes(String(effective.undertakingAgree || '').toLowerCase());
         const declarationAgreed = ['on', 'true', 'yes', '1'].includes(String(effective.idCardDeclaration || '').toLowerCase());
 
+        const graduatesUndertakingHtml = isGraduates
+            ? `
+                <div class="undertaking-print section-block">
+                    <div class="section-head">Undertaking / إقرار وتعهد</div>
+                    <div class="undertaking-grid">
+                        <div class="u-head u-col-ar">إقرار وتعهد</div>
+                        <div class="u-head u-col-en">Undertaking</div>
+
+                        <div class="u-col-ar">الالتزام بلوائح مستشفى السلطان قابوس وجداول التدريب.</div>
+                        <div class="u-col-en">Adhere to SQUH regulations and training schedule.</div>
+
+                        <div class="u-col-ar">تحمّل المسؤولية الكاملة عن السلوك خلال فترة التدريب.</div>
+                        <div class="u-col-en">Be fully responsible for behavior during training period.</div>
+
+                        <div class="u-col-ar">الالتزام بقواعد اللباس للطلاب الطبيين والأطباء المتدربين (HWP-HDO-IPP-012) عند الانضمام إلى الفريق الطبي.</div>
+                        <div class="u-col-en">Follow Dress Code for Medical Students and Doctors in Training (HWP-HDO-IPP-012) if joining medical team.</div>
+
+                        <div class="u-col-ar">لا يتحمل المستشفى أي مسؤولية عن الحوادث أو الأضرار خلال فترة التدريب.</div>
+                        <div class="u-col-en">SQUH is not liable for accidents or harm during training.</div>
+
+                        <div class="u-col-ar">أي مخالفة قد تؤدي إلى إيقاف التدريب فورًا وإبلاغ الجهة الطالبة.</div>
+                        <div class="u-col-en">Any violation may result in immediate discontinuation and reporting to requesting institute.</div>
+
+                        <div class="u-col-ar">إعادة بطاقة التدريب في اليوم الأخير؛ التأخير لأكثر من 5 أيام يؤدي إلى مصادرة الوديعة القابلة للاسترداد.</div>
+                        <div class="u-col-en">Return training ID card on the last day; delay more than 5 days forfeits refundable deposit.</div>
+
+                        <div class="u-col-ar">بطاقة التدريب ملك لمستشفى السلطان قابوس وسوء الاستخدام أو الفقدان قد يؤدي إلى إجراءات قانونية.</div>
+                        <div class="u-col-en">Training card is property of SQUH and misuse/loss may lead to legal action.</div>
+                    </div>
+                    <div class="undertaking-agree">I agree / أوافق على الإقرار والتعهد: <strong>${undertakingAgreed ? 'Yes / نعم' : 'No / لا'}</strong></div>
+                </div>
+            `
+            : '';
+
         const section2Department = escapeHtml(formatPrintValue(
             effective.managerSection2?.department || effective.department || effective.specialtyDepartment || '---'
         ));
@@ -797,6 +831,15 @@
                 .footer { margin-top: 14px; font-size: 11px; color: var(--brand-ink); text-align: center; }
                 .note-list { margin: 4px 14px 8px; padding-left: 16px; direction: ltr; color: var(--brand-ink); }
                 .note-list li { margin-bottom: 4px; font-size: 11px; line-height: 1.35; }
+                .undertaking-print { break-inside: avoid; page-break-inside: avoid; }
+                .undertaking-grid { display: grid; grid-template-columns: 1fr 1fr; }
+                .undertaking-grid > div { border-top: 1px solid var(--brand-mid); padding: 6px 8px; font-size: 11.5px; line-height: 1.45; }
+                .u-head { background: #f3f7f6; font-weight: 800; }
+                .u-col-ar { direction: rtl; text-align: right; border-left: 1px solid var(--brand-mid); }
+                .u-col-en { direction: ltr; text-align: left; }
+                .undertaking-grid .u-col-ar:not(.u-head)::before,
+                .undertaking-grid .u-col-en:not(.u-head)::before { content: "• "; font-weight: 700; }
+                .undertaking-agree { border-top: 1px solid var(--brand-mid); padding: 6px 8px; font-size: 11.5px; direction: ltr; text-align: left; }
                 @media print {
                     .paper { width: 100%; max-width: 194mm; margin: 0 auto; padding: 0; }
                 }
@@ -814,7 +857,7 @@
                     </div>
                     <div class="request-id">رقم الطلب: ${escapeHtml(formatPrintValue(effective.id || effective._docId || '---'))}</div>
                 </div>
-                ${isGraduates ? graduatesSection1Html : `<table><tbody>${rows}</tbody></table>`}
+                ${isGraduates ? `${graduatesUndertakingHtml}${graduatesSection1Html}` : `<table><tbody>${rows}</tbody></table>`}
                 ${graduatesDeclarationsHtml}
                 ${section2Html}
                 <div class="footer">تم إنشاء هذه النسخة تلقائيا من النظام لغرض الحفظ والأرشفة.</div>
