@@ -770,8 +770,9 @@
                 .personal-table th { width: 34%; background: #f6f8f8; text-align: left; font-weight: 700; }
                 .photo-placeholder { font-size: 10px; color: var(--brand-ink); text-align: center; padding: 8px; }
                 .header { border: 1px solid var(--brand-mid); padding: 5px 8px; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between; }
-                .title { margin: 0; color: var(--brand-ink); font-size: 15px; font-weight: 700; }
-                .sub { color: var(--brand-ink); margin-top: 2px; font-size: 11px; }
+                .title { margin: 0; color: var(--brand-ink); font-size: 20px; font-weight: 800; }
+                .sub { color: var(--brand-ink); margin-top: 2px; font-size: 14px; }
+                .request-id { font-size: 14px; color: #1f2937; font-weight: 700; }
                 table { width: 100%; border-collapse: collapse; }
                 th, td { border: 1px solid #b9d8d3; padding: 6px 8px; vertical-align: top; font-size: 12px; }
                 th { width: 34%; background: var(--brand-soft); color: var(--brand-ink); text-align: right; }
@@ -811,7 +812,7 @@
                         <h1 class="title">${escapeHtml(formTitle)}</h1>
                         <div class="sub">دائرة التدريب والتطوير المهني المستمر</div>
                     </div>
-                    <div style="font-size:12px;color:#374151;">رقم الطلب: ${escapeHtml(formatPrintValue(effective.id || effective._docId || '---'))}</div>
+                    <div class="request-id">رقم الطلب: ${escapeHtml(formatPrintValue(effective.id || effective._docId || '---'))}</div>
                 </div>
                 ${isGraduates ? graduatesSection1Html : `<table><tbody>${rows}</tbody></table>`}
                 ${graduatesDeclarationsHtml}

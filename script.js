@@ -1098,13 +1098,18 @@ function openSubmissionPrintPreview(formName, data) {
       .title {
         margin: 0;
         color: var(--brand-ink);
-        font-size: 15px;
-        font-weight: 700;
+        font-size: 20px;
+        font-weight: 800;
       }
       .sub {
         margin-top: 2px;
         color: var(--brand-ink);
-        font-size: 11px;
+        font-size: 14px;
+      }
+      .request-id {
+        font-size: 14px;
+        color: #1f2937;
+        font-weight: 700;
       }
       table {
         width: 100%;
@@ -1273,7 +1278,7 @@ function openSubmissionPrintPreview(formName, data) {
           <h1 class="title">${escapeHtml(getFormTitle(formName))}</h1>
           <div class="sub">دائرة التدريب والتطوير المهني المستمر</div>
         </div>
-        <div style="font-size:12px;color:#374151;">رقم الطلب: ${escapeHtml(getPrintableValue(data.id || '---'))}</div>
+        <div class="request-id">رقم الطلب: ${escapeHtml(getPrintableValue(data.id || '---'))}</div>
       </div>
       ${isGraduates
         ? graduatesSection1Html
