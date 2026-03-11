@@ -966,9 +966,9 @@ function openSubmissionPrintPreview(formName, data) {
           <span class="check-box"></span><span class="check-text">Approved</span>
           <span class="check-box"></span><span class="check-text">Rejected</span>
         </div>
-        <div class="line-row"><span class="line-label">Manager Notes:</span><span class="line-value">&nbsp;</span></div>
+        <div class="line-row"><span class="line-label">Director/HOD Notes:</span><span class="line-value">&nbsp;</span></div>
         <div class="line-row split">
-          <div><span class="line-label">Manager Name:</span><span class="line-value short">&nbsp;</span></div>
+          <div><span class="line-label">Director/HOD Name:</span><span class="line-value short">&nbsp;</span></div>
           <div><span class="line-label">Signature:</span><span class="line-value short">&nbsp;</span></div>
         </div>
         <div class="line-row"><span class="line-label">Date:</span><span class="line-value short">&nbsp;</span></div>
@@ -1001,7 +1001,7 @@ function openSubmissionPrintPreview(formName, data) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${escapeHtml(getFormTitle(formName))}</title>
     <style>
-      @page { size: A4 portrait; margin: 10mm; }
+      @page { size: A4 portrait; margin: 8mm; }
       * { box-sizing: border-box; }
       :root {
         --brand-ink: #111;
@@ -1014,27 +1014,28 @@ function openSubmissionPrintPreview(formName, data) {
         margin: 0;
         color: var(--brand-ink);
         background: #fff;
-        padding: 12px 0;
+        padding: 8px 0;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
       }
       .paper {
-        width: min(190mm, calc(100vw - 24px));
+        width: 100%;
+        max-width: 194mm;
         margin: 0 auto;
-        padding: 4mm;
+        padding: 2mm;
       }
       .branding {
         display: flex;
         justify-content: center;
         align-items: center;
-        margin-bottom: 8px;
+        margin-bottom: 6px;
         padding: 4px 8px;
         border: 1px solid var(--brand-mid);
         background: #fff;
-        min-height: 118px;
+        min-height: 92px;
       }
       .brand-logo {
-        width: 220px;
+        width: 170px;
         max-width: 100%;
         height: auto;
         display: block;
@@ -1049,9 +1050,9 @@ function openSubmissionPrintPreview(formName, data) {
         margin-bottom: 10px;
       }
       .photo-box {
-        width: 145px;
-        min-width: 145px;
-        height: 182px;
+        width: 120px;
+        min-width: 120px;
+        height: 150px;
         border: 2px solid var(--brand-mid);
         padding: 3px;
         background: #fff;
@@ -1069,10 +1070,10 @@ function openSubmissionPrintPreview(formName, data) {
       .personal-layout {
         direction: ltr;
         display: grid;
-        grid-template-columns: 1fr 170px;
-        gap: 10px;
+        grid-template-columns: minmax(0, 1fr) 132px;
+        gap: 8px;
         align-items: start;
-        padding: 10px;
+        padding: 8px;
       }
       .personal-data-col { min-width: 0; }
       .personal-photo-col {
@@ -1086,8 +1087,8 @@ function openSubmissionPrintPreview(formName, data) {
       .personal-table th,
       .personal-table td {
         border: 1px solid var(--brand-mid);
-        padding: 6px 8px;
-        font-size: 13px;
+        padding: 5px 7px;
+        font-size: 12px;
         vertical-align: top;
       }
       .personal-table th {
@@ -1104,8 +1105,8 @@ function openSubmissionPrintPreview(formName, data) {
       }
       .header {
         border: 1px solid var(--brand-mid);
-        padding: 6px 10px;
-        margin-bottom: 8px;
+        padding: 5px 8px;
+        margin-bottom: 6px;
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -1113,13 +1114,13 @@ function openSubmissionPrintPreview(formName, data) {
       .title {
         margin: 0;
         color: var(--brand-ink);
-        font-size: 17px;
+        font-size: 15px;
         font-weight: 700;
       }
       .subtitle {
         margin-top: 2px;
         color: var(--brand-ink);
-        font-size: 12px;
+        font-size: 11px;
       }
       table {
         width: 100%;
@@ -1127,9 +1128,9 @@ function openSubmissionPrintPreview(formName, data) {
       }
       th, td {
         border: 1px solid #b9d8d3;
-        padding: 8px 10px;
+        padding: 6px 8px;
         vertical-align: top;
-        font-size: 13px;
+        font-size: 12px;
       }
       th {
         width: 34%;
@@ -1145,12 +1146,12 @@ function openSubmissionPrintPreview(formName, data) {
       }
       .section-block {
         border: 1px solid var(--brand-mid);
-        margin-bottom: 10px;
+        margin-bottom: 8px;
       }
       .section-head {
-        font-size: 17px;
+        font-size: 15px;
         font-weight: 800;
-        padding: 6px 12px;
+        padding: 5px 10px;
         border-bottom: 1px solid var(--brand-mid);
         background: var(--brand-soft);
         color: var(--brand-ink);
@@ -1166,7 +1167,7 @@ function openSubmissionPrintPreview(formName, data) {
         text-align: left;
       }
       .line-row {
-        padding: 6px 12px;
+        padding: 4px 10px;
         direction: ltr;
         text-align: left;
         color: var(--brand-ink);
@@ -1175,10 +1176,10 @@ function openSubmissionPrintPreview(formName, data) {
         gap: 6px;
       }
       .line-label {
-        font-size: 14px;
+        font-size: 12px;
         font-weight: 700;
         display: inline-block;
-        min-width: 118px;
+        min-width: 96px;
       }
       .line-label.small {
         font-size: 13px;
@@ -1193,12 +1194,12 @@ function openSubmissionPrintPreview(formName, data) {
         flex: 1;
         border-bottom: 1.5px solid var(--brand-mid);
         padding: 0 4px 2px;
-        font-size: 14px;
+        font-size: 12px;
         vertical-align: baseline;
-        min-height: 20px;
+        min-height: 18px;
       }
       .line-value.short {
-        flex: 0 0 185px;
+        flex: 0 0 150px;
       }
       .line-row.split {
         display: grid;
@@ -1217,8 +1218,8 @@ function openSubmissionPrintPreview(formName, data) {
         flex-wrap: wrap;
       }
       .check-box {
-        width: 18px;
-        height: 18px;
+        width: 15px;
+        height: 15px;
         border: 1.5px solid var(--brand-mid);
         display: inline-flex;
         align-items: center;
@@ -1228,29 +1229,29 @@ function openSubmissionPrintPreview(formName, data) {
         line-height: 1;
       }
       .check-text {
-        font-size: 14px;
+        font-size: 12px;
         font-weight: 700;
       }
       .duration-row .line-value.short {
-        flex-basis: 170px;
+        flex-basis: 132px;
       }
       .objective-line {
-        min-height: 28px;
+        min-height: 22px;
         border-bottom: 1.5px solid var(--brand-mid);
-        margin: 0 12px 8px;
-        font-size: 14px;
+        margin: 0 10px 6px;
+        font-size: 12px;
         color: var(--brand-ink);
         direction: ltr;
         text-align: left;
         padding: 2px 4px;
       }
       .section2-block { margin-top: 8px; }
-      .section2-block .line-label { min-width: 130px; }
-      .note-list { margin: 6px 16px 10px; padding-left: 18px; direction: ltr; color: var(--brand-ink); }
-      .note-list li { margin-bottom: 6px; font-size: 13px; line-height: 1.5; }
+      .section2-block .line-label { min-width: 110px; }
+      .note-list { margin: 4px 14px 8px; padding-left: 16px; direction: ltr; color: var(--brand-ink); }
+      .note-list li { margin-bottom: 4px; font-size: 11px; line-height: 1.35; }
       .no-print {
         margin: 12px auto;
-        width: 210mm;
+        width: 194mm;
         display: flex;
         justify-content: flex-end;
         gap: 8px;
@@ -1266,7 +1267,8 @@ function openSubmissionPrintPreview(formName, data) {
         .no-print { display: none !important; }
         body { background: #fff; padding: 0; }
         .paper {
-          width: 190mm;
+          width: 100%;
+          max-width: 194mm;
           margin: 0 auto;
           padding: 0;
         }
