@@ -657,7 +657,12 @@ async function handleFormSubmit(formEl, formName) {
             console.warn('تعذر تجهيز معاينة صورة المتقدم:', err);
           }
         }
-        obj[k] = await buildAttachmentValue(v, formName, useFirebase);
+        const attachmentValue = await buildAttachmentValue(v, formName, useFirebase);
+        if (k === 'applicantPhoto' && attachmentValue && typeof attachmentValue === 'object' && obj.applicantPhotoDataUrl) {
+          attachmentValue.dataUrl = attachmentValue.dataUrl || obj.applicantPhotoDataUrl;
+          attachmentValue.preview = attachmentValue.preview || obj.applicantPhotoDataUrl;
+        }
+        obj[k] = attachmentValue;
       });
     await Promise.all(fileTasks);
 
@@ -817,25 +822,33 @@ function getSquhHeaderLogoUrl() {
 }
 
 function getApplicantPhotoSrc(data) {
+  const isRenderableImageSrc = (value) => {
+    const src = String(value || '').trim();
+    return /^(data:image\/|blob:|https?:\/\/|\.\/|\/)/i.test(src);
+  };
+
   const directPreview = data && data.__applicantPhotoDataUrl;
-  if (directPreview && /^data:image\//i.test(String(directPreview))) {
+  if (directPreview && isRenderableImageSrc(directPreview)) {
     return String(directPreview);
   }
 
   const storedPreview = data && data.applicantPhotoDataUrl;
-  if (storedPreview && /^data:image\//i.test(String(storedPreview))) {
+  if (storedPreview && isRenderableImageSrc(storedPreview)) {
     return String(storedPreview);
   }
 
   const photo = data && data.applicantPhoto;
-  if (photo && typeof photo === 'object' && photo.dataUrl && /^data:image\//i.test(String(photo.dataUrl))) {
+  if (photo && typeof photo === 'object' && photo.dataUrl && isRenderableImageSrc(photo.dataUrl)) {
     return String(photo.dataUrl);
   }
-  if (photo && typeof photo === 'object' && photo.url && /^https?:\/\//i.test(String(photo.url))) {
+  if (photo && typeof photo === 'object' && photo.preview && isRenderableImageSrc(photo.preview)) {
+    return String(photo.preview);
+  }
+  if (photo && typeof photo === 'object' && photo.url && isRenderableImageSrc(photo.url)) {
     return String(photo.url);
   }
 
-  if (typeof photo === 'string' && /^https?:\/\//i.test(photo)) {
+  if (typeof photo === 'string' && isRenderableImageSrc(photo)) {
     return photo;
   }
 
