@@ -1,6 +1,26 @@
 {
 	"hosting": {
 		"public": ".",
+		"headers": [
+			{
+				"source": "**/*.html",
+				"headers": [
+					{
+						"key": "Cache-Control",
+						"value": "no-cache, no-store, must-revalidate"
+					}
+				]
+			},
+			{
+				"source": "**/script.js",
+				"headers": [
+					{
+						"key": "Cache-Control",
+						"value": "no-cache, no-store, must-revalidate"
+					}
+				]
+			}
+		],
 		"redirects": [
 			{
 				"source": "/",
