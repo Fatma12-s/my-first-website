@@ -33,6 +33,31 @@
         .photo-preview{margin-top:10px;width:145px;height:182px;border:2px solid #8ba79e;border-radius:8px;object-fit:cover;background:#fff;display:none}
         .photo-preview.visible{display:block}
         @media (max-width:768px){.two-col{grid-template-columns:1fr} nav ul{flex-direction:column;gap:var(--space-sm)}}
+        /* Bilingual Undertaking Layout */
+        .bilingual-list{border:1px solid #cde8dc;border-radius:10px;overflow:hidden;margin-bottom:12px;counter-reset:bl-counter}
+        .bl-header,.bl-item{display:flex}
+        .bl-item{counter-increment:bl-counter;border-bottom:1px solid #e8f3ef}
+        .bl-item:last-child{border-bottom:none}
+        .bl-item:nth-child(even){background:#f7fbf9}
+        .bl-col-ar,.bl-col-en{flex:1;padding:9px 12px;line-height:1.75;font-size:13px}
+        .bl-col-ar{direction:rtl;text-align:right;border-left:2px solid #cde8dc}
+        .bl-col-ar::before{content:counter(bl-counter,arabic-indic) ". ";font-weight:700;color:#1f5b46}
+        .bl-col-en{direction:ltr;text-align:left}
+        .bl-col-en::before{content:counter(bl-counter) ". ";font-weight:700;color:#1f5b46}
+        .bl-header{background:#1f5b46;color:#fff}
+        .bl-header .bl-col-ar,.bl-header .bl-col-en{font-weight:800;font-size:14px;color:#fff;padding:10px 12px}
+        .bl-header .bl-col-ar{border-left:2px solid rgba(255,255,255,0.3)}
+        .bl-header .bl-col-ar::before,.bl-header .bl-col-en::before{content:none}
+        @media (max-width:600px){
+            .bl-item{flex-direction:column}
+            .bl-header{flex-direction:column}
+            .bl-col-ar{border-left:none;border-bottom:1px dashed #cde8dc}
+            .bl-header .bl-col-ar{border-left:none;border-bottom:1px solid rgba(255,255,255,0.3)}
+        }
+        @media print{
+            .bilingual-list{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+            .bl-item{break-inside:avoid}
+        }
     </style>
 </head>
 <body>
@@ -69,15 +94,40 @@
             <form id="graduates-form" enctype="multipart/form-data">
                 <fieldset>
                     <legend>Undertaking / إقرار وتعهد</legend>
-                    <ul class="pledge-list">
-                        <li>Adhere to SQUH regulations and training schedule.</li>
-                        <li>Be fully responsible for behavior during training period.</li>
-                        <li>Follow Dress Code for Medical Students and Doctors in Training (HWP-HDO-IPP-012) if joining medical team.</li>
-                        <li>SQUH is not liable for accidents or harm during training.</li>
-                        <li>Any violation may result in immediate discontinuation and reporting to requesting institute.</li>
-                        <li>Return training ID card on the last day; delay more than 5 days forfeits refundable deposit.</li>
-                        <li>Training card is property of SQUH and misuse/loss may lead to legal action.</li>
-                    </ul>
+                    <div class="bilingual-list">
+                        <div class="bl-header">
+                            <div class="bl-col-ar">إقرار وتعهد</div>
+                            <div class="bl-col-en">Undertaking</div>
+                        </div>
+                        <div class="bl-item">
+                            <div class="bl-col-ar">الالتزام بلوائح مستشفى السلطان قابوس وجداول التدريب.</div>
+                            <div class="bl-col-en">Adhere to SQUH regulations and training schedule.</div>
+                        </div>
+                        <div class="bl-item">
+                            <div class="bl-col-ar">تحمّل المسؤولية الكاملة عن السلوك خلال فترة التدريب.</div>
+                            <div class="bl-col-en">Be fully responsible for behavior during training period.</div>
+                        </div>
+                        <div class="bl-item">
+                            <div class="bl-col-ar">الالتزام بقواعد اللباس للطلاب الطبيين والأطباء المتدربين (HWP-HDO-IPP-012) عند الانضمام إلى الفريق الطبي.</div>
+                            <div class="bl-col-en">Follow Dress Code for Medical Students and Doctors in Training (HWP-HDO-IPP-012) if joining medical team.</div>
+                        </div>
+                        <div class="bl-item">
+                            <div class="bl-col-ar">لا يتحمل المستشفى أي مسؤولية عن الحوادث أو الأضرار خلال فترة التدريب.</div>
+                            <div class="bl-col-en">SQUH is not liable for accidents or harm during training.</div>
+                        </div>
+                        <div class="bl-item">
+                            <div class="bl-col-ar">أي مخالفة قد تؤدي إلى إيقاف التدريب فورًا وإبلاغ الجهة الطالبة.</div>
+                            <div class="bl-col-en">Any violation may result in immediate discontinuation and reporting to requesting institute.</div>
+                        </div>
+                        <div class="bl-item">
+                            <div class="bl-col-ar">إعادة بطاقة التدريب في اليوم الأخير؛ التأخير لأكثر من 5 أيام يؤدي إلى مصادرة الوديعة القابلة للاسترداد.</div>
+                            <div class="bl-col-en">Return training ID card on the last day; delay more than 5 days forfeits refundable deposit.</div>
+                        </div>
+                        <div class="bl-item">
+                            <div class="bl-col-ar">بطاقة التدريب ملك لمستشفى السلطان قابوس وسوء الاستخدام أو الفقدان قد يؤدي إلى إجراءات قانونية.</div>
+                            <div class="bl-col-en">Training card is property of SQUH and misuse/loss may lead to legal action.</div>
+                        </div>
+                    </div>
                     <div class="check-row">
                         <input type="checkbox" id="undertakingAgree" name="undertakingAgree" required>
                         <label for="undertakingAgree">I agree / أوافق على الإقرار والتعهد</label>
@@ -247,7 +297,6 @@
 
                 <div class="form-actions">
                     <button type="submit" class="form-btn">تقديم الطلب</button>
-                    <button type="button" id="fillDemoBtn" class="demo-btn">تعبئة نموذج تجريبي</button>
                     <button type="button" id="previewDemoPdfBtn" class="demo-preview-btn">معاينة PDF تجريبية</button>
                 </div>
                 <div class="demo-note">ملاحظة: المعاينة التجريبية لا تحفظ الطلب ولا ترسل بريد، وهي مخصصة لاختبار شكل الاستمارة.</div>

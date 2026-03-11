@@ -447,14 +447,6 @@ if (graduatesForm) {
     return data;
   };
 
-  const fillDemoBtn = document.getElementById('fillDemoBtn');
-  if (fillDemoBtn) {
-    fillDemoBtn.addEventListener('click', () => {
-      fillGraduatesDemoData();
-      alert('تمت تعبئة البيانات التجريبية. يمكنك تعديل أي حقل قبل الإرسال أو المعاينة.');
-    });
-  }
-
   const previewDemoPdfBtn = document.getElementById('previewDemoPdfBtn');
   if (previewDemoPdfBtn) {
     previewDemoPdfBtn.addEventListener('click', async () => {
