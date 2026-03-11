@@ -922,7 +922,6 @@ function openSubmissionPrintPreview(formName, data) {
             <table class="personal-table">
               <tbody>
                 <tr><th>Full Name</th><td>${lineValue(data?.name || '---')}</td></tr>
-                <tr><th>Date of Birth</th><td>${lineValue(data?.dateOfBirth || data?.dob || data?.birthDate || '---')}</td></tr>
                 <tr><th>Nationality</th><td>${lineValue(data?.nationality || '---')}</td></tr>
                 <tr><th>National ID / Card No</th><td>${lineValue(data?.nationalId || data?.cardNo || '---')}</td></tr>
                 <tr><th>Address</th><td>${lineValue(data?.address || '---')}</td></tr>
