@@ -958,7 +958,7 @@ function openSubmissionPrintPreview(formName, data) {
   const section2Html = isGraduates
     ? `
       <div class="section-block section2-block">
-        <div class="section-head">Section 2: To be filled by the concerned department Director/HOD</div>
+        <div class="section-head">Section 3: To be filled by the concerned department Director/HOD</div>
         <div class="line-row"><span class="line-label">Department:</span><span class="line-value">${section2Department}</span></div>
         <div class="line-row duration-row"><span class="line-label">DURATION: From</span><span class="line-value short">${section2From}</span><span class="line-label small">to</span><span class="line-value short">${section2To}</span></div>
         <div class="line-row requirement-row">
@@ -1029,12 +1029,13 @@ function openSubmissionPrintPreview(formName, data) {
         justify-content: center;
         align-items: center;
         margin-bottom: 8px;
-        padding: 7px 8px;
+        padding: 4px 8px;
         border: 1px solid var(--brand-mid);
         background: #fff;
+        min-height: 118px;
       }
       .brand-logo {
-        width: 320px;
+        width: 220px;
         max-width: 100%;
         height: auto;
         display: block;
