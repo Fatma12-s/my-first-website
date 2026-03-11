@@ -899,8 +899,6 @@ function openSubmissionPrintPreview(formName, data) {
                 <tr><th>Date of Birth</th><td>${lineValue(data?.dateOfBirth || data?.dob || data?.birthDate || '---')}</td></tr>
                 <tr><th>Nationality</th><td>${lineValue(data?.nationality || '---')}</td></tr>
                 <tr><th>National ID / Card No</th><td>${lineValue(data?.nationalId || data?.cardNo || '---')}</td></tr>
-                <tr><th>Passport No</th><td>${lineValue(data?.passportNo || '---')}</td></tr>
-                <tr><th>Gender</th><td>${lineValue(data?.gender || '---')}</td></tr>
                 <tr><th>Address</th><td>${lineValue(data?.address || '---')}</td></tr>
                 <tr><th>Telephone / GSM</th><td>${lineValue(data?.phone || '---')}</td></tr>
                 <tr><th>Email</th><td>${lineValue(data?.email || '---')}</td></tr>
@@ -960,7 +958,7 @@ function openSubmissionPrintPreview(formName, data) {
   const section2Html = isGraduates
     ? `
       <div class="section-block section2-block">
-        <div class="section-head">Section 3: To be filled by supervisor / manager</div>
+        <div class="section-head">Section 2: To be filled by the concerned department Director/HOD</div>
         <div class="line-row"><span class="line-label">Department:</span><span class="line-value">${section2Department}</span></div>
         <div class="line-row duration-row"><span class="line-label">DURATION: From</span><span class="line-value short">${section2From}</span><span class="line-label small">to</span><span class="line-value short">${section2To}</span></div>
         <div class="line-row requirement-row">
@@ -980,14 +978,6 @@ function openSubmissionPrintPreview(formName, data) {
 
   const graduatesDeclarationsHtml = isGraduates
     ? `
-      <div class="section-block">
-        <div class="section-head">Undertaking / Declaration</div>
-        <div class="line-row"><span class="line-label">Undertaking Agreed:</span><span class="line-value">${undertakingAgreed ? 'Yes' : 'No'}</span></div>
-        <div class="line-row"><span class="line-label">ID Card Declaration:</span><span class="line-value">${declarationAgreed ? 'Yes' : 'No'}</span></div>
-        <div class="line-row"><span class="line-label">Applicant Signature:</span><span class="line-value">${lineValue(data?.applicantSignature)}</span></div>
-        <div class="line-row"><span class="line-label">Attachments:</span><span class="line-value">CV: ${lineValue(data?.cvFile)} | University Letter: ${lineValue(data?.universityLetter)} | ID Card: ${lineValue(data?.idCardCopy)} | Others: ${lineValue(data?.otherAttachments)}</span></div>
-      </div>
-
       <div class="section-block">
         <div class="section-head">Fees & Notes</div>
         <ul class="note-list">

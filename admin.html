@@ -545,8 +545,6 @@
                                     <tr><th>Date of Birth</th><td>${lineValue(effective.dateOfBirth || effective.dob || effective.birthDate || '---')}</td></tr>
                                     <tr><th>Nationality</th><td>${lineValue(effective.nationality || '---')}</td></tr>
                                     <tr><th>National ID / Card No</th><td>${lineValue(effective.nationalId || effective.cardNo || '---')}</td></tr>
-                                    <tr><th>Passport No</th><td>${lineValue(effective.passportNo || '---')}</td></tr>
-                                    <tr><th>Gender</th><td>${lineValue(effective.gender || '---')}</td></tr>
                                     <tr><th>Address</th><td>${lineValue(effective.address || '---')}</td></tr>
                                     <tr><th>Telephone / GSM</th><td>${lineValue(effective.phone || '---')}</td></tr>
                                     <tr><th>Email</th><td>${lineValue(effective.email || '---')}</td></tr>
@@ -585,7 +583,7 @@
         const section2Html = isGraduates
             ? `
                 <div class="section-block section2-block">
-                    <div class="section-head">Section 3: To be filled by supervisor / manager</div>
+                    <div class="section-head">Section 2: To be filled by the concerned department Director/HOD</div>
                     <div class="line-row"><span class="line-label">Department:</span><span class="line-value">${section2Department}</span></div>
                     <div class="line-row duration-row"><span class="line-label">DURATION: From</span><span class="line-value short">${section2From}</span><span class="line-label small">to</span><span class="line-value short">${section2To}</span></div>
                     <div class="line-row requirement-row">
@@ -605,14 +603,6 @@
 
         const graduatesDeclarationsHtml = isGraduates
             ? `
-                <div class="section-block">
-                    <div class="section-head">Undertaking / Declaration</div>
-                    <div class="line-row"><span class="line-label">Undertaking Agreed:</span><span class="line-value">${undertakingAgreed ? 'Yes' : 'No'}</span></div>
-                    <div class="line-row"><span class="line-label">ID Card Declaration:</span><span class="line-value">${declarationAgreed ? 'Yes' : 'No'}</span></div>
-                    <div class="line-row"><span class="line-label">Applicant Signature:</span><span class="line-value">${lineValue(effective.applicantSignature)}</span></div>
-                    <div class="line-row"><span class="line-label">Attachments:</span><span class="line-value">CV: ${lineValue(effective.cvFile)} | University Letter: ${lineValue(effective.universityLetter)} | ID Card: ${lineValue(effective.idCardCopy)} | Others: ${lineValue(effective.otherAttachments)}</span></div>
-                </div>
-
                 <div class="section-block">
                     <div class="section-head">Fees & Notes</div>
                     <ul class="note-list">
