@@ -446,7 +446,7 @@
             </div>
         </div>
 
-        <div id="dataSourceNotice" class="source-note" style="display:none;"></div>
+        <!-- تم إخفاء رسالة مصدر البيانات الحالي بناءً على طلب المستخدم -->
 
         <div id="submissionsContainer" class="submissions">
             <!-- سيتم ملؤها بـ JavaScript -->
@@ -971,8 +971,14 @@
     async function sendDecisionEmail(submission, decisionStatus, reviewNote = '') {
         try {
             if (!submission || !submission.email) return false;
-            const cfg = getMailConfig();
-            if (!cfg.serviceId || !cfg.templateId || !cfg.publicKey) return false;
+            const cfg = window.APP_EMAIL_CONFIG || {};
+            const serviceId = String(cfg.emailjsServiceId || '').trim();
+            const publicKey = String(cfg.emailjsPublicKey || '').trim();
+            let templateId;
+            if (decisionStatus === 'Approved') templateId = cfg.emailjsTemplateIdApprove;
+            else if (decisionStatus === 'Rejected') templateId = cfg.emailjsTemplateIdReject;
+            else templateId = cfg.emailjsTemplateId;
+            if (!serviceId || !templateId || !publicKey) return false;
 
             const decisionTitle = decisionStatus === 'Approved' ? '✅ تمت الموافقة على طلبك' : '❌ تم رفض طلبك';
             const reviewNoteText = reviewNote ? `\nملاحظة المراجعة: ${reviewNote}` : '';
@@ -999,9 +1005,9 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    service_id: cfg.serviceId,
-                    template_id: cfg.templateId,
-                    user_id: cfg.publicKey,
+                    service_id: serviceId,
+                    template_id: templateId,
+                    user_id: publicKey,
                     template_params: {
                         to_email: submission.email,
                         to_name: submission.name || 'مقدم الطلب',
@@ -1382,21 +1388,38 @@
     }
 
     function exportToCSV() {
-        const rows = Array.isArray(window.__currentSubmissions) ? window.__currentSubmissions : [];
-        if (!rows.length) {
-            alert('لا توجد بيانات للتصدير.');
-            return;
+        // إظهار رسالة تحميل مؤقتة
+        const exportBtn = event?.target || document.querySelector('button[onclick="exportToCSV()"]');
+        if (exportBtn) {
+            exportBtn.disabled = true;
+            exportBtn.textContent = '⏳ جاري التحميل...';
         }
 
-        const excluded = new Set(['_source', '_docId', '_localIndex']);
-        const headers = Array.from(
-            rows.reduce((set, row) => {
-                Object.keys(row).forEach((k) => {
-                    if (!excluded.has(k)) set.add(k);
-                });
-                return set;
-            }, new Set())
-        );
+        const showLoading = () => {
+            const modal = document.createElement('div');
+            modal.id = 'csvLoadingModal';
+            modal.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(255,255,255,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;font-size:22px;color:#41726a;';
+            modal.innerHTML = '<div>⏳ جاري تصدير جميع الطلبات من قاعدة البيانات...</div>';
+            document.body.appendChild(modal);
+        };
+        const hideLoading = () => {
+            const modal = document.getElementById('csvLoadingModal');
+            if (modal) modal.remove();
+        };
+        showLoading();
+
+        // الأعمدة المطلوبة بالترتيب
+        const orderedHeaders = [
+            'id',
+            'name',
+            'email',
+            'phone',
+            'department',
+            'durationFrom',
+            'durationTo',
+            'status',
+            'submittedAt'
+        ];
 
         const escapeCsv = (v) => {
             const s = String(v ?? '');
@@ -1404,25 +1427,73 @@
             return s;
         };
 
-        const lines = [headers.join(',')];
-        rows.forEach((row) => {
-            const line = headers.map((h) => {
-                const val = row[h];
-                if (val && typeof val === 'object') return escapeCsv(JSON.stringify(val));
-                return escapeCsv(val);
-            }).join(',');
-            lines.push(line);
-        });
+        // جلب كل الطلبات من Firestore
+        (async () => {
+            let rows = [];
+            if (typeof db === 'object' && db && db.collection) {
+                try {
+                    const snapshot = await db.collection('formSubmissions').get();
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        rows.push({ ...data, id: doc.id });
+                    });
+                } catch (err) {
+                    alert('تعذر جلب البيانات من Firebase. سيتم استخدام البيانات المحلية.');
+                }
+            }
+            // احتياطي: البيانات المحلية
+            if (!rows.length) {
+                const localData = JSON.parse(localStorage.getItem('formSubmissions')) || {};
+                Object.values(localData).forEach(arr => {
+                    if (Array.isArray(arr)) rows.push(...arr);
+                });
+            }
+            if (!rows.length) {
+                hideLoading();
+                if (exportBtn) {
+                    exportBtn.disabled = false;
+                    exportBtn.textContent = '📥 تصدير Excel';
+                }
+                alert('لا توجد بيانات للتصدير.');
+                return;
+            }
 
-        const blob = new Blob([`\uFEFF${lines.join('\n')}`], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `submissions-${new Date().toISOString().slice(0, 10)}.csv`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
+            // بناء الصفوف بالترتيب المطلوب
+            const lines = [orderedHeaders.join(',')];
+            rows.forEach(row => {
+                const line = orderedHeaders.map(h => {
+                    let val = row[h];
+                    if (h === 'submittedAt') {
+                        // تحويل التاريخ إلى صيغة قابلة للقراءة
+                        if (val && !isNaN(val)) {
+                            val = new Date(Number(val)).toLocaleString('ar-SA');
+                        } else if (val && typeof val === 'string') {
+                            val = val;
+                        } else {
+                            val = '';
+                        }
+                    }
+                    if (val && typeof val === 'object') return escapeCsv(JSON.stringify(val));
+                    return escapeCsv(val);
+                }).join(',');
+                lines.push(line);
+            });
+
+            hideLoading();
+            if (exportBtn) {
+                exportBtn.disabled = false;
+                exportBtn.textContent = '📥 تصدير Excel';
+            }
+            const blob = new Blob([`\uFEFF${lines.join('\n')}`], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `submissions-${new Date().toISOString().slice(0, 10)}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        })();
     }
 
     function toggleSubmissionRecord(index) {
