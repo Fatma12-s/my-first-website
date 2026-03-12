@@ -1,0 +1,7 @@
+{
+  "projects": {
+    "firebase deploy --only hosting": "squh-training"
+  },
+  "targets": {},
+  "etags": {}
+}

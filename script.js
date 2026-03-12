@@ -324,7 +324,17 @@ async function saveFormData(formName, formData) {
   cleaned.createdAt = new Date().toISOString();
   
   // إرسال إشعار بريدي (يعمل بدون انتظار)
-  sendNotificationEmail(cleaned, responsible, 'confirm');
+  // إذا كانت إعدادات البريد مكتملة فقط
+  if (
+    window.APP_EMAIL_CONFIG &&
+    window.APP_EMAIL_CONFIG.emailjsServiceId &&
+    window.APP_EMAIL_CONFIG.emailjsTemplateId &&
+    window.APP_EMAIL_CONFIG.emailjsPublicKey
+  ) {
+    sendNotificationEmail(cleaned, responsible, 'confirm');
+  } else {
+    console.warn('⚠️ لم يتم إرسال بريد: إعدادات البريد غير مكتملة');
+  }
 
   // إذا كان Firebase متاحاً، احفظ في Firestore فقط
   if (window.FIREBASE_CONFIG && window.firebase && window.firebase.firestore) {
@@ -507,10 +517,11 @@ if (contactForm) {
 
 // ===== Firebase upload helpers (optional) =====
 async function loadFirebaseSDK() {
-  if (window.firebase && window.firebase.storage) return;
+  if (window.firebase && window.firebase.storage && window.firebase.firestore) return;
   const scripts = [
     'https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js',
-    'https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js'
+    'https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js',
+    'https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js'
   ];
   for (const src of scripts) {
     await new Promise((res, rej) => {

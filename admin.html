@@ -443,7 +443,42 @@
 
                 <button onclick="exportToCSV()">📥 تصدير Excel</button>
                 <button class="clear-btn" onclick="clearAllData()">🗑️ حذف الكل</button>
+
+                <!-- زر حذف الطلبات القديمة -->
+                <input type="date" id="deleteBeforeDate" style="margin-right:8px;">
+                <button onclick="deleteOldSubmissions()" style="background:#d9534f;">🗑️ حذف الطلبات قبل التاريخ</button>
             </div>
+            // حذف الطلبات القديمة من Firestore
+            async function deleteOldSubmissions() {
+                const dateInput = document.getElementById('deleteBeforeDate');
+                const beforeDate = dateInput?.value;
+                if (!beforeDate) {
+                    alert('يرجى اختيار التاريخ أولاً.');
+                    return;
+                }
+                if (!db) {
+                    alert('قاعدة البيانات غير متاحة حالياً.');
+                    return;
+                }
+                const confirmed = confirm('سيتم حذف جميع الطلبات المقدمة قبل ' + beforeDate + '. هل أنت متأكد؟');
+                if (!confirmed) return;
+                try {
+                    // جلب الطلبات القديمة
+                    const query = db.collection('formSubmissions').where('submittedAt', '<', beforeDate);
+                    const snapshot = await query.get();
+                    if (snapshot.empty) {
+                        alert('لا توجد طلبات قديمة بهذا التاريخ.');
+                        return;
+                    }
+                    const batch = db.batch();
+                    snapshot.forEach(doc => batch.delete(doc.ref));
+                    await batch.commit();
+                    alert('تم حذف جميع الطلبات القديمة بنجاح.');
+                    await loadSubmissions();
+                } catch (err) {
+                    alert('حدث خطأ أثناء الحذف: ' + err);
+                }
+            }
         </div>
 
         <!-- تم إخفاء رسالة مصدر البيانات الحالي بناءً على طلب المستخدم -->

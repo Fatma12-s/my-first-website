@@ -3,7 +3,9 @@
 
 window.APP_EMAIL_CONFIG = {
   emailjsServiceId: "service_bzfkj3q",
-  emailjsTemplateId: "template_ihph0ia",
+  emailjsTemplateIdConfirm: "template_confirm", // قالب تأكيد الاستلام
+  emailjsTemplateIdApprove: "template_approve", // قالب الموافقة
+  emailjsTemplateIdReject: "template_reject",   // قالب الرفض
   emailjsPublicKey: "XIbn_hYrfaNHp7Z0F",
   sendApplicantCopy: true,
 
