@@ -109,7 +109,7 @@ function assignResponsible(formName) {
 }
 
 // ===== إرسال إشعار بريدي (EmailJS أساسي) =====
-async function sendNotificationEmail(applicantData, responsible) {
+async function sendNotificationEmail(applicantData, responsible, templateType = 'confirm') {
   try {
     const mailConfig = getMailConfig();
     const applicantName = applicantData.name || applicantData.fullName || applicantData.applicantName || 'متقدم';
@@ -128,6 +128,13 @@ async function sendNotificationEmail(applicantData, responsible) {
       `رقم الطلب: ${submissionId}\n` +
       `التاريخ: ${submittedAt}\n` +
       (freeTextMessage ? `الرسالة/الملاحظات: ${freeTextMessage}` : '');
+
+    // اختيار قالب البريد حسب النوع
+    let templateId;
+    if (templateType === 'confirm') templateId = mailConfig.emailjsTemplateIdConfirm;
+    else if (templateType === 'approve') templateId = mailConfig.emailjsTemplateIdApprove;
+    else if (templateType === 'reject') templateId = mailConfig.emailjsTemplateIdReject;
+    else templateId = mailConfig.emailjsTemplateId;
 
     const sendViaSendGrid = async () => {
       if (!mailConfig.sendgridApiKey || !mailConfig.sendgridFromEmail) {
@@ -179,56 +186,56 @@ async function sendNotificationEmail(applicantData, responsible) {
     };
 
     const sendViaEmailJs = async () => {
-      if (!mailConfig.emailjsServiceId || !mailConfig.emailjsTemplateId || !mailConfig.emailjsPublicKey) {
+      if (!mailConfig.emailjsServiceId || !templateId || !mailConfig.emailjsPublicKey) {
         return false;
       }
 
       const sendOne = async (targetEmail, targetName, subjectPrefix) => {
-      const finalSubject = `${subjectPrefix} - ${applicantName}`;
-      const payload = {
-        service_id: mailConfig.emailjsServiceId,
-        template_id: mailConfig.emailjsTemplateId,
-        user_id: mailConfig.emailjsPublicKey,
-        template_params: {
-          // مفاتيح أساسية
-          to_email: targetEmail,
-          to_name: targetName,
-          subject: finalSubject,
-          from_name: 'دائرة التدريب والتطوير المهني',
+        const finalSubject = `${subjectPrefix} - ${applicantName}`;
+        const payload = {
+          service_id: mailConfig.emailjsServiceId,
+          template_id: templateId,
+          user_id: mailConfig.emailjsPublicKey,
+          template_params: {
+            // مفاتيح أساسية
+            to_email: targetEmail,
+            to_name: targetName,
+            subject: finalSubject,
+            from_name: 'دائرة التدريب والتطوير المهني',
 
-          // مفاتيح المشروع الحالية
-          applicant_name: applicantName,
-          applicant_email: applicantEmail,
-          applicant_phone: applicantPhone,
-          form_type: formType,
-          submission_id: submissionId,
-          submitted_at: submittedAt,
-          message_text: detailsText,
+            // مفاتيح المشروع الحالية
+            applicant_name: applicantName,
+            applicant_email: applicantEmail,
+            applicant_phone: applicantPhone,
+            form_type: formType,
+            submission_id: submissionId,
+            submitted_at: submittedAt,
+            message_text: detailsText,
 
-          // مفاتيح fallback لقوالب EmailJS الافتراضية
-          title: finalSubject,
-          name: applicantName,
-          email: applicantEmail,
-          phone: applicantPhone,
-          time: submittedAt,
-          message: detailsText,
-          details: detailsText,
-          reply_to: applicantEmail
+            // مفاتيح fallback لقوالب EmailJS الافتراضية
+            title: finalSubject,
+            name: applicantName,
+            email: applicantEmail,
+            phone: applicantPhone,
+            time: submittedAt,
+            message: detailsText,
+            details: detailsText,
+            reply_to: applicantEmail
+          }
+        };
+
+        const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`EmailJS ${response.status}: ${errorText}`);
         }
-      };
-
-      const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`EmailJS ${response.status}: ${errorText}`);
-      }
       };
 
       await sendOne(responsible.email, responsible.name, '🔔 طلب جديد يحتاج مراجعة');
@@ -317,9 +324,9 @@ async function saveFormData(formName, formData) {
   cleaned.createdAt = new Date().toISOString();
   
   // إرسال إشعار بريدي (يعمل بدون انتظار)
-  sendNotificationEmail(cleaned, responsible);
+  sendNotificationEmail(cleaned, responsible, 'confirm');
 
-  // إذا كان Firebase متاحاً، احفظ في Firestore
+  // إذا كان Firebase متاحاً، احفظ في Firestore فقط
   if (window.FIREBASE_CONFIG && window.firebase && window.firebase.firestore) {
     try {
       const result = await withTimeout(
@@ -330,16 +337,13 @@ async function saveFormData(formName, formData) {
       return { success: true, data: cleaned };
     } catch (e) {
       console.error('Firebase Error:', e);
-      // المتابعة مع localStorage كبديل
+      alert('⚠️ حدث خطأ أثناء الحفظ في قاعدة البيانات. يرجى إعادة المحاولة أو التواصل مع الدعم.');
+      return { success: false, error: 'firebase error' };
     }
+  } else {
+    alert('⚠️ لا يمكن حفظ الطلب: قاعدة البيانات غير متاحة حالياً. يرجى التواصل مع الدعم أو إعادة المحاولة لاحقاً.');
+    return { success: false, error: 'firebase unavailable' };
   }
-
-  // احفظ محلياً (Firebase متعطل أو غير متوفر)
-  let allSubmissions = JSON.parse(localStorage.getItem('formSubmissions')) || {};
-  if (!allSubmissions[formName]) allSubmissions[formName] = [];
-  allSubmissions[formName].push(cleaned);
-  localStorage.setItem('formSubmissions', JSON.stringify(allSubmissions));
-  return { success: true, data: cleaned, local: true };
 }
 
 // ===== استمارة تدريب الطلاب والخريجين =====
