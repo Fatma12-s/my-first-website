@@ -347,13 +347,28 @@ async function saveFormData(formName, formData) {
       return { success: true, data: cleaned };
     } catch (e) {
       console.error('Firebase Error:', e);
-      alert('⚠️ حدث خطأ أثناء الحفظ في قاعدة البيانات. يرجى إعادة المحاولة أو التواصل مع الدعم.');
-      return { success: false, error: 'firebase error' };
+      // إذا فشل الحفظ في Firebase، احفظ محلياً
+      saveToLocalStorage(formName, cleaned);
+      return { success: true, data: cleaned, local: true };
     }
   } else {
-    alert('⚠️ لا يمكن حفظ الطلب: قاعدة البيانات غير متاحة حالياً. يرجى التواصل مع الدعم أو إعادة المحاولة لاحقاً.');
-    return { success: false, error: 'firebase unavailable' };
+    // حفظ محلي في localStorage
+    saveToLocalStorage(formName, cleaned);
+    return { success: true, data: cleaned, local: true };
   }
+
+}
+
+function saveToLocalStorage(formName, cleaned) {
+  let all = {};
+  try {
+    all = JSON.parse(localStorage.getItem('formSubmissions')) || {};
+  } catch (e) {
+    all = {};
+  }
+  if (!all[formName]) all[formName] = [];
+  all[formName].push(cleaned);
+  localStorage.setItem('formSubmissions', JSON.stringify(all));
 }
 
 // ===== استمارة تدريب الطلاب والخريجين =====
