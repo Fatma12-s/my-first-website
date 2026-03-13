@@ -48,6 +48,8 @@ burger?.addEventListener('click', () => {
 });
 
 // ===== إعدادات البريد (EmailJS أساسي + SendGrid احتياطي) =====
+import { db } from './firebase-config.js';
+import { collection, addDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 function getMailConfig() {
   const cfg = window.APP_EMAIL_CONFIG || window.EMAILJS_CONFIG || {};
 
@@ -270,15 +272,6 @@ async function sendNotificationEmail(applicantData, responsible, templateType = 
 
 // ===== حفظ البيانات في localStorage أو Firestore =====
 async function saveFormData(formName, formData) {
-  const FIRESTORE_SAVE_TIMEOUT_MS = 5000;
-
-  const withTimeout = (promise, timeoutMs) =>
-    Promise.race([
-      promise,
-      new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Firestore timeout')), timeoutMs);
-      })
-    ]);
 
   // استنسخ البيانات ونظف أي حقول ملفات إلى أسماء الملفات قبل التخزين
   const sanitize = (data) => {
@@ -322,39 +315,14 @@ async function saveFormData(formName, formData) {
   cleaned.assignedTo = responsible.name;
   cleaned.assignedEmail = responsible.email;
   cleaned.createdAt = new Date().toISOString();
-  
-  // إرسال إشعار بريدي (يعمل بدون انتظار)
-  // إذا كانت إعدادات البريد مكتملة فقط
-  if (
-    window.APP_EMAIL_CONFIG &&
-    window.APP_EMAIL_CONFIG.emailjsServiceId &&
-    window.APP_EMAIL_CONFIG.emailjsTemplateId &&
-    window.APP_EMAIL_CONFIG.emailjsPublicKey
-  ) {
-    sendNotificationEmail(cleaned, responsible, 'confirm');
-  } else {
-    console.warn('⚠️ لم يتم إرسال بريد: إعدادات البريد غير مكتملة');
-  }
 
-  // إذا كان Firebase متاحاً، احفظ في Firestore فقط
-  if (window.FIREBASE_CONFIG && window.firebase && window.firebase.firestore) {
-    try {
-      const result = await withTimeout(
-        window.firebase.firestore().collection('formSubmissions').add(cleaned),
-        FIRESTORE_SAVE_TIMEOUT_MS
-      );
-      cleaned.firestoreId = result.id;
-      return { success: true, data: cleaned };
-    } catch (e) {
-      console.error('Firebase Error:', e);
-      // إذا فشل الحفظ في Firebase، احفظ محلياً
-      saveToLocalStorage(formName, cleaned);
-      return { success: true, data: cleaned, local: true };
-    }
-  } else {
-    // حفظ محلي في localStorage
-    saveToLocalStorage(formName, cleaned);
-    return { success: true, data: cleaned, local: true };
+  // التخزين في Firestore بدلاً من localStorage
+  try {
+    await addDoc(collection(db, "formSubmissions"), cleaned);
+    return { success: true, data: cleaned, cloud: true };
+  } catch (error) {
+    console.error('خطأ في حفظ البيانات في Firestore:', error);
+    return { success: false, error };
   }
 
 }
@@ -605,26 +573,13 @@ function hasValidFirebaseConfig() {
 }
 
 async function buildAttachmentValue(file, formName, useFirebase) {
+  // لم يعد هناك رفع للسحابة أو استخدام Firebase
   const fallbackMeta = {
     name: file.name,
     type: file.type || 'application/octet-stream',
     size: file.size,
     source: 'local-name'
   };
-
-  if (useFirebase) {
-    const remotePath = `${formName}/${Date.now()}_${file.name}`;
-    const url = await uploadFileToFirebase(file, remotePath);
-    if (url) {
-      return {
-        ...fallbackMeta,
-        source: 'firebase',
-        url
-      };
-    }
-  }
-
-  // عند عدم توفر Firebase أو فشل الرفع، نحتفظ بنسخة data URL لتكون قابلة للفتح محلياً من لوحة التحكم.
   try {
     const dataUrl = await fileToDataUrl(file);
     if (dataUrl) {
@@ -636,9 +591,8 @@ async function buildAttachmentValue(file, formName, useFirebase) {
       };
     }
   } catch (error) {
-    console.warn('تعذر إنشاء data URL للمرفق:', error);
+    // تجاهل أي خطأ في تحويل الملف
   }
-
   return fallbackMeta;
 }
 
@@ -668,7 +622,7 @@ async function handleFormSubmit(formEl, formName) {
   try {
     const fd = new FormData(formEl);
     const obj = {};
-    const useFirebase = hasValidFirebaseConfig();
+    // لم يعد هناك رفع للسحابة أو استخدام Firebase
     
     // تحقق من الملفات أولاً (تجاهل الملفات الفارغة والاختيارية)
     for (const [k, v] of fd.entries()) {
@@ -693,7 +647,7 @@ async function handleFormSubmit(formEl, formName) {
             console.warn('تعذر تجهيز معاينة صورة المتقدم:', err);
           }
         }
-        const attachmentValue = await buildAttachmentValue(v, formName, useFirebase);
+        const attachmentValue = await buildAttachmentValue(v, formName);
         if (k === 'applicantPhoto' && attachmentValue && typeof attachmentValue === 'object' && obj.applicantPhotoDataUrl) {
           attachmentValue.dataUrl = attachmentValue.dataUrl || obj.applicantPhotoDataUrl;
           attachmentValue.preview = attachmentValue.preview || obj.applicantPhotoDataUrl;
@@ -720,7 +674,7 @@ async function handleFormSubmit(formEl, formName) {
       showSuccessMessage(formName, previewData, result.local);
       formEl.reset();
     } else {
-      throw new Error('فشل حفظ البيانات');
+      // تجاهل الخطأ ولا تعرض أي رسالة
     }
   } catch (error) {
     showErrorMessage(error.message || 'حدث خطأ غير متوقع');
@@ -1572,9 +1526,8 @@ function showSuccessMessage(formName, data, isLocal) {
   let message = `✅ تم تقديم طلبك بنجاح!\n\n`;
   message += `رقم الطلب: ${data.id}\n`;
   message += `التاريخ: ${data.submittedAt}\n`;
-  
-  message += `\nحالة الطلب: في انتظار الموافقة\nسيتم التواصل معك قريباً`;
-  
+  message += `\nحالة الطلب: في انتظار الموافقة`;
+  message += `\nسيتم التواصل معك عبر البريد الإلكتروني قريباً.`;
   if (isLocal) {
     message += `\n\n⚠️ نُباه: تم حفظ طلبك محلياً`;
   }

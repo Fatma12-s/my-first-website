@@ -1,5 +1,5 @@
-// ملف إعدادات Firebase
-// ضع بيانات الربط هنا
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDmNC9-8sRAHGqGSC9r_Zr3mk97tu3RFgc",
@@ -11,3 +11,5 @@ const firebaseConfig = {
   measurementId: "G-NNKT4PCV5T"
 };
 
+export const app = initializeApp(firebaseConfig);
+export const db = getFirestore(app);
