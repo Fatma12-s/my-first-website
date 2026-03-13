@@ -272,6 +272,29 @@ async function sendNotificationEmail(applicantData, responsible, templateType = 
 
 // ===== حفظ البيانات في localStorage أو Firestore =====
 async function saveFormData(formName, formData) {
+  // رفع جميع المرفقات إلى Firebase Storage وحفظ روابطها
+  const uploadAttachment = async (file, fieldName, cleaned) => {
+    if (file && file instanceof File) {
+      try {
+        const storageRef = firebase.storage().ref();
+        const attachRef = storageRef.child(`attachments/${cleaned.id}_${fieldName}_${file.name}`);
+        await attachRef.put(file);
+        const url = await attachRef.getDownloadURL();
+        cleaned[fieldName + 'URL'] = url;
+      } catch (err) {
+        console.error('خطأ في رفع المرفق:', fieldName, err);
+        cleaned[fieldName + 'URL'] = '';
+      }
+    }
+  };
+
+  // قائمة الحقول التي قد تحتوي ملفات
+  const attachmentFields = ['applicantPhoto', 'cvFile', 'universityLetter', 'idCardCopy', 'otherAttachments'];
+  for (const field of attachmentFields) {
+    if (formData[field] && formData[field] instanceof File) {
+      await uploadAttachment(formData[field], field, cleaned);
+    }
+  }
 
   // استنسخ البيانات ونظف أي حقول ملفات إلى أسماء الملفات قبل التخزين
   const sanitize = (data) => {
@@ -444,13 +467,16 @@ if (graduatesForm) {
     return data;
   };
 
-  const previewDemoPdfBtn = document.getElementById('previewDemoPdfBtn');
-  if (previewDemoPdfBtn) {
-    previewDemoPdfBtn.addEventListener('click', async () => {
-      const previewData = await buildGraduatesDemoPreviewData();
-      openSubmissionPrintPreview('graduates', previewData);
-    });
-  }
+  // تفعيل زر معاينة PDF التجريبية بشكل مؤكد
+  document.addEventListener('DOMContentLoaded', () => {
+    const previewDemoPdfBtn = document.getElementById('previewDemoPdfBtn');
+    if (previewDemoPdfBtn) {
+      previewDemoPdfBtn.onclick = async () => {
+        const previewData = await buildGraduatesDemoPreviewData();
+        openSubmissionPrintPreview('graduates', previewData);
+      };
+    }
+  });
 }
 
 // ===== استمارة البرامج الداخلية - الموظفين =====
