@@ -700,7 +700,7 @@ async function handleFormSubmit(formEl, formName) {
       showSuccessMessage(formName, previewData, result.local);
       formEl.reset();
     } else {
-      // تجاهل الخطأ ولا تعرض أي رسالة
+      showErrorMessage('حدث خطأ أثناء حفظ الطلب، يرجى المحاولة مرة أخرى. لم يتم تفريغ البيانات.');
     }
   } catch (error) {
     showErrorMessage(error.message || 'حدث خطأ غير متوقع');
