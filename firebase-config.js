@@ -19,10 +19,10 @@ function loadFirebaseScripts(callback) {
     return;
   }
   const scriptApp = document.createElement('script');
-  scriptApp.src = "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+  scriptApp.src = "https://www.gstatic.com/firebasejs/11.0.1/firebase-app-compat.js";
   scriptApp.onload = () => {
     const scriptFirestore = document.createElement('script');
-    scriptFirestore.src = "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+    scriptFirestore.src = "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore-compat.js";
     scriptFirestore.onload = callback;
     scriptFirestore.onerror = () => {
       console.error("فشل تحميل مكتبة Firestore.");
