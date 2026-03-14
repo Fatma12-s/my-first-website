@@ -299,29 +299,13 @@ async function saveFormData(formName, formData) {
   cleaned.id = Date.now();
   cleaned.formType = formName;
 
-  // رفع جميع المرفقات إلى Firebase Storage وحفظ روابطها
-  const uploadAttachment = async (file, fieldName) => {
-    if (file && file instanceof File) {
-      try {
-        const storageRef = firebase.storage().ref();
-        const attachRef = storageRef.child(`attachments/${cleaned.id}_${fieldName}_${file.name}`);
-        await attachRef.put(file);
-        const url = await attachRef.getDownloadURL();
-        cleaned[fieldName + 'URL'] = url;
-        // طباعة رابط التحميل بشكل واضح
-        console.log(`رابط التحميل من Firebase (${fieldName}):`, url);
-      } catch (err) {
-        console.error('خطأ في رفع المرفق:', fieldName, err);
-        cleaned[fieldName + 'URL'] = '';
-      }
-    }
-  };
-
-  // قائمة الحقول التي قد تحتوي ملفات
-  const attachmentFields = ['applicantPhoto', 'cvFile', 'universityLetter', 'idCardCopy', 'otherAttachments'];
+  // رفع المرفقات إلى Firebase Storage
+  const attachmentFields = ['applicantPhoto', 'cv', 'idCard', 'universityLetter', 'otherAttachment'];
   for (const field of attachmentFields) {
     if (formData[field] && formData[field] instanceof File) {
-      await uploadAttachment(formData[field], field);
+      await window.fileUpload.uploadAttachment(formData[field], field, cleaned);
+      // بعد الرفع، يتم حفظ رابط الملف في cleaned[field+'URL']
+      cleaned[field] = undefined; // لا تحفظ الملف نفسه
     }
   }
 
@@ -334,7 +318,7 @@ async function saveFormData(formName, formData) {
       cleaned.duration = from && to ? `${from} -> ${to}` : from || to || '';
     }
   }
-  
+
   // إضافة نظام الحالات والتعيين التلقائي
   cleaned.status = 'Pending'; // Pending, Approved, Rejected
   const responsible = assignResponsible(formName);
@@ -342,20 +326,22 @@ async function saveFormData(formName, formData) {
   cleaned.assignedEmail = responsible.email;
   cleaned.createdAt = new Date().toISOString();
 
-  // التخزين في Firestore بدلاً من localStorage
-  try {
-    // استخدام دوال Firestore المتوافقة مع المتصفح
-    if (window.firebase && window.firebase.firestore) {
-      await window.firebase.firestore().collection("formSubmissions").add(cleaned);
-      return { success: true, data: cleaned, cloud: true };
-    } else {
-      throw new Error('Firebase Firestore غير متوفر');
+  // حفظ في Firestore
+  if (window.db) {
+    try {
+      await window.db.collection('formSubmissions').add(cleaned);
+      console.log('✅ تم حفظ الطلب في Firestore مع روابط المرفقات');
+      return { success: true, data: cleaned, firestore: true };
+    } catch (err) {
+      console.error('❌ خطأ في حفظ البيانات في Firestore:', err);
+      // fallback: حفظ محلي
+      saveToLocalStorage(formName, cleaned);
+      return { success: false, error: err, local: true };
     }
-  } catch (error) {
-    console.error('خطأ في حفظ البيانات في Firestore:', error);
-    return { success: false, error };
+  } else {
+    saveToLocalStorage(formName, cleaned);
+    return { success: true, data: cleaned, local: true };
   }
-
 }
 
 function saveToLocalStorage(formName, cleaned) {
