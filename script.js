@@ -1,5 +1,8 @@
 // ===== إضافة مؤشرات البدء لحقول الملفات =====
 document.addEventListener('DOMContentLoaded', () => {
+  // لمسح التخزين المؤقت مرة واحدة لاختبار نظيف
+  localStorage.clear();
+  sessionStorage.clear();
   // البحث عن جميع حقول الملفات وإضافة عرض للملف المختار
   document.querySelectorAll('input[type="file"]').forEach(fileInput => {
     fileInput.addEventListener('change', (e) => {
@@ -604,26 +607,18 @@ function hasValidFirebaseConfig() {
 
 async function buildAttachmentValue(file, formName, useFirebase) {
   // لم يعد هناك رفع للسحابة أو استخدام Firebase
-  const fallbackMeta = {
+  const meta = {
     name: file.name,
     type: file.type || 'application/octet-stream',
     size: file.size,
     source: 'local-name'
   };
-  try {
-    const dataUrl = await fileToDataUrl(file);
-    if (dataUrl) {
-      return {
-        ...fallbackMeta,
-        source: 'inline-data',
-        dataUrl,
-        preview: dataUrl
-      };
-    }
-  } catch (error) {
-    // تجاهل أي خطأ في تحويل الملف
+  // إذا كان هناك رابط تحميل في cleaned، أضفه
+  if (window.fileUpload && typeof window.fileUpload.getAttachmentUrl === 'function') {
+    const url = await window.fileUpload.getAttachmentUrl(file, formName);
+    if (url) meta.url = url;
   }
-  return fallbackMeta;
+  return meta;
 }
 
 function fileToDataUrl(file) {
@@ -1514,14 +1509,14 @@ function openSubmissionPrintPreview(formName, data) {
   const previewStorageKey = `printPreviewHtml:${previewToken}`;
 
   try {
-    sessionStorage.setItem(previewStorageKey, html);
-    const previewUrl = `print-preview.html?token=${encodeURIComponent(previewToken)}`;
-    const previewWindow = window.open(previewUrl, '_blank');
+      // إنشاء Blob من الـ HTML
+      const blob = new Blob([html], { type: 'text/html' });
+      const blobUrl = URL.createObjectURL(blob);
+      const previewWindow = window.open(blobUrl, '_blank');
 
     if (!previewWindow) {
-      sessionStorage.removeItem(previewStorageKey);
-      printHtmlWithIframe(html);
-      alert('تعذر فتح صفحة المعاينة في تبويب جديد. تم فتح المعاينة داخل الصفحة الحالية.');
+        printHtmlWithIframe(html);
+        alert('تعذر فتح صفحة المعاينة في تبويب جديد. تم فتح المعاينة داخل الصفحة الحالية.');
     }
   } catch (err) {
     console.error('تعذر تجهيز صفحة المعاينة المنفصلة:', err);
