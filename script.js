@@ -352,7 +352,17 @@ function saveToLocalStorage(formName, cleaned) {
     all = {};
   }
   if (!all[formName]) all[formName] = [];
-  all[formName].push(cleaned);
+
+  // حذف أي روابط أو بيانات كبيرة قبل الحفظ
+  const smallCleaned = {};
+  for (const [k, v] of Object.entries(cleaned)) {
+    if (typeof v === 'string' && v.length < 1000) {
+      smallCleaned[k] = v;
+    }
+    // تجاهل أي بيانات كبيرة أو روابط
+  }
+
+  all[formName].push(smallCleaned);
   localStorage.setItem('formSubmissions', JSON.stringify(all));
 }
 
