@@ -272,32 +272,6 @@ async function sendNotificationEmail(applicantData, responsible, templateType = 
 
 // ===== حفظ البيانات في localStorage أو Firestore =====
 async function saveFormData(formName, formData) {
-  // رفع جميع المرفقات إلى Firebase Storage وحفظ روابطها
-  const uploadAttachment = async (file, fieldName, cleaned) => {
-    if (file && file instanceof File) {
-      try {
-        const storageRef = firebase.storage().ref();
-        const attachRef = storageRef.child(`attachments/${cleaned.id}_${fieldName}_${file.name}`);
-        await attachRef.put(file);
-        const url = await attachRef.getDownloadURL();
-        cleaned[fieldName + 'URL'] = url;
-        // طباعة رابط التحميل بشكل واضح
-        console.log(`رابط التحميل من Firebase (${fieldName}):`, url);
-      } catch (err) {
-        console.error('خطأ في رفع المرفق:', fieldName, err);
-        cleaned[fieldName + 'URL'] = '';
-      }
-    }
-  };
-
-  // قائمة الحقول التي قد تحتوي ملفات
-  const attachmentFields = ['applicantPhoto', 'cvFile', 'universityLetter', 'idCardCopy', 'otherAttachments'];
-  for (const field of attachmentFields) {
-    if (formData[field] && formData[field] instanceof File) {
-      await uploadAttachment(formData[field], field, cleaned);
-    }
-  }
-
   // استنسخ البيانات ونظف أي حقول ملفات إلى أسماء الملفات قبل التخزين
   const sanitize = (data) => {
     const out = {};
@@ -318,11 +292,38 @@ async function saveFormData(formName, formData) {
     return out;
   };
 
+  // تعريف cleaned قبل رفع المرفقات
   const cleaned = sanitize(formData);
   cleaned.submittedAt = new Date().toLocaleString('ar-SA');
   cleaned.submittedAtISO = new Date().toISOString();
   cleaned.id = Date.now();
   cleaned.formType = formName;
+
+  // رفع جميع المرفقات إلى Firebase Storage وحفظ روابطها
+  const uploadAttachment = async (file, fieldName) => {
+    if (file && file instanceof File) {
+      try {
+        const storageRef = firebase.storage().ref();
+        const attachRef = storageRef.child(`attachments/${cleaned.id}_${fieldName}_${file.name}`);
+        await attachRef.put(file);
+        const url = await attachRef.getDownloadURL();
+        cleaned[fieldName + 'URL'] = url;
+        // طباعة رابط التحميل بشكل واضح
+        console.log(`رابط التحميل من Firebase (${fieldName}):`, url);
+      } catch (err) {
+        console.error('خطأ في رفع المرفق:', fieldName, err);
+        cleaned[fieldName + 'URL'] = '';
+      }
+    }
+  };
+
+  // قائمة الحقول التي قد تحتوي ملفات
+  const attachmentFields = ['applicantPhoto', 'cvFile', 'universityLetter', 'idCardCopy', 'otherAttachments'];
+  for (const field of attachmentFields) {
+    if (formData[field] && formData[field] instanceof File) {
+      await uploadAttachment(formData[field], field);
+    }
+  }
 
   // توافق مع النسخة السابقة: حفظ حقول Section 2 بأسماء مفهومة للوحة الموافقات.
   if (formName === 'graduates') {
@@ -343,8 +344,13 @@ async function saveFormData(formName, formData) {
 
   // التخزين في Firestore بدلاً من localStorage
   try {
-    await addDoc(collection(db, "formSubmissions"), cleaned);
-    return { success: true, data: cleaned, cloud: true };
+    // استخدام دوال Firestore المتوافقة مع المتصفح
+    if (window.firebase && window.firebase.firestore) {
+      await window.firebase.firestore().collection("formSubmissions").add(cleaned);
+      return { success: true, data: cleaned, cloud: true };
+    } else {
+      throw new Error('Firebase Firestore غير متوفر');
+    }
   } catch (error) {
     console.error('خطأ في حفظ البيانات في Firestore:', error);
     return { success: false, error };
