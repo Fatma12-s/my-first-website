@@ -281,6 +281,8 @@ async function saveFormData(formName, formData) {
         await attachRef.put(file);
         const url = await attachRef.getDownloadURL();
         cleaned[fieldName + 'URL'] = url;
+        // طباعة رابط التحميل بشكل واضح
+        console.log(`رابط التحميل من Firebase (${fieldName}):`, url);
       } catch (err) {
         console.error('خطأ في رفع المرفق:', fieldName, err);
         cleaned[fieldName + 'URL'] = '';
