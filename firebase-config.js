@@ -1,4 +1,3 @@
-
 // تحميل مكتبات Firebase عبر CDN
 const firebaseConfig = {
   apiKey: "AIzaSyDmNC9-8sRAHGqGSC9r_Zr3mk97tu3RFgc",
@@ -10,39 +9,48 @@ const firebaseConfig = {
   measurementId: "G-NNKT4PCV5T"
 };
 
-// تحميل مكتبات Firebase إذا لم تكن موجودة
-if (!window.firebase) {
+// تعريف إعدادات Firebase على window
+window.FIREBASE_CONFIG = firebaseConfig;
+
+// دالة لتحميل مكتبات Firebase عبر CDN
+function loadFirebaseScripts(callback) {
+  if (window.firebase && window.firebase.initializeApp) {
+    callback();
+    return;
+  }
   const scriptApp = document.createElement('script');
   scriptApp.src = "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+  scriptApp.onload = () => {
+    const scriptFirestore = document.createElement('script');
+    scriptFirestore.src = "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+    scriptFirestore.onload = callback;
+    scriptFirestore.onerror = () => {
+      console.error("فشل تحميل مكتبة Firestore.");
+    };
+    document.head.appendChild(scriptFirestore);
+  };
+  scriptApp.onerror = () => {
+    console.error("فشل تحميل مكتبة Firebase App.");
+  };
   document.head.appendChild(scriptApp);
-  const scriptFirestore = document.createElement('script');
-  scriptFirestore.src = "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-  document.head.appendChild(scriptFirestore);
-  scriptFirestore.onload = initFirebase; // Ensure initFirebase runs after Firestore is loaded
 }
 
-
-// تهيئة التطبيق وقاعدة البيانات بعد تحميل المكتبات
-// تعريف إعدادات Firebase على window
-window.FIREBASE_CONFIG = {
-  apiKey: "AIzaSyDmNC9-8sRAHGqGSC9r_Zr3mk97tu3RFgc",
-  authDomain: "squh-training.firebaseapp.com",
-  projectId: "squh-training",
-  storageBucket: "squh-training.appspot.com",
-  messagingSenderId: "1064112237940",
-  appId: "1:1064112237940:web:94905f060413b97ad6d021",
-  measurementId: "G-NNKT4PCV5T"
-};
+// تحميل المكتبات ثم التهيئة
+loadFirebaseScripts(initFirebase);
 
 // تهيئة التطبيق وقاعدة البيانات
 function initFirebase() {
-  if (window.firebase && window.firebase.initializeApp) {
-    if (!window.firebase.apps || !window.firebase.apps.length) {
-      window.firebase.initializeApp(window.FIREBASE_CONFIG);
+  try {
+    if (window.firebase && window.firebase.initializeApp) {
+      if (!window.firebase.apps || !window.firebase.apps.length) {
+        window.firebase.initializeApp(window.FIREBASE_CONFIG);
+      }
+      window.db = window.firebase.firestore();
+      console.log("تم تهيئة Firebase بنجاح.");
+    } else {
+      console.error("Firebase غير متوفر بعد تحميل المكتبات.");
     }
-    window.db = window.firebase.firestore();
+  } catch (e) {
+    console.error("حدث خطأ أثناء تهيئة Firebase:", e);
   }
 }
-
-// انتظر تحميل المكتبات ثم نفذ التهيئة
-// لا حاجة لاستخدام setTimeout، سيتم استدعاء initFirebase بعد تحميل المكتبات
