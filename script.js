@@ -533,11 +533,12 @@ if (contactForm) {
 
 // ===== Firebase upload helpers (optional) =====
 async function loadFirebaseSDK() {
-  if (window.firebase && window.firebase.storage && window.firebase.firestore) return;
+  // تحميل مكتبات Firebase Modular
+  if (window.firebaseModularLoaded) return;
   const scripts = [
-    'https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js',
-    'https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js',
-    'https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js'
+    'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js',
+    'https://www.gstatic.com/firebasejs/9.22.1/firebase-storage.js',
+    'https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js'
   ];
   for (const src of scripts) {
     await new Promise((res, rej) => {
@@ -548,49 +549,40 @@ async function loadFirebaseSDK() {
       document.head.appendChild(s);
     });
   }
+  window.firebaseModularLoaded = true;
 }
 
 async function ensureFirebase() {
   if (!window.FIREBASE_CONFIG) return false;
-  if (!window.firebase || !window.firebase.apps || !window.firebase.apps.length) {
-    await loadFirebaseSDK();
+  await loadFirebaseSDK();
+  if (!window.firebaseApp) {
     try {
-      window.firebase.initializeApp(window.FIREBASE_CONFIG);
+      window.firebaseApp = window.firebase.initializeApp(window.FIREBASE_CONFIG);
     } catch (err) {
       // ignore if already initialized
+      window.firebaseApp = window.firebase.getApp();
     }
   }
-  return !!(window.firebase && window.firebase.storage);
+  return !!window.firebaseApp;
 }
 
 async function uploadFileToFirebase(file, remotePath) {
   if (!file || !file.name) return null;
-  
   try {
     const ok = await ensureFirebase();
     if (!ok) {
       console.warn('Firebase Storage not available');
       return null;
     }
-    
-    if (!window.firebase || !window.firebase.storage) {
-      console.warn('Firebase Storage SDK not loaded');
-      return null;
-    }
-
-    const storageRef = window.firebase.storage().ref();
-    const ref = storageRef.child(remotePath);
-    
-    // رفع الملف مع مراقبة التقدم
-    const snapshot = await ref.put(file);
-    
-    // احصل على رابط التحميل
-    const url = await snapshot.ref.getDownloadURL();
+    // استخدام نظام modular
+    const storage = window.firebase.storage.getStorage();
+    const ref = window.firebase.storage.ref(storage, remotePath);
+    const snapshot = await window.firebase.storage.uploadBytes(ref, file);
+    const url = await window.firebase.storage.getDownloadURL(ref);
     console.log(`✅ File uploaded: ${remotePath}`);
     return url;
   } catch (error) {
     console.error(`Failed to upload file to Firebase:`, error);
-    // إذا فشل Firebase، سيعود handleFormSubmit إلى حفظ اسم الملف فقط
     return null;
   }
 }
