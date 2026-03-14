@@ -48,8 +48,8 @@ burger?.addEventListener('click', () => {
 });
 
 // ===== إعدادات البريد (EmailJS أساسي + SendGrid احتياطي) =====
-import { db } from './firebase-config.js';
-import { collection, addDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+// استخدام window.db و window.firebase مباشرة
+// يجب تعريف window.db في firebase-config.js
 function getMailConfig() {
   const cfg = window.APP_EMAIL_CONFIG || window.EMAILJS_CONFIG || {};
 
