@@ -1697,3 +1697,14 @@ function showErrorMessage(message) {
   container.appendChild(overlay);
   container.appendChild(modal);
 }
+
+// تحديث التوكن بعد تعيين claim
+// تحديث التوكن بعد تعيين claim (للمتصفح)
+const auth = window.firebase && window.firebase.auth && window.firebase.auth();
+if (auth && auth.currentUser) {
+  auth.currentUser.getIdToken(true).then(() => {
+    auth.currentUser.getIdTokenResult().then(tokenResult => {
+      console.log(tokenResult.claims.admin); // true إذا تم تعيين claim
+    });
+  });
+}
