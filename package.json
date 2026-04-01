@@ -4,7 +4,7 @@
   "description": "",
   "main": "firebase-config.example.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node tests/validate.test.js"
   },
   "repository": {
     "type": "git",
