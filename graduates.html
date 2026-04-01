@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>طلبات الخريجين</title>
+  <style>
+    body { font-family: 'Cairo', Arial, sans-serif; background: #f8fafc; margin: 0; padding: 0; }
+    #main-content { max-width: 700px; margin: 40px auto; background: #fff; border-radius: 10px; box-shadow: 0 2px 12px #0001; padding: 32px; }
+    #error-message { color: #d32f2f; font-weight: bold; margin-bottom: 20px; }
+    ul { padding: 0; list-style: none; }
+    li { background: #f1f5f9; margin-bottom: 10px; padding: 12px 16px; border-radius: 6px; }
+    .attachment { margin-top: 8px; }
+    .attachment img { max-width: 120px; max-height: 120px; display: block; margin-top: 6px; border: 1px solid #ccc; border-radius: 4px; }
+    .attachment a { color: #0f766e; text-decoration: underline; }
+  </style>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
+  <script src="firebase-config.js"></script>
+</head>
+<body>
+  <div id="main-content">
+    <div id="error-message"></div>
+    <div id="graduates-list">جاري تحميل البيانات...</div>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', async function() {
+      const errorDiv = document.getElementById('error-message');
+      const listDiv = document.getElementById('graduates-list');
+      errorDiv.textContent = '';
+      try {
+        if (!window.firebase || !window.firebase.initializeApp) {
+          throw new Error('Firebase SDK غير محمل!');
+        }
+        if (!window.firebase.apps || !window.firebase.apps.length) {
+          window.firebase.initializeApp(window.FIREBASE_CONFIG);
+        }
+        const db = window.firebase.firestore();
+        const snapshot = await db.collection('formSubmissions').where('formType', '==', 'graduates').limit(20).get();
+        if (snapshot.empty) {
+          listDiv.innerHTML = '<p>لا توجد طلبات خريجين حالياً.</p>';
+          return;
+        }
+        let html = '<ul>';
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          html += `<li><b>الاسم:</b> ${data.fullName || '---'}<br><b>تاريخ التقديم:</b> ${data.submittedAt || ''}`;
+          // عرض المرفقات
+          const attachments = ['idCardURL', 'cvURL', 'universityLetterURL', 'otherAttachmentURL'];
+          attachments.forEach(key => {
+            if (data[key]) {
+              if (data[key].match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+                html += `<div class="attachment"><b>مرفق:</b><br><img src="${data[key]}" alt="attachment" onerror="this.onerror=null;this.src='';this.alt='الملف غير متوفر';"></div>`;
+              } else {
+                html += `<div class="attachment"><a href="${data[key]}" target="_blank">تحميل/عرض المرفق</a></div>`;
+              }
+            }
+          });
+          html += '</li>';
+        });
+        html += '</ul>';
+        listDiv.innerHTML = html;
+      } catch (err) {
+        console.error('❌ خطأ في تحميل الصفحة:', err);
+        errorDiv.textContent = 'حدث خطأ في تحميل البيانات: ' + (err.message || err);
+        listDiv.innerHTML = '';
+      }
+    });
+  </script>
+</body>
+</html>
