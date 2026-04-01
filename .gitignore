@@ -3,3 +3,16 @@ node_modules/
 functions/node_modules/
 deploy-result.json
 functions-deploy.json
+
+# ملفات الإعداد السرية - لا تُدرجها في Git
+firebase-config.js
+email-config.js
+
+# ملفات متغيرات البيئة
+.env
+.env.local
+.env.*.local
+
+# مجلدات البناء
+dist/
+build/

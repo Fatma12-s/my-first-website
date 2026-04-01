@@ -1,12 +1,14 @@
 // تحميل مكتبات Firebase عبر CDN
+// ⚠️ انسخ هذا الملف من firebase-config.example.js وأدخل بياناتك الحقيقية
+// لا تُدرج هذا الملف في Git إذا كان يحتوي على مفاتيح حقيقية
 const firebaseConfig = {
-  apiKey: "AIzaSyDmNC9-8sRAHGqGSC9r_Zr3mk97tu3RFgc",
-  authDomain: "squh-training.firebaseapp.com",
-  projectId: "squh-training",
-  storageBucket: "squh-training.appspot.com",
-  messagingSenderId: "1064112237940",
-  appId: "1:1064112237940:web:94905f060413b97ad6d021",
-  measurementId: "G-NNKT4PCV5T"
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+  appId: "YOUR_APP_ID",
+  measurementId: "YOUR_MEASUREMENT_ID"
 };
 
 // تعريف إعدادات Firebase على window

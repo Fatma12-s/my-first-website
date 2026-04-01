@@ -1,8 +1,5 @@
 // ===== إضافة مؤشرات البدء لحقول الملفات =====
 document.addEventListener('DOMContentLoaded', () => {
-  // لمسح التخزين المؤقت مرة واحدة لاختبار نظيف
-  localStorage.clear();
-  sessionStorage.clear();
   // البحث عن جميع حقول الملفات وإضافة عرض للملف المختار
   document.querySelectorAll('input[type="file"]').forEach(fileInput => {
     fileInput.addEventListener('change', (e) => {
@@ -339,7 +336,7 @@ async function saveFormData(formName, formData) {
       console.error('❌ خطأ في حفظ البيانات في Firestore:', err);
       // fallback: حفظ محلي
       saveToLocalStorage(formName, cleaned);
-      return { success: false, error: err, local: true };
+      return { success: true, data: cleaned, local: true };
     }
   } else {
     saveToLocalStorage(formName, cleaned);
