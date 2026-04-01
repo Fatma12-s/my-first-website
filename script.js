@@ -276,15 +276,16 @@ async function sendNotificationEmail(applicantData, responsible, templateType = 
 // ===== حفظ البيانات في localStorage أو Firestore =====
 async function saveFormData(formName, formData) {
   // استنسخ البيانات ونظف أي حقول ملفات إلى أسماء الملفات قبل التخزين
+  // تعديل: حفظ روابط الملفات بدلاً من الأسماء فقط
   const sanitize = (data) => {
     const out = {};
     for (const [k, v] of Object.entries(data)) {
       if (String(k).startsWith('__')) continue;
       try {
         if (typeof File !== 'undefined' && v instanceof File) {
-          out[k] = v.name;
+          out[k] = v; // احتفظ بالملف لرفعه
         } else if (typeof File !== 'undefined' && v instanceof FileList) {
-          out[k] = Array.from(v).map(f => f.name).join('; ');
+          out[k] = Array.from(v); // احتفظ بالقائمة
         } else {
           out[k] = v;
         }
@@ -302,12 +303,11 @@ async function saveFormData(formName, formData) {
   cleaned.id = Date.now();
   cleaned.formType = formName;
 
-  // رفع المرفقات إلى Firebase Storage
+  // رفع المرفقات إلى Firebase Storage وحفظ الرابط
   const attachmentFields = ['applicantPhoto', 'cv', 'idCard', 'universityLetter', 'otherAttachment'];
   for (const field of attachmentFields) {
     if (formData[field] && formData[field] instanceof File) {
       await window.fileUpload.uploadAttachment(formData[field], field, cleaned);
-      // بعد الرفع، يتم حفظ رابط الملف في cleaned[field+'URL']
       cleaned[field] = undefined; // لا تحفظ الملف نفسه
     }
   }
@@ -333,11 +333,10 @@ async function saveFormData(formName, formData) {
   if (window.db) {
     try {
       await window.db.collection('formSubmissions').add(cleaned);
-      console.log('✅ تم حفظ الطلب في Firestore مع روابط المرفقات');
+      console.log('✅ تم حفظ الطلب في Firestore مع روابط المرفقات:', cleaned);
       return { success: true, data: cleaned, firestore: true };
     } catch (err) {
       console.error('❌ خطأ في حفظ البيانات في Firestore:', err);
-      // fallback: حفظ محلي
       saveToLocalStorage(formName, cleaned);
       return { success: false, error: err, local: true };
     }
@@ -598,14 +597,13 @@ function hasValidFirebaseConfig() {
 }
 
 async function buildAttachmentValue(file, formName, useFirebase) {
-  // لم يعد هناك رفع للسحابة أو استخدام Firebase
+  // تعديل: جلب رابط التحميل من cleaned مباشرة
   const meta = {
     name: file.name,
     type: file.type || 'application/octet-stream',
     size: file.size,
-    source: 'local-name'
+    source: 'firebase-url'
   };
-  // إذا كان هناك رابط تحميل في cleaned، أضفه
   if (window.fileUpload && typeof window.fileUpload.getAttachmentUrl === 'function') {
     const url = await window.fileUpload.getAttachmentUrl(file, formName);
     if (url) meta.url = url;

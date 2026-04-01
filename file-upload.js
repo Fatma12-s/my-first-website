@@ -3,15 +3,17 @@ window.fileUpload = {
   uploadAttachment: async function(file, fieldName, cleaned) {
     if (file && file instanceof File) {
       try {
-        // استخدام نظام modular
+        const ok = await window.ensureFirebase?.();
+        if (!ok) throw new Error('Firebase not initialized');
         const storage = window.firebase.storage.getStorage();
-        const attachRef = window.firebase.storage.ref(storage, `attachments/${cleaned.id}_${fieldName}_${file.name}`);
-        await window.firebase.storage.uploadBytes(attachRef, file);
+        const attachRef = window.firebase.storage.ref(storage, `attachments/${cleaned.id}_${fieldName}_${Date.now()}_${file.name}`);
+        const snapshot = await window.firebase.storage.uploadBytes(attachRef, file);
+        if (!snapshot) throw new Error('Upload failed');
         const url = await window.firebase.storage.getDownloadURL(attachRef);
         cleaned[fieldName + 'URL'] = url;
-        console.log(`رابط التحميل من Firebase (${fieldName}):`, url);
+        console.log(`✅ [${fieldName}] Uploaded:`, url);
       } catch (err) {
-        console.error('خطأ في رفع المرفق:', fieldName, err);
+        console.error('❌ خطأ في رفع المرفق:', fieldName, err);
         cleaned[fieldName + 'URL'] = '';
       }
     }
