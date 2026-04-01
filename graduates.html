@@ -46,7 +46,7 @@
         snapshot.forEach(doc => {
           const data = doc.data();
           html += `<li><b>الاسم:</b> ${data.fullName || '---'}<br><b>تاريخ التقديم:</b> ${data.submittedAt || ''}`;
-          // عرض المرفقات
+          // عرض المرفقات كما كانت سابقًا
           const attachments = ['idCardURL', 'cvURL', 'universityLetterURL', 'otherAttachmentURL'];
           attachments.forEach(key => {
             if (data[key]) {
