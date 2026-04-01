@@ -62,7 +62,7 @@
         html += '</ul>';
         listDiv.innerHTML = html;
       } catch (err) {
-        console.error('❌ خطأ في تحميل الصفحة:', err);
+        console.error('❌ خطأ في تحميل بيانات الخريجين:', err);
         errorDiv.textContent = 'حدث خطأ في تحميل البيانات: ' + (err.message || err);
         listDiv.innerHTML = '';
       }
