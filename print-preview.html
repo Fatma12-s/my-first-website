@@ -146,22 +146,20 @@
           return;
         }
 
-        let done = 0;
-        const trigger = function () {
-          done += 1;
-          if (done >= images.length) {
-            setTimeout(doPrint, 220);
-          }
-        };
+    Promise.all(images.map(function (img) {
+      return new Promise(function (resolve) {
+        if (img.complete) {
+          resolve();
+          return;
+        }
 
-        images.forEach(function (img) {
-          if (img.complete) {
-            trigger();
-          } else {
-            img.addEventListener('load', trigger, { once: true });
-            img.addEventListener('error', trigger, { once: true });
-          }
-        });
+        const done = function () { resolve(); };
+        img.addEventListener('load', done, { once: true });
+        img.addEventListener('error', done, { once: true });
+      });
+    })).finally(function () {
+      setTimeout(doPrint, 220);
+    });
       }
 
       refreshBtn.addEventListener('click', renderPreview);

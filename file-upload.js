@@ -13,7 +13,21 @@ window.fileUpload = {
 
         const safeName = String(file.name || 'attachment').replace(/[^a-zA-Z0-9._-]+/g, '_');
         const attachRef = storage.ref(`attachments/${cleaned.id}_${fieldName}_${Date.now()}_${safeName}`);
-        const snapshot = await attachRef.put(file);
+        const uploadTask = attachRef.put(file);
+        const timeoutMs = 8000;
+        const snapshot = await Promise.race([
+          uploadTask,
+          new Promise((_, reject) => {
+            setTimeout(() => {
+              if (typeof uploadTask.cancel === 'function') {
+                try {
+                  uploadTask.cancel();
+                } catch (_) {}
+              }
+              reject(new Error(`Upload timed out after ${timeoutMs}ms`));
+            }, timeoutMs);
+          })
+        ]);
         if (!snapshot) throw new Error('Upload failed');
         const url = await attachRef.getDownloadURL();
         cleaned[fieldName + 'URL'] = url;
