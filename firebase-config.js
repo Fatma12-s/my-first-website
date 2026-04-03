@@ -13,7 +13,8 @@ window.FIREBASE_CONFIG = firebaseConfig;
 const FIREBASE_SDKS = {
   app: "https://www.gstatic.com/firebasejs/11.0.1/firebase-app-compat.js",
   auth: "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth-compat.js",
-  firestore: "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore-compat.js"
+  firestore: "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore-compat.js",
+  storage: "https://www.gstatic.com/firebasejs/11.0.1/firebase-storage-compat.js"
 };
 
 function loadScriptOnce(src) {
@@ -46,6 +47,7 @@ function getMissingFirebaseModules() {
   if (!(window.firebase && window.firebase.initializeApp)) missing.push('app');
   if (!(window.firebase && window.firebase.auth)) missing.push('auth');
   if (!(window.firebase && window.firebase.firestore)) missing.push('firestore');
+  if (!(window.firebase && window.firebase.storage)) missing.push('storage');
   return missing;
 }
 
@@ -61,6 +63,7 @@ function initFirebase() {
 
     window.db = window.firebase.firestore ? window.firebase.firestore() : null;
     window.firebaseAuth = window.firebase.auth ? window.firebase.auth() : null;
+    window.firebaseStorage = window.firebase.storage ? window.firebase.storage() : null;
     console.log('تم تهيئة Firebase بنجاح.');
     return true;
   } catch (e) {
@@ -82,4 +85,5 @@ window.ensureFirebaseReady = async function ensureFirebaseReady() {
   }
 };
 
+window.ensureFirebase = window.ensureFirebaseReady;
 window.firebaseReadyPromise = window.ensureFirebaseReady();
