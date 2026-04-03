@@ -704,28 +704,115 @@
         }
     }
 
+    function firstNonEmptySubmissionValue(submission, candidates) {
+        if (!submission || !Array.isArray(candidates)) return '';
+
+        for (const candidate of candidates) {
+            if (!candidate) continue;
+
+            if (typeof candidate === 'function') {
+                const computed = candidate(submission);
+                if (computed !== undefined && computed !== null && String(computed).trim() !== '') {
+                    return computed;
+                }
+                continue;
+            }
+
+            if (typeof candidate !== 'string') continue;
+
+            const parts = candidate.split('.');
+            let current = submission;
+            let found = true;
+
+            for (const part of parts) {
+                if (current && typeof current === 'object' && part in current) {
+                    current = current[part];
+                } else {
+                    found = false;
+                    break;
+                }
+            }
+
+            if (found && current !== undefined && current !== null && String(current).trim() !== '') {
+                return current;
+            }
+        }
+
+        return '';
+    }
+
+    function normalizeSubmissionAssets(submission) {
+        if (!submission || typeof submission !== 'object') return submission;
+
+        const normalized = { ...submission };
+        const assignIfMissing = (targetKey, candidateKeys) => {
+            if (normalized[targetKey] !== undefined && normalized[targetKey] !== null && String(normalized[targetKey]).trim() !== '') {
+                return;
+            }
+
+            const resolved = firstNonEmptySubmissionValue(normalized, candidateKeys);
+            if (resolved !== undefined && resolved !== null && String(resolved).trim() !== '') {
+                normalized[targetKey] = resolved;
+            }
+        };
+
+        assignIfMissing('applicantPhotoURL', [
+            'applicantPhotoURL',
+            'applicantPhotoUrl',
+            'photoURL',
+            'photoUrl',
+            'passportPhotoURL',
+            'passportPhotoUrl',
+            'applicantPhoto.url',
+            'applicantPhoto.preview',
+            'applicantPhoto.dataUrl',
+            'applicantPhotoDataUrl',
+            '__applicantPhotoDataUrl'
+        ]);
+        assignIfMissing('applicantPhotoDataUrl', [
+            'applicantPhotoDataUrl',
+            '__applicantPhotoDataUrl',
+            'applicantPhoto.dataUrl',
+            'applicantPhoto.preview',
+            'applicantPhoto.url',
+            'applicantPhotoURL',
+            'applicantPhotoUrl',
+            'photoURL',
+            'photoUrl'
+        ]);
+        assignIfMissing('cvFileURL', ['cvFileURL', 'cvFileUrl', 'cvURL', 'cv.url', 'cvFile.url']);
+        assignIfMissing('idCardCopyURL', ['idCardCopyURL', 'idCardCopyUrl', 'idCardURL', 'idCard.url', 'idCardCopy.url']);
+        assignIfMissing('universityLetterURL', ['universityLetterURL', 'universityLetterUrl', 'universityAttachmentURL', 'universityLetter.url']);
+        assignIfMissing('otherAttachmentsURL', ['otherAttachmentsURL', 'otherAttachmentsUrl', 'otherAttachmentURL', 'otherAttachmentUrl', 'otherAttachments.url']);
+        assignIfMissing('receiptURL', ['receiptURL', 'receiptUrl', 'paymentReceiptURL', 'paymentReceiptUrl', 'receipt.url']);
+
+        return normalized;
+    }
+
     function getApplicantPhotoSrc(submission) {
         const isRenderableImageSrc = (value) => {
             const src = String(value || '').trim();
             return /^(data:image\/|blob:|https?:\/\/|\.\/|\/)/i.test(src);
         };
 
-        const directPreview = submission && submission.__applicantPhotoDataUrl;
+        const normalized = normalizeSubmissionAssets(submission);
+
+        const directPreview = normalized && normalized.__applicantPhotoDataUrl;
         if (directPreview && isRenderableImageSrc(directPreview)) {
             return String(directPreview);
         }
 
-        const storedPreview = submission && submission.applicantPhotoDataUrl;
+        const storedPreview = normalized && normalized.applicantPhotoDataUrl;
         if (storedPreview && isRenderableImageSrc(storedPreview)) {
             return String(storedPreview);
         }
 
-        const storedPhotoUrl = submission && submission.applicantPhotoURL;
+        const storedPhotoUrl = normalized && normalized.applicantPhotoURL;
         if (storedPhotoUrl && isRenderableImageSrc(storedPhotoUrl)) {
             return String(storedPhotoUrl);
         }
 
-        const photo = submission && submission.applicantPhoto;
+        const photo = normalized && normalized.applicantPhoto;
         if (photo && typeof photo === 'object' && photo.dataUrl && isRenderableImageSrc(photo.dataUrl)) {
             return String(photo.dataUrl);
         }
@@ -1323,7 +1410,7 @@
                 const snapshot = await query.get();
                 snapshot.forEach(doc => {
                     const data = doc.data();
-                    filteredData.push({ ...data, _source: 'firestore', _docId: doc.id });
+                    filteredData.push(normalizeSubmissionAssets({ ...data, _source: 'firestore', _docId: doc.id }));
                 });
                 setSourceNotice('مصدر البيانات الحالي: Firebase / Firestore');
             } catch (err) {
@@ -1337,7 +1424,7 @@
                 if (Array.isArray(submissions)) {
                     submissions.forEach((sub, localIndex) => {
                         if (!selectedForm || formType === selectedForm) {
-                            filteredData.push({ ...sub, formType, _source: 'local', _localIndex: localIndex });
+                            filteredData.push(normalizeSubmissionAssets({ ...sub, formType, _source: 'local', _localIndex: localIndex }));
                         }
                     });
                 }
@@ -1406,6 +1493,7 @@
         function renderReviewAttachments(submission) {
             const isRenderableImage = (value) => /^(data:image\/|blob:|https?:\/\/|\.\/|\/)/i.test(String(value || '').trim()) && /(^data:image\/|\.(png|jpe?g|gif|webp|bmp|svg)(\?|#|$))/i.test(String(value || '').trim());
             const isOpenableUrl = (value) => /^(https?:\/\/|data:|blob:|\.|\/)/i.test(String(value || '').trim());
+            const normalized = normalizeSubmissionAssets(submission);
             const getAttachmentSource = (value) => {
                 if (!value) return '';
                 if (typeof value === 'object') {
@@ -1420,9 +1508,9 @@
                 return fallbackLabel;
             };
 
-            const attachmentDefs = submission.formType === 'graduates'
+            const attachmentDefs = normalized.formType === 'graduates'
                 ? [
-                    { key: 'applicantPhoto', previewKey: 'applicantPhotoDataUrl', extraPreviewKey: '__applicantPhotoDataUrl', label: 'Applicant Photo / صورة المتقدم' },
+                    { key: 'applicantPhoto', previewKey: 'applicantPhotoDataUrl', extraPreviewKey: '__applicantPhotoDataUrl', urlKey: 'applicantPhotoURL', label: 'Applicant Photo / صورة المتقدم' },
                     { key: 'idCardCopy', urlKey: 'idCardCopyURL', label: 'ID Card Copy / نسخة البطاقة الشخصية' },
                     { key: 'cvFile', urlKey: 'cvFileURL', label: 'CV / السيرة الذاتية' },
                     { key: 'universityLetter', urlKey: 'universityLetterURL', label: 'University Letter / خطاب الجامعة' },
@@ -1433,8 +1521,8 @@
                 ];
 
             const sections = attachmentDefs.map(({ key, urlKey, previewKey, extraPreviewKey, label }) => {
-                const rawValue = submission[key];
-                const fallbackValue = (previewKey && submission[previewKey]) || (extraPreviewKey && submission[extraPreviewKey]) || (urlKey && submission[urlKey]) || rawValue;
+                const rawValue = normalized[key];
+                const fallbackValue = (previewKey && normalized[previewKey]) || (extraPreviewKey && normalized[extraPreviewKey]) || (urlKey && normalized[urlKey]) || rawValue;
                 if (!fallbackValue) return '';
 
                 const src = getAttachmentSource(fallbackValue);
