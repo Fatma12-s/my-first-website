@@ -923,10 +923,15 @@
             const type = typeof value === 'object' ? String(value.type || '').toLowerCase() : '';
             const lowerName = String(name || '').toLowerCase();
             const lowerSrc = String(src || '').toLowerCase();
-            if (type.startsWith('image/') || /^data:image\//.test(lowerSrc) || /\.(png|jpe?g|gif|webp|bmp|svg)(\?|#|$)/i.test(lowerName || lowerSrc)) {
+
+            if (!lowerSrc) {
+                return 'missing';
+            }
+
+            if (type.startsWith('image/') || /^data:image\//.test(lowerSrc) || /\.(png|jpe?g|gif|webp|bmp|svg)(\?|#|$)/i.test(lowerSrc) || /\.(png|jpe?g|gif|webp|bmp|svg)(\?|#|$)/i.test(lowerName)) {
                 return 'image';
             }
-            if (type === 'application/pdf' || /^data:application\/pdf/.test(lowerSrc) || /\.pdf(\?|#|$)/i.test(lowerName || lowerSrc)) {
+            if (type === 'application/pdf' || /^data:application\/pdf/.test(lowerSrc) || /\.pdf(\?|#|$)/i.test(lowerSrc) || /\.pdf(\?|#|$)/i.test(lowerName)) {
                 return 'pdf';
             }
             return src ? 'link' : 'missing';
