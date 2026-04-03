@@ -73,6 +73,7 @@ const path = require('path');
     await page.type('#applicantSignature', 'اختبار نهائي');
 
     const assetPath = path.resolve(__dirname, 'assets', 'squh-header-logo.jpg');
+      await (await page.$('#applicantPhoto')).uploadFile(assetPath);
     await (await page.$('#cvFile')).uploadFile(assetPath);
     await (await page.$('#universityLetter')).uploadFile(assetPath);
     await (await page.$('#idCardCopy')).uploadFile(assetPath);
@@ -86,11 +87,12 @@ const path = require('path');
     });
     console.log('VALIDATION:', JSON.stringify(validity));
 
-    await page.click('#graduates-form button[type="submit"]');
+    await page.evaluate(() => document.getElementById('graduates-form').requestSubmit());
     await new Promise(r => setTimeout(r, 8000));
 
     const finalResult = await page.evaluate(() => {
       const modal = document.querySelector('.success-modal');
+      const errorModal = document.querySelector('.error-modal');
       const logs = Array.isArray(window.__emailjsLogs) ? window.__emailjsLogs : [];
       const submitLogs = Array.isArray(window.__submitLogs) ? window.__submitLogs : [];
       const stored = localStorage.getItem('formSubmissions');
@@ -101,6 +103,9 @@ const path = require('path');
       } catch (_) {}
       return {
         hasSuccessModal: !!modal,
+        successText: modal ? modal.textContent : '',
+        hasErrorModal: !!errorModal,
+        errorText: errorModal ? errorModal.textContent : '',
         graduatesCount,
         emailjsCalls: logs,
         submitLogs

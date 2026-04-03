@@ -1254,23 +1254,30 @@
             const decisionTitle = decisionStatus === 'Approved' ? '✅ تمت الموافقة على طلبك' : '❌ تم رفض طلبك';
             const reviewNoteText = reviewNote ? `\nملاحظة المراجعة: ${reviewNote}` : '';
             const managerSection2 = submission.managerSection2 || {};
-            const managerSection2Text = managerSection2.department
-                ? (
-                    `\n\nبيانات Section 2 (المراجعة):\n` +
-                    `Department: ${managerSection2.department || '---'}\n` +
-                    `Duration From: ${managerSection2.durationFrom || '---'}\n` +
-                    `Duration To: ${managerSection2.durationTo || '---'}\n` +
-                    `Duration: ${managerSection2.duration || '---'}`
-                )
-                : '';
+            const effectiveDepartment = managerSection2.department || submission.department || submission.specialtyDepartment || '---';
+            const effectiveDurationFrom = managerSection2.durationFrom || submission.durationFrom || '---';
+            const effectiveDurationTo = managerSection2.durationTo || submission.durationTo || '---';
+            const effectiveDuration = managerSection2.duration || submission.duration || ((effectiveDurationFrom !== '---' || effectiveDurationTo !== '---')
+                ? `${effectiveDurationFrom} -> ${effectiveDurationTo}`
+                : '---');
+            const decisionLead = decisionStatus === 'Approved'
+                ? 'نفيدكم بأنه تمت الموافقة على طلبكم بنجاح.'
+                : 'نفيدكم بأنه تم تحديث حالة طلبكم.';
             const details =
+                `${decisionLead}\n\n` +
+                `تفاصيل الطلب:\n` +
                 `الاسم: ${submission.name || '---'}\n` +
-                `نوع الطلب: ${submission.formType || '---'}\n` +
+                `البريد الإلكتروني: ${submission.email || '---'}\n` +
                 `رقم الطلب: ${submission.id || submission._docId || '---'}\n` +
+                `نوع الطلب: ${submission.formType || '---'}\n` +
+                `القسم: ${effectiveDepartment}\n` +
+                `الفترة من: ${effectiveDurationFrom}\n` +
+                `الفترة إلى: ${effectiveDurationTo}\n` +
+                `المدة: ${effectiveDuration}\n` +
+                `تاريخ الإرسال: ${submission.submittedAt || '---'}\n` +
                 `الحالة الجديدة: ${decisionStatus}\n` +
                 `تاريخ المراجعة: ${new Date().toLocaleString('ar-SA')}` +
-                reviewNoteText +
-                managerSection2Text;
+                reviewNoteText;
 
             const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
                 method: 'POST',

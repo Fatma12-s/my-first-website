@@ -246,7 +246,13 @@ async function sendNotificationEmail(applicantData, responsible, templateType = 
 
       await sendOne(responsible.email, responsible.name, '🔔 طلب جديد يحتاج مراجعة');
 
-      if (mailConfig.sendApplicantCopy && applicantData.email) {
+      const normalizedResponsibleEmail = String(responsible.email || '').trim().toLowerCase();
+      const normalizedApplicantEmail = String(applicantData.email || '').trim().toLowerCase();
+      if (
+        mailConfig.sendApplicantCopy &&
+        normalizedApplicantEmail &&
+        normalizedApplicantEmail !== normalizedResponsibleEmail
+      ) {
         await sendOne(applicantData.email, applicantData.name || 'مقدم الطلب', '✅ تم استلام طلبك');
       }
 
@@ -665,12 +671,7 @@ async function handleFormSubmit(formEl, formName) {
             console.warn('تعذر تجهيز معاينة صورة المتقدم:', err);
           }
         }
-        const attachmentValue = await buildAttachmentValue(v, formName);
-        if (k === 'applicantPhoto' && attachmentValue && typeof attachmentValue === 'object' && obj.applicantPhotoDataUrl) {
-          attachmentValue.dataUrl = attachmentValue.dataUrl || obj.applicantPhotoDataUrl;
-          attachmentValue.preview = attachmentValue.preview || obj.applicantPhotoDataUrl;
-        }
-        obj[k] = attachmentValue;
+        obj[k] = v;
       });
     await Promise.all(fileTasks);
 
@@ -1711,11 +1712,20 @@ function showErrorMessage(message) {
 
 // تحديث التوكن بعد تعيين claim
 // تحديث التوكن بعد تعيين claim (للمتصفح)
-const auth = window.firebase && window.firebase.auth && window.firebase.auth();
-if (auth && auth.currentUser) {
-  auth.currentUser.getIdToken(true).then(() => {
-    auth.currentUser.getIdTokenResult().then(tokenResult => {
-      console.log(tokenResult.claims.admin); // true إذا تم تعيين claim
-    });
-  });
+async function refreshAdminClaimState() {
+  try {
+    const ready = window.ensureFirebaseReady ? await window.ensureFirebaseReady() : !!window.firebase;
+    if (!ready) return;
+
+    const auth = window.firebaseAuth || (window.firebase && window.firebase.auth && window.firebase.auth());
+    if (!auth || !auth.currentUser) return;
+
+    await auth.currentUser.getIdToken(true);
+    const tokenResult = await auth.currentUser.getIdTokenResult();
+    console.log(tokenResult.claims.admin); // true if claim was assigned
+  } catch (err) {
+    console.warn('Failed to refresh admin claim state:', err);
+  }
 }
+
+refreshAdminClaimState();
