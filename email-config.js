@@ -3,9 +3,10 @@
 
 window.APP_EMAIL_CONFIG = {
   emailjsServiceId: "service_bzfkj3q",
-  emailjsTemplateIdConfirm: "template_n25xf1u",
-  emailjsTemplateIdApprove: "template_n25xf1u",
-  emailjsTemplateIdReject: "template_n25xf1u",
+  emailjsTemplateId: "template_ihph0ia",
+  emailjsTemplateIdConfirm: "template_ihph0ia",
+  emailjsTemplateIdApprove: "template_ihph0ia",
+  emailjsTemplateIdReject: "template_ihph0ia",
   emailjsPublicKey: "XIbn_hYrfaNHp7Z0F",
   sendApplicantCopy: true
 };

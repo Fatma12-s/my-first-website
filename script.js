@@ -1,8 +1,6 @@
 // ===== إضافة مؤشرات البدء لحقول الملفات =====
 document.addEventListener('DOMContentLoaded', () => {
   // لمسح التخزين المؤقت مرة واحدة لاختبار نظيف
-  localStorage.clear();
-  sessionStorage.clear();
   // البحث عن جميع حقول الملفات وإضافة عرض للملف المختار
   document.querySelectorAll('input[type="file"]').forEach(fileInput => {
     fileInput.addEventListener('change', (e) => {
@@ -72,7 +70,10 @@ function getMailConfig() {
     sendgridFromName,
     sendApplicantCopy,
     emailjsServiceId: clean(cfg.emailjsServiceId || cfg.serviceId),
-    emailjsTemplateId: clean(cfg.emailjsTemplateId || cfg.templateId),
+    emailjsTemplateId: clean(cfg.emailjsTemplateId || cfg.templateId || cfg.emailjsTemplateIdConfirm),
+    emailjsTemplateIdConfirm: clean(cfg.emailjsTemplateIdConfirm || cfg.emailjsTemplateId || cfg.templateId),
+    emailjsTemplateIdApprove: clean(cfg.emailjsTemplateIdApprove || cfg.emailjsTemplateId || cfg.templateId),
+    emailjsTemplateIdReject: clean(cfg.emailjsTemplateIdReject || cfg.emailjsTemplateId || cfg.templateId),
     emailjsPublicKey: clean(cfg.emailjsPublicKey || cfg.publicKey)
   };
 }
@@ -304,7 +305,7 @@ async function saveFormData(formName, formData) {
   cleaned.formType = formName;
 
   // رفع المرفقات إلى Firebase Storage وحفظ الرابط
-  const attachmentFields = ['applicantPhoto', 'cv', 'idCard', 'universityLetter', 'otherAttachment'];
+  const attachmentFields = ['applicantPhoto', 'cvFile', 'idCardCopy', 'universityLetter', 'otherAttachments', 'receipt'];
   for (const field of attachmentFields) {
     if (formData[field] && formData[field] instanceof File) {
       await window.fileUpload.uploadAttachment(formData[field], field, cleaned);
@@ -333,8 +334,9 @@ async function saveFormData(formName, formData) {
   if (window.db) {
     try {
       await window.db.collection('formSubmissions').add(cleaned);
+      const emailSent = await sendNotificationEmail(cleaned, responsible, 'confirm');
       console.log('✅ تم حفظ الطلب في Firestore مع روابط المرفقات:', cleaned);
-      return { success: true, data: cleaned, firestore: true };
+      return { success: true, data: cleaned, firestore: true, emailSent };
     } catch (err) {
       console.error('❌ خطأ في حفظ البيانات في Firestore:', err);
       saveToLocalStorage(formName, cleaned);
@@ -342,7 +344,8 @@ async function saveFormData(formName, formData) {
     }
   } else {
     saveToLocalStorage(formName, cleaned);
-    return { success: true, data: cleaned, local: true };
+    const emailSent = await sendNotificationEmail(cleaned, responsible, 'confirm');
+    return { success: true, data: cleaned, local: true, emailSent };
   }
 }
 
@@ -869,7 +872,13 @@ function openSubmissionPrintPreview(formName, data) {
     'reviewedAt',
     'managerSection2',
     'firestoreId',
-    '__applicantPhotoDataUrl'
+    '__applicantPhotoDataUrl',
+    'applicantPhotoURL',
+    'cvFileURL',
+    'idCardCopyURL',
+    'universityLetterURL',
+    'otherAttachmentsURL',
+    'receiptURL'
   ]);
 
   const applicantPhotoSrc = getApplicantPhotoSrc(data);
@@ -918,15 +927,19 @@ function openSubmissionPrintPreview(formName, data) {
     }
     return src ? 'link' : 'missing';
   };
-  const attachmentFields = [
-    { key: 'idCardCopy', label: 'ID Card Copy / نسخة البطاقة الشخصية' },
-    { key: 'cvFile', label: 'CV / السيرة الذاتية' },
-    { key: 'universityLetter', label: 'University Letter / خطاب الجامعة' },
-    { key: 'otherAttachments', label: 'Other Attachments / مرفقات أخرى' }
-  ];
-  const attachmentSectionsHtml = isGraduates
-    ? attachmentFields.map(({ key, label }) => {
-        const value = data?.[key];
+  const attachmentFields = isGraduates
+    ? [
+        { key: 'idCardCopy', urlKey: 'idCardCopyURL', label: 'ID Card Copy / نسخة البطاقة الشخصية' },
+        { key: 'cvFile', urlKey: 'cvFileURL', label: 'CV / السيرة الذاتية' },
+        { key: 'universityLetter', urlKey: 'universityLetterURL', label: 'University Letter / خطاب الجامعة' },
+        { key: 'otherAttachments', urlKey: 'otherAttachmentsURL', label: 'Other Attachments / مرفقات أخرى' }
+      ]
+    : ['training-employees', 'training-others', 'internal-employees', 'internal-others'].includes(formName)
+      ? [{ key: 'receipt', urlKey: 'receiptURL', label: 'Payment Receipt / إيصال الدفع' }]
+      : [];
+  const attachmentSectionsHtml = attachmentFields.length
+    ? attachmentFields.map(({ key, urlKey, label }) => {
+        const value = data?.[key] || data?.[urlKey];
         if (!value) return '';
         const src = getAttachmentSrc(value);
         const fileName = getAttachmentName(value, label);

@@ -45,8 +45,14 @@
       };
 
       localStorage.setItem('formSubmissions', JSON.stringify(sample));
-      alert('تمت إضافة بيانات تجريبية. الانتقال إلى لوحة الإدارة...');
-      location.href = 'admin.html';
+      const adminSession = sessionStorage.getItem('adminSession');
+      alert('تمت إضافة بيانات تجريبية. سيتم نقلك إلى شاشة دخول الإدارة إذا لم تكن مسجلًا كمشرف.');
+      if (adminSession) {
+        location.href = 'admin.html';
+        return;
+      }
+      sessionStorage.setItem('redirectTo', 'admin.html');
+      location.href = 'admin-login.html';
     });
   </script>
   <footer style="text-align:center; margin-top: 24px; color:#666;">

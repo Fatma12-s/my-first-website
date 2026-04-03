@@ -7,12 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <script>
-        // لم يعد هناك أي منطق دخول أو رمز أو مربع حوار
-        // لوحة التحكم متاحة للجميع بدون أي رمز أو مربع حوار
-        document.addEventListener('DOMContentLoaded', () => {
-            const nameElement = document.getElementById('adminName');
-            if (nameElement) nameElement.textContent = 'لوحة التحكم';
-        });
+        document.documentElement.style.visibility = 'hidden';
     </script>
     <style>
         * {
@@ -362,6 +357,76 @@
             word-break: break-word;
         }
 
+        .json-object-value {
+            margin: 0;
+            padding: 10px 12px;
+            border-radius: 8px;
+            background: #f7fbfa;
+            border: 1px solid #dbe9e5;
+            color: #2b4c45;
+            font-family: Consolas, "Courier New", monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+
+        .review-attachment-field {
+            grid-column: span 1;
+        }
+
+        .review-attachment-value {
+            display: grid;
+            gap: 10px;
+        }
+
+        .review-attachment-name {
+            font-weight: 600;
+            color: #26443d;
+        }
+
+        .review-attachment-thumb {
+            display: inline-flex;
+            width: min(100%, 220px);
+            border: 1px solid #cfe3dd;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #fff;
+        }
+
+        .review-attachment-thumb img {
+            display: block;
+            width: 100%;
+            height: auto;
+            max-height: 220px;
+            object-fit: contain;
+            background: #fff;
+        }
+
+        .review-attachment-link,
+        .review-attachment-missing {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 44px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px dashed #b9d8d3;
+            background: #fff;
+        }
+
+        .review-attachment-link {
+            color: #0f766e;
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .review-attachment-link:hover {
+            text-decoration: underline;
+        }
+
+        .review-attachment-missing {
+            color: #6b7280;
+        }
+
         .empty-state {
             background: white;
             padding: var(--space-2xl);
@@ -392,7 +457,37 @@
             background: #c9302c;
         }
 
+        .header-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .admin-session-card {
+            min-width: 220px;
+            background: #f9fffe;
+            border: 1px solid #cfe3dd;
+            border-radius: 10px;
+            padding: 12px 14px;
+        }
+
+        .admin-session-card p {
+            margin: 0 0 8px;
+            font-size: 12px;
+            color: #516764;
+        }
+
+        .admin-session-card strong {
+            color: #24453e;
+        }
+
         @media (max-width: 768px) {
+            .header-top {
+                flex-direction: column;
+            }
+
             .header-info {
                 flex-direction: column;
             }
@@ -419,9 +514,17 @@
 <body>
     <div class="container">
         <header>
-            <h1>📊 لوحة التحكم - دائرة التدريب والتطوير المهني المستمر</h1>
-            <p>عرض وإدارة جميع طلبات المشاركين والمتدربين</p>
-            <p style="font-size: 12px; color: #999; margin-top: 8px;">مرحباً بك: <strong id="adminName">Admin</strong></p>
+            <div class="header-top">
+                <div>
+                    <h1>📊 لوحة التحكم - دائرة التدريب والتطوير المهني المستمر</h1>
+                    <p>عرض وإدارة جميع طلبات المشاركين والمتدربين</p>
+                    <p style="font-size: 12px; color: #999; margin-top: 8px;">مرحباً بك: <strong id="adminName">Admin</strong></p>
+                </div>
+                <div class="admin-session-card">
+                    <p>الدخول الحالي: <strong id="adminEmployeeId">---</strong></p>
+                    <button class="logout-btn" type="button" onclick="logoutAdmin()">تسجيل الخروج</button>
+                </div>
+            </div>
             <div class="header-info" id="stats">
                 <!-- سيتم ملؤها بـ JavaScript -->
             </div>
@@ -456,21 +559,15 @@
         </div>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <script src="firebase-config.js"></script>
+    <script src="admin-auth.js"></script>
     <script src="email-config.js"></script>
     <script>
-    // تهيئة Firebase
     let db = null;
-    try {
-        if (window.FIREBASE_CONFIG && window.FIREBASE_CONFIG.projectId && 
-            !window.FIREBASE_CONFIG.projectId.includes('YOUR_')) {
-            firebase.initializeApp(window.FIREBASE_CONFIG);
-            db = firebase.firestore();
-        }
-    } catch (err) {
-        console.log('Firebase غير متاح، سيتم استخدام localStorage');
+
+    function redirectToAdminLogin() {
+        sessionStorage.setItem('redirectTo', 'admin.html');
+        window.location.replace('admin-login.html');
     }
 
     function getMailConfig() {
@@ -489,6 +586,58 @@
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#39;');
+    }
+
+    function normalizeDigits(value) {
+        return String(value || '').replace(/[\u0660-\u0669\u06F0-\u06F9]/g, (digit) => {
+            const code = digit.charCodeAt(0);
+            if (code >= 0x0660 && code <= 0x0669) return String(code - 0x0660);
+            if (code >= 0x06F0 && code <= 0x06F9) return String(code - 0x06F0);
+            return digit;
+        });
+    }
+
+    function parseSubmissionTimestamp(value) {
+        if (value === undefined || value === null || value === '') return 0;
+        if (typeof value === 'number' && Number.isFinite(value)) return value;
+        if (value instanceof Date && !Number.isNaN(value.getTime())) return value.getTime();
+        if (typeof value === 'object') {
+            if (typeof value.toMillis === 'function') {
+                const millis = value.toMillis();
+                return Number.isFinite(millis) ? millis : 0;
+            }
+            if (typeof value.seconds === 'number') {
+                return (value.seconds * 1000) + Math.floor((value.nanoseconds || 0) / 1000000);
+            }
+        }
+
+        const normalized = normalizeDigits(value).replace(/[،]/g, ',').trim();
+        const direct = Date.parse(normalized);
+        if (!Number.isNaN(direct)) return direct;
+
+        const match = normalized.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s*(\d{1,2}):(\d{2}):(\d{2})\s*(ص|م|AM|PM)?$/i);
+        if (!match) return 0;
+
+        const [, day, month, year, hoursRaw, minutes, seconds, meridiemRaw] = match;
+        let hours = Number(hoursRaw);
+        const meridiem = String(meridiemRaw || '').toUpperCase();
+
+        if ((meridiem === 'PM' || meridiem === 'م') && hours < 12) {
+            hours += 12;
+        } else if ((meridiem === 'AM' || meridiem === 'ص') && hours === 12) {
+            hours = 0;
+        }
+
+        const parsed = new Date(Number(year), Number(month) - 1, Number(day), hours, Number(minutes), Number(seconds));
+        return Number.isNaN(parsed.getTime()) ? 0 : parsed.getTime();
+    }
+
+    function safeStringify(value) {
+        try {
+            return JSON.stringify(value, null, 2);
+        } catch (err) {
+            return String(value);
+        }
     }
 
     function formatPrintValue(value) {
@@ -525,13 +674,20 @@
             objective1: 'هدف التدريب 1',
             objective2: 'هدف التدريب 2',
             applicantPhoto: 'صورة المتقدم',
+            applicantPhotoURL: 'رابط صورة المتقدم',
             applicantSignature: 'توقيع مقدم الطلب',
             undertakingAgree: 'الإقرار والتعهد',
             idCardDeclaration: 'تعهد البطاقة',
             cvFile: 'السيرة الذاتية',
+            cvFileURL: 'رابط السيرة الذاتية',
             universityLetter: 'خطاب الجامعة',
+            universityLetterURL: 'رابط خطاب الجامعة',
             idCardCopy: 'نسخة البطاقة',
+            idCardCopyURL: 'رابط نسخة البطاقة',
             otherAttachments: 'مرفقات أخرى',
+            otherAttachmentsURL: 'رابط المرفقات الأخرى',
+            receipt: 'إيصال الدفع',
+            receiptURL: 'رابط إيصال الدفع',
             dateOfBirth: 'تاريخ الميلاد',
             nationality: 'الجنسية',
             gender: 'الجنس',
@@ -562,6 +718,11 @@
         const storedPreview = submission && submission.applicantPhotoDataUrl;
         if (storedPreview && isRenderableImageSrc(storedPreview)) {
             return String(storedPreview);
+        }
+
+        const storedPhotoUrl = submission && submission.applicantPhotoURL;
+        if (storedPhotoUrl && isRenderableImageSrc(storedPhotoUrl)) {
+            return String(storedPhotoUrl);
         }
 
         const photo = submission && submission.applicantPhoto;
@@ -614,7 +775,20 @@
             effective.duration = managerSection2.duration;
         }
 
-        const excluded = new Set(['_source', '_docId', '_localIndex', 'managerSection2']);
+        const excluded = new Set([
+            '_source',
+            '_docId',
+            '_localIndex',
+            'managerSection2',
+            'applicantPhotoDataUrl',
+            '__applicantPhotoDataUrl',
+            'applicantPhotoURL',
+            'cvFileURL',
+            'idCardCopyURL',
+            'universityLetterURL',
+            'otherAttachmentsURL',
+            'receiptURL'
+        ]);
         const isGraduates = effective.formType === 'graduates';
         const lineValue = (value) => {
             if (value === undefined || value === null) return '';
@@ -670,18 +844,21 @@
             }
             return src ? 'link' : 'missing';
         };
-        const attachmentFields = [
-            { key: 'idCardCopy', label: 'ID Card Copy / نسخة البطاقة الشخصية' },
-            { key: 'cvFile', label: 'CV / السيرة الذاتية' },
-            { key: 'universityLetter', label: 'University Letter / خطاب الجامعة' },
-            { key: 'otherAttachments', label: 'Other Attachments / مرفقات أخرى' }
-        ];
-        const attachmentSectionsHtml = isGraduates
-            ? attachmentFields.map(({ key, label }) => {
-                const value = effective[key];
+        const attachmentFields = isGraduates
+            ? [
+                { key: 'idCardCopy', urlKey: 'idCardCopyURL', label: 'ID Card Copy / نسخة البطاقة الشخصية' },
+                { key: 'cvFile', urlKey: 'cvFileURL', label: 'CV / السيرة الذاتية' },
+                { key: 'universityLetter', urlKey: 'universityLetterURL', label: 'University Letter / خطاب الجامعة' },
+                { key: 'otherAttachments', urlKey: 'otherAttachmentsURL', label: 'Other Attachments / مرفقات أخرى' }
+            ]
+            : [
+                { key: 'receipt', urlKey: 'receiptURL', label: 'Payment Receipt / إيصال الدفع' }
+            ];
+        const attachmentSectionsHtml = attachmentFields.map(({ key, urlKey, label }) => {
+                const value = effective[urlKey] || effective[key];
                 if (!value) return '';
                 const src = getAttachmentSrc(value);
-                const fileName = getAttachmentName(value, label);
+                const fileName = getAttachmentName(effective[key] || value, label);
                 const kind = getAttachmentKind(value, src, fileName);
                 const mediaHtml = kind === 'image'
                     ? `<div class="attachment-media attachment-image"><img src="${escapeHtml(src)}" alt="${escapeHtml(fileName)}"></div>`
@@ -699,8 +876,7 @@
                         ${mediaHtml}
                     </div>
                 `;
-            }).filter(Boolean).join('')
-            : '';
+            }).filter(Boolean).join('');
 
         const graduatesUndertakingHtml = isGraduates
             ? `
@@ -1180,7 +1356,11 @@
             });
         }
         // ترتيب حسب التاريخ (الأحدث أولاً)
-        filteredData.sort((a, b) => (b.submittedAt || 0) - (a.submittedAt || 0));
+        filteredData.sort((a, b) => {
+            const aTime = parseSubmissionTimestamp(a.submittedAtMs || a.submittedAt);
+            const bTime = parseSubmissionTimestamp(b.submittedAtMs || b.submittedAt);
+            return bTime - aTime;
+        });
         // العرض
         if (filteredData.length === 0) {
             container.innerHTML = `
@@ -1209,7 +1389,7 @@
                 if (obj.name) {
                     return `<span>📎 ${toSafeText(obj.name)} <small style="color:#6b7280;">(تم حفظ الاسم فقط، لا يوجد رابط للفتح)</small></span>`;
                 }
-                return `<span>${JSON.stringify(obj)}</span>`;
+                return `<pre class="json-object-value">${toSafeText(safeStringify(obj))}</pre>`;
             }
 
             const s = String(value);
@@ -1221,6 +1401,62 @@
             }
             if (isOpenableUrl(s)) return asLink(s, s);
             return `<span>${toSafeText(s)}</span>`;
+        }
+
+        function renderReviewAttachments(submission) {
+            const isRenderableImage = (value) => /^(data:image\/|blob:|https?:\/\/|\.\/|\/)/i.test(String(value || '').trim()) && /(^data:image\/|\.(png|jpe?g|gif|webp|bmp|svg)(\?|#|$))/i.test(String(value || '').trim());
+            const isOpenableUrl = (value) => /^(https?:\/\/|data:|blob:|\.|\/)/i.test(String(value || '').trim());
+            const getAttachmentSource = (value) => {
+                if (!value) return '';
+                if (typeof value === 'object') {
+                    const candidate = value.url || value.dataUrl || value.preview || '';
+                    return isOpenableUrl(candidate) ? String(candidate) : '';
+                }
+                return isOpenableUrl(value) ? String(value) : '';
+            };
+            const getAttachmentName = (primaryValue, fallbackLabel) => {
+                if (primaryValue && typeof primaryValue === 'object' && primaryValue.name) return String(primaryValue.name);
+                if (typeof primaryValue === 'string' && primaryValue && !isOpenableUrl(primaryValue)) return String(primaryValue);
+                return fallbackLabel;
+            };
+
+            const attachmentDefs = submission.formType === 'graduates'
+                ? [
+                    { key: 'applicantPhoto', previewKey: 'applicantPhotoDataUrl', extraPreviewKey: '__applicantPhotoDataUrl', label: 'Applicant Photo / صورة المتقدم' },
+                    { key: 'idCardCopy', urlKey: 'idCardCopyURL', label: 'ID Card Copy / نسخة البطاقة الشخصية' },
+                    { key: 'cvFile', urlKey: 'cvFileURL', label: 'CV / السيرة الذاتية' },
+                    { key: 'universityLetter', urlKey: 'universityLetterURL', label: 'University Letter / خطاب الجامعة' },
+                    { key: 'otherAttachments', urlKey: 'otherAttachmentsURL', label: 'Other Attachments / مرفقات أخرى' }
+                ]
+                : [
+                    { key: 'receipt', urlKey: 'receiptURL', label: 'Payment Receipt / إيصال الدفع' }
+                ];
+
+            const sections = attachmentDefs.map(({ key, urlKey, previewKey, extraPreviewKey, label }) => {
+                const rawValue = submission[key];
+                const fallbackValue = (previewKey && submission[previewKey]) || (extraPreviewKey && submission[extraPreviewKey]) || (urlKey && submission[urlKey]) || rawValue;
+                if (!fallbackValue) return '';
+
+                const src = getAttachmentSource(fallbackValue);
+                const name = getAttachmentName(rawValue || fallbackValue, label);
+                const previewHtml = src
+                    ? isRenderableImage(src)
+                        ? `<a class="review-attachment-thumb" href="${escapeHtml(src)}" target="_blank" rel="noopener noreferrer"><img src="${escapeHtml(src)}" alt="${escapeHtml(name)}"></a>`
+                        : `<a class="review-attachment-link" href="${escapeHtml(src)}" target="_blank" rel="noopener noreferrer">فتح المرفق</a>`
+                    : `<span class="review-attachment-missing">الاسم محفوظ بدون رابط قابل للفتح</span>`;
+
+                return `
+                    <div class="field review-attachment-field">
+                        <div class="field-label">${escapeHtml(label)}</div>
+                        <div class="field-value review-attachment-value">
+                            <div class="review-attachment-name">${escapeHtml(name)}</div>
+                            ${previewHtml}
+                        </div>
+                    </div>
+                `;
+            }).filter(Boolean).join('');
+
+            return sections ? sections : '';
         }
 
         const pickValue = (submission, keys) => {
@@ -1282,6 +1518,8 @@
                 `
                 : '';
 
+            const attachmentReviewHtml = renderReviewAttachments(submission);
+
             return `
                 <div class="submission-record" id="submission-record-${index}">
                     <div class="record-summary">
@@ -1322,7 +1560,7 @@
                         <div class="submission-content">
                             ${section2Html}
                             ${Object.entries(submission)
-                                .filter(([key]) => !['_source', '_docId', '_localIndex', 'managerSection2', 'department', 'duration', 'durationFrom', 'durationTo', 'specialtyDepartment', 'objective1', 'objective2', 'applicantPhotoDataUrl', '__applicantPhotoDataUrl'].includes(key))
+                                .filter(([key]) => !['_source', '_docId', '_localIndex', 'managerSection2', 'department', 'duration', 'durationFrom', 'durationTo', 'specialtyDepartment', 'objective1', 'objective2', 'applicantPhoto', 'applicantPhotoDataUrl', '__applicantPhotoDataUrl', 'applicantPhotoURL', 'cvFile', 'cvFileURL', 'idCardCopy', 'idCardCopyURL', 'universityLetter', 'universityLetterURL', 'otherAttachments', 'otherAttachmentsURL', 'receipt', 'receiptURL'].includes(key))
                                 .map(([key, value]) => {
                                     const displayVal = (['undertakingAgree','idCardDeclaration'].includes(key) && String(value).toLowerCase() === 'on') ? 'نعم ✔' : value;
                                     return `
@@ -1332,6 +1570,7 @@
                                     </div>
                                 `;
                                 }).join('')}
+                            ${attachmentReviewHtml}
                         </div>
                     </div>
                 </div>
@@ -1505,9 +1744,48 @@
         record.classList.toggle('expanded');
     }
 
-    document.getElementById('formFilter').addEventListener('change', loadSubmissions);
-    document.getElementById('searchInput').addEventListener('input', loadSubmissions);
-    loadSubmissions();
+    function logoutAdmin() {
+        window.adminAuth.signOut().finally(() => {
+            sessionStorage.setItem('redirectTo', 'admin.html');
+            window.location.href = 'admin-login.html';
+        });
+    }
+
+    function bindAdminIdentity(session) {
+        const nameElement = document.getElementById('adminName');
+        if (nameElement) {
+            nameElement.textContent = session.displayName || session.email || 'مشرف';
+        }
+
+        const employeeIdElement = document.getElementById('adminEmployeeId');
+        if (employeeIdElement) {
+            employeeIdElement.textContent = session.employeeId || session.email || '---';
+        }
+    }
+
+    async function initializeAdminPage() {
+        try {
+            const authResult = await window.adminAuth.requireAdmin();
+            if (!authResult.ok) {
+                redirectToAdminLogin();
+                return;
+            }
+
+            db = window.db || null;
+            bindAdminIdentity(authResult.session || {});
+
+            document.getElementById('formFilter').addEventListener('change', loadSubmissions);
+            document.getElementById('searchInput').addEventListener('input', loadSubmissions);
+
+            document.documentElement.style.visibility = 'visible';
+            await loadSubmissions();
+        } catch (err) {
+            console.error('تعذر تهيئة لوحة التحكم:', err);
+            redirectToAdminLogin();
+        }
+    }
+
+    initializeAdminPage();
     </script>
     <footer style="text-align:center; margin: 40px 0 10px; color:#666;">
         <div style="width: 100%; margin-top: 12px; background: linear-gradient(120deg, #e6f7f4 0%, #fafdff 100%); padding: 10px 0;">
