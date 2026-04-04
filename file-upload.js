@@ -4,17 +4,6 @@
 window.fileUpload = {
   uploadAttachment: async function(file, fieldName, cleaned) {
     if (file && file instanceof File) {
-      const toDataUrl = (fileValue) => new Promise((resolve, reject) => {
-        try {
-          const reader = new FileReader();
-          reader.onload = () => resolve(String(reader.result || ''));
-          reader.onerror = () => reject(reader.error || new Error('file read failed'));
-          reader.readAsDataURL(fileValue);
-        } catch (error) {
-          reject(error);
-        }
-      });
-
       try {
         const ok = await window.ensureFirebaseReady?.();
         if (!ok) throw new Error('Firebase not initialized');
@@ -43,18 +32,25 @@ window.fileUpload = {
         const url = await attachRef.getDownloadURL();
         cleaned[fieldName + 'URL'] = url;
         console.log(`✅ [${fieldName}] Uploaded:`, url);
+        return {
+          name: String(file.name || 'attachment'),
+          url,
+          type: String(file.type || 'application/octet-stream'),
+          size: Number(file.size || 0)
+        };
       } catch (err) {
         console.error('❌ خطأ في رفع المرفق:', fieldName, err);
-        try {
-          const fallbackUrl = await toDataUrl(file);
-          cleaned[fieldName + 'URL'] = fallbackUrl;
-          console.warn(`⚠️ [${fieldName}] using local preview fallback instead of Firebase URL`);
-        } catch (fallbackError) {
-          console.error('❌ تعذر تجهيز fallback للمرفق:', fieldName, fallbackError);
-          cleaned[fieldName + 'URL'] = '';
-        }
+        cleaned[fieldName + 'URL'] = '';
+        return {
+          name: String(file.name || 'attachment'),
+          type: String(file.type || 'application/octet-stream'),
+          size: Number(file.size || 0),
+          status: 'upload_failed',
+          message: 'فشل رفع الملف'
+        };
       }
     }
+    return null;
   },
   getAttachmentUrl: function(file, formName) {
     // يبحث عن رابط التحميل في cleaned
@@ -63,7 +59,7 @@ window.fileUpload = {
       const arr = all[formName] || [];
       for (const item of arr) {
         for (const key of Object.keys(item)) {
-          if (key.endsWith('URL') && item[key].includes(file.name)) {
+          if (key.endsWith('URL') && typeof item[key] === 'string' && item[key].includes(file.name)) {
             return item[key];
           }
         }
