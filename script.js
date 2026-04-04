@@ -1,8 +1,6 @@
 // ===== إضافة مؤشرات البدء لحقول الملفات =====
 document.addEventListener('DOMContentLoaded', () => {
   // لمسح التخزين المؤقت مرة واحدة لاختبار نظيف
-  localStorage.clear();
-  sessionStorage.clear();
   // البحث عن جميع حقول الملفات وإضافة عرض للملف المختار
   document.querySelectorAll('input[type="file"]').forEach(fileInput => {
     fileInput.addEventListener('change', (e) => {
@@ -72,7 +70,10 @@ function getMailConfig() {
     sendgridFromName,
     sendApplicantCopy,
     emailjsServiceId: clean(cfg.emailjsServiceId || cfg.serviceId),
-    emailjsTemplateId: clean(cfg.emailjsTemplateId || cfg.templateId),
+    emailjsTemplateId: clean(cfg.emailjsTemplateId || cfg.templateId || cfg.emailjsTemplateIdConfirm),
+    emailjsTemplateIdConfirm: clean(cfg.emailjsTemplateIdConfirm || cfg.emailjsTemplateId || cfg.templateId),
+    emailjsTemplateIdApprove: clean(cfg.emailjsTemplateIdApprove || cfg.emailjsTemplateId || cfg.templateId),
+    emailjsTemplateIdReject: clean(cfg.emailjsTemplateIdReject || cfg.emailjsTemplateId || cfg.templateId),
     emailjsPublicKey: clean(cfg.emailjsPublicKey || cfg.publicKey)
   };
 }
@@ -245,7 +246,13 @@ async function sendNotificationEmail(applicantData, responsible, templateType = 
 
       await sendOne(responsible.email, responsible.name, '🔔 طلب جديد يحتاج مراجعة');
 
-      if (mailConfig.sendApplicantCopy && applicantData.email) {
+      const normalizedResponsibleEmail = String(responsible.email || '').trim().toLowerCase();
+      const normalizedApplicantEmail = String(applicantData.email || '').trim().toLowerCase();
+      if (
+        mailConfig.sendApplicantCopy &&
+        normalizedApplicantEmail &&
+        normalizedApplicantEmail !== normalizedResponsibleEmail
+      ) {
         await sendOne(applicantData.email, applicantData.name || 'مقدم الطلب', '✅ تم استلام طلبك');
       }
 
@@ -276,15 +283,16 @@ async function sendNotificationEmail(applicantData, responsible, templateType = 
 // ===== حفظ البيانات في localStorage أو Firestore =====
 async function saveFormData(formName, formData) {
   // استنسخ البيانات ونظف أي حقول ملفات إلى أسماء الملفات قبل التخزين
+  // تعديل: حفظ روابط الملفات بدلاً من الأسماء فقط
   const sanitize = (data) => {
     const out = {};
     for (const [k, v] of Object.entries(data)) {
       if (String(k).startsWith('__')) continue;
       try {
         if (typeof File !== 'undefined' && v instanceof File) {
-          out[k] = v.name;
+          out[k] = v; // احتفظ بالملف لرفعه
         } else if (typeof File !== 'undefined' && v instanceof FileList) {
-          out[k] = Array.from(v).map(f => f.name).join('; ');
+          out[k] = Array.from(v); // احتفظ بالقائمة
         } else {
           out[k] = v;
         }
@@ -302,12 +310,11 @@ async function saveFormData(formName, formData) {
   cleaned.id = Date.now();
   cleaned.formType = formName;
 
-  // رفع المرفقات إلى Firebase Storage
-  const attachmentFields = ['applicantPhoto', 'cv', 'idCard', 'universityLetter', 'otherAttachment'];
+  // رفع المرفقات إلى Firebase Storage وحفظ الرابط
+  const attachmentFields = ['applicantPhoto', 'cvFile', 'idCardCopy', 'universityLetter', 'otherAttachments', 'receipt'];
   for (const field of attachmentFields) {
     if (formData[field] && formData[field] instanceof File) {
       await window.fileUpload.uploadAttachment(formData[field], field, cleaned);
-      // بعد الرفع، يتم حفظ رابط الملف في cleaned[field+'URL']
       cleaned[field] = undefined; // لا تحفظ الملف نفسه
     }
   }
@@ -333,17 +340,18 @@ async function saveFormData(formName, formData) {
   if (window.db) {
     try {
       await window.db.collection('formSubmissions').add(cleaned);
-      console.log('✅ تم حفظ الطلب في Firestore مع روابط المرفقات');
-      return { success: true, data: cleaned, firestore: true };
+      const emailSent = await sendNotificationEmail(cleaned, responsible, 'confirm');
+      console.log('✅ تم حفظ الطلب في Firestore مع روابط المرفقات:', cleaned);
+      return { success: true, data: cleaned, firestore: true, emailSent };
     } catch (err) {
       console.error('❌ خطأ في حفظ البيانات في Firestore:', err);
-      // fallback: حفظ محلي
       saveToLocalStorage(formName, cleaned);
       return { success: false, error: err, local: true };
     }
   } else {
     saveToLocalStorage(formName, cleaned);
-    return { success: true, data: cleaned, local: true };
+    const emailSent = await sendNotificationEmail(cleaned, responsible, 'confirm');
+    return { success: true, data: cleaned, local: true, emailSent };
   }
 }
 
@@ -598,14 +606,13 @@ function hasValidFirebaseConfig() {
 }
 
 async function buildAttachmentValue(file, formName, useFirebase) {
-  // لم يعد هناك رفع للسحابة أو استخدام Firebase
+  // تعديل: جلب رابط التحميل من cleaned مباشرة
   const meta = {
     name: file.name,
     type: file.type || 'application/octet-stream',
     size: file.size,
-    source: 'local-name'
+    source: 'firebase-url'
   };
-  // إذا كان هناك رابط تحميل في cleaned، أضفه
   if (window.fileUpload && typeof window.fileUpload.getAttachmentUrl === 'function') {
     const url = await window.fileUpload.getAttachmentUrl(file, formName);
     if (url) meta.url = url;
@@ -664,12 +671,7 @@ async function handleFormSubmit(formEl, formName) {
             console.warn('تعذر تجهيز معاينة صورة المتقدم:', err);
           }
         }
-        const attachmentValue = await buildAttachmentValue(v, formName);
-        if (k === 'applicantPhoto' && attachmentValue && typeof attachmentValue === 'object' && obj.applicantPhotoDataUrl) {
-          attachmentValue.dataUrl = attachmentValue.dataUrl || obj.applicantPhotoDataUrl;
-          attachmentValue.preview = attachmentValue.preview || obj.applicantPhotoDataUrl;
-        }
-        obj[k] = attachmentValue;
+        obj[k] = v;
       });
     await Promise.all(fileTasks);
 
@@ -871,7 +873,13 @@ function openSubmissionPrintPreview(formName, data) {
     'reviewedAt',
     'managerSection2',
     'firestoreId',
-    '__applicantPhotoDataUrl'
+    '__applicantPhotoDataUrl',
+    'applicantPhotoURL',
+    'cvFileURL',
+    'idCardCopyURL',
+    'universityLetterURL',
+    'otherAttachmentsURL',
+    'receiptURL'
   ]);
 
   const applicantPhotoSrc = getApplicantPhotoSrc(data);
@@ -920,15 +928,19 @@ function openSubmissionPrintPreview(formName, data) {
     }
     return src ? 'link' : 'missing';
   };
-  const attachmentFields = [
-    { key: 'idCardCopy', label: 'ID Card Copy / نسخة البطاقة الشخصية' },
-    { key: 'cvFile', label: 'CV / السيرة الذاتية' },
-    { key: 'universityLetter', label: 'University Letter / خطاب الجامعة' },
-    { key: 'otherAttachments', label: 'Other Attachments / مرفقات أخرى' }
-  ];
-  const attachmentSectionsHtml = isGraduates
-    ? attachmentFields.map(({ key, label }) => {
-        const value = data?.[key];
+  const attachmentFields = isGraduates
+    ? [
+        { key: 'idCardCopy', urlKey: 'idCardCopyURL', label: 'ID Card Copy / نسخة البطاقة الشخصية' },
+        { key: 'cvFile', urlKey: 'cvFileURL', label: 'CV / السيرة الذاتية' },
+        { key: 'universityLetter', urlKey: 'universityLetterURL', label: 'University Letter / خطاب الجامعة' },
+        { key: 'otherAttachments', urlKey: 'otherAttachmentsURL', label: 'Other Attachments / مرفقات أخرى' }
+      ]
+    : ['training-employees', 'training-others', 'internal-employees', 'internal-others'].includes(formName)
+      ? [{ key: 'receipt', urlKey: 'receiptURL', label: 'Payment Receipt / إيصال الدفع' }]
+      : [];
+  const attachmentSectionsHtml = attachmentFields.length
+    ? attachmentFields.map(({ key, urlKey, label }) => {
+        const value = data?.[key] || data?.[urlKey];
         if (!value) return '';
         const src = getAttachmentSrc(value);
         const fileName = getAttachmentName(value, label);
@@ -1697,3 +1709,23 @@ function showErrorMessage(message) {
   container.appendChild(overlay);
   container.appendChild(modal);
 }
+
+// تحديث التوكن بعد تعيين claim
+// تحديث التوكن بعد تعيين claim (للمتصفح)
+async function refreshAdminClaimState() {
+  try {
+    const ready = window.ensureFirebaseReady ? await window.ensureFirebaseReady() : !!window.firebase;
+    if (!ready) return;
+
+    const auth = window.firebaseAuth || (window.firebase && window.firebase.auth && window.firebase.auth());
+    if (!auth || !auth.currentUser) return;
+
+    await auth.currentUser.getIdToken(true);
+    const tokenResult = await auth.currentUser.getIdTokenResult();
+    console.log(tokenResult.claims.admin); // true if claim was assigned
+  } catch (err) {
+    console.warn('Failed to refresh admin claim state:', err);
+  }
+}
+
+refreshAdminClaimState();

@@ -1,0 +1,40 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn()
+        && firestore.exists(/databases/(default)/documents/admins/$(request.auth.uid))
+        && firestore.get(/databases/(default)/documents/admins/$(request.auth.uid)).data.active == true
+        && firestore.get(/databases/(default)/documents/admins/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isAllowedAttachmentType() {
+      return request.resource != null
+        && request.resource.contentType.matches('image/.*|application/pdf');
+    }
+
+    function isAllowedAttachmentSize() {
+      return request.resource != null
+        && request.resource.size < 10 * 1024 * 1024;
+    }
+
+    match /attachments/{allPaths=**} {
+      allow create: if isAllowedAttachmentType() && isAllowedAttachmentSize();
+      allow update, delete: if isAdmin();
+
+      // Current frontend persists getDownloadURL values in Firestore.
+      // Keeping read open here preserves the existing applicant/admin flows.
+      // To make attachments admin-only, migrate the app to store storage paths
+      // instead of public download URLs, then change this rule to: if isAdmin().
+      allow read: if true;
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

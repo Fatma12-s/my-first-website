@@ -1,4 +1,10 @@
 {
+	"firestore": {
+		"rules": "firestore.rules"
+	},
+	"storage": {
+		"rules": "storage.rules"
+	},
 	"hosting": {
 		"public": ".",
 		"headers": [
@@ -31,6 +37,7 @@
 		"ignore": [
 			"firebase.json",
 			"deploy.log",
+			"__tmp_*",
 			".git/**",
 			"**/.*",
 			"**/node_modules/**"
