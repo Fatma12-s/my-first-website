@@ -24,9 +24,11 @@
             background: linear-gradient(135deg, var(--brand-600) 0%, var(--brand-500) 100%);
             min-height: 100vh;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             padding: 20px;
+            gap: 20px;
         }
 
         .login-container {
@@ -108,6 +110,14 @@
             display: none;
         }
 
+        .status {
+            color: var(--brand-600);
+            font-size: 13px;
+            margin-top: 10px;
+            text-align: center;
+            display: none;
+        }
+
         .back-link {
             text-align: center;
             margin-top: 20px;
@@ -146,6 +156,19 @@
             font-size: 13px;
             color: #333;
         }
+
+        .page-footer {
+            text-align: center;
+            color: #fff;
+        }
+
+        .page-footer img {
+            width: 110px;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+            opacity: 0.9;
+        }
     </style>
 </head>
 <body>
@@ -155,7 +178,7 @@
             <p>أدخل بيانات حسابك</p>
         </div>
 
-        <form id="loginForm" onsubmit="handleLogin(event)">
+        <form id="loginForm">
             <div class="form-group">
                 <label for="adminEmail">البريد الإلكتروني للمشرف</label>
                 <input type="email" id="adminEmail" name="adminEmail" placeholder="admin@example.com" required autofocus>
@@ -170,6 +193,7 @@
             <button type="submit" class="btn">دخول</button>
 
             <div class="error" id="error"></div>
+            <div class="status" id="status"></div>
         </form>
 
         <div class="login-link">
@@ -181,18 +205,44 @@
         </div>
 
         <div class="back-link">
-            <button class="btn" style="background:#f0ad4e;color:#222;font-size:14px;padding:8px 10px;margin-top:10px;" onclick="resetAdminAccount()">إعادة تعيين كلمة المرور</button>
-        </div>
+            <button type="button" id="resetPasswordBtn" class="btn" style="background:#f0ad4e;color:#222;font-size:14px;padding:8px 10px;margin-top:10px;">إعادة تعيين كلمة المرور</button>
         </div>
     </div>
 
-    <script src="firebase-config.js"></script>
+    <script type="module" src="firebase-config.js?v=1.2"></script>
     <script src="admin-auth.js"></script>
     <script>
+        function showStatus(message) {
+            const statusMsg = document.getElementById('status');
+            if (!statusMsg) return;
+            statusMsg.textContent = message || '';
+            statusMsg.style.display = message ? 'block' : 'none';
+        }
+
         function showError(message) {
             const errorMsg = document.getElementById('error');
             errorMsg.textContent = message;
             errorMsg.style.display = 'block';
+            showStatus('');
+        }
+
+        function clearError() {
+            const errorMsg = document.getElementById('error');
+            errorMsg.textContent = '';
+            errorMsg.style.display = 'none';
+        }
+
+        function setFormEnabled(enabled) {
+            const form = document.getElementById('loginForm');
+            const resetBtn = document.getElementById('resetPasswordBtn');
+            if (form) {
+                form.querySelectorAll('input, button').forEach((element) => {
+                    element.disabled = !enabled;
+                });
+            }
+            if (resetBtn) {
+                resetBtn.disabled = !enabled;
+            }
         }
 
         function getReadableAuthError(err) {
@@ -217,37 +267,71 @@
             if (!email) return;
 
             try {
+                clearError();
+                showStatus('جاري إرسال رابط إعادة التعيين...');
                 await window.adminAuth.sendPasswordReset(email.trim());
+                showStatus('');
                 alert('تم إرسال رابط إعادة تعيين كلمة المرور إلى البريد الإلكتروني إذا كان الحساب موجودًا.');
             } catch (err) {
                 console.error(err);
                 alert(getReadableAuthError(err));
+            } finally {
+                showStatus('');
             }
         }
 
-        window.addEventListener('DOMContentLoaded', async () => {
+        async function bootstrapAdminLogin() {
+            clearError();
+            setFormEnabled(false);
+            showStatus('جاري تهيئة تسجيل الدخول...');
+
             try {
+                if (!window.adminAuth || typeof window.adminAuth.ensureFirebase !== 'function') {
+                    throw new Error('admin-auth-unavailable');
+                }
+
+                const isReady = await window.adminAuth.ensureFirebase();
+                if (!isReady) {
+                    throw new Error('firebase-init-failed');
+                }
+
                 const result = await window.adminAuth.requireAdmin();
                 if (result.ok) {
                     window.location.replace(sessionStorage.getItem('redirectTo') || 'admin.html');
+                    return;
                 }
+
+                showStatus('');
+                setFormEnabled(true);
             } catch (err) {
-                console.warn('لم يتم العثور على جلسة مشرف نشطة:', err);
+                console.error('تعذر تهيئة صفحة تسجيل الدخول:', err);
+                showError('تعذر تحميل خدمة تسجيل الدخول. تحقق من الاتصال بالإنترنت وإعدادات Firebase ثم أعد المحاولة.');
             }
-        });
+        }
 
         async function handleLogin(event) {
             event.preventDefault();
             const email = document.getElementById('adminEmail').value.trim();
             const password = document.getElementById('password').value;
-            const errorMsg = document.getElementById('error');
             const submitBtn = document.querySelector('#loginForm button[type="submit"]');
 
-            errorMsg.style.display = 'none';
+            clearError();
+            showStatus('');
+
+            if (!window.adminAuth || typeof window.adminAuth.signIn !== 'function') {
+                showError('خدمة تسجيل الدخول غير جاهزة بعد. أعد تحميل الصفحة ثم حاول مرة أخرى.');
+                return;
+            }
+
             submitBtn.disabled = true;
             submitBtn.textContent = 'جاري التحقق...';
 
             try {
+                const isReady = await window.adminAuth.ensureFirebase();
+                if (!isReady) {
+                    throw new Error('firebase-init-failed');
+                }
+
                 await window.adminAuth.signIn(email, password);
                 const redirectTo = sessionStorage.getItem('redirectTo') || 'admin.html';
                 sessionStorage.removeItem('redirectTo');
@@ -262,9 +346,15 @@
                 submitBtn.textContent = 'دخول';
             }
         }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('loginForm').addEventListener('submit', handleLogin);
+            document.getElementById('resetPasswordBtn').addEventListener('click', resetAdminAccount);
+            bootstrapAdminLogin();
+        });
     </script>
-    <footer style="text-align:center; margin-top: 24px; color:#fff;">
-        <img src="./assets/logo2.png.png" alt="الشعار الثاني" style="width: 110px; height: auto; display: block; margin: 0 auto; opacity: 0.9;">
+    <footer class="page-footer">
+        <img src="./assets/logo2.png.png" alt="الشعار الثاني">
     </footer>
 </body>
 </html>

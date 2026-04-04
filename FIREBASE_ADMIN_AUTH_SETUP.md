@@ -73,6 +73,33 @@ Example document body:
 }
 ```
 
+## 6.1 Local helper script
+
+You can also create or update the admin document from the workspace using:
+
+```bash
+cd functions
+node set-admin.js <firebase-auth-uid> true <email> <displayName> <employeeId>
+```
+
+Example:
+
+```bash
+cd functions
+node set-admin.js abc123 true fsalim@squ.edu.om "Fatma Admin" EMP001
+```
+
+To revoke admin access:
+
+```bash
+cd functions
+node set-admin.js <firebase-auth-uid> false
+```
+
+This helper updates both:
+- the Firestore document at `admins/<uid>`
+- the optional custom claim `admin`
+
 ## 7. Important note
 Current public forms still create documents in `formSubmissions` without authentication.
 Admin read/update/delete is protected by Firestore rules.

@@ -4,6 +4,15 @@
 window.fileUpload = {
   uploadAttachment: async function(file, fieldName, cleaned) {
     if (file && file instanceof File) {
+      const buildResult = (overrides = {}) => ({
+        name: String(overrides.name || file.name || 'attachment'),
+        type: String(overrides.type || file.type || 'application/octet-stream'),
+        size: Number(overrides.size || file.size || 0),
+        ...(overrides.url ? { url: String(overrides.url) } : {}),
+        ...(overrides.status ? { status: String(overrides.status) } : {}),
+        ...(overrides.message ? { message: String(overrides.message) } : {})
+      });
+
       const toDataUrl = (fileValue) => new Promise((resolve, reject) => {
         try {
           const reader = new FileReader();
@@ -43,18 +52,29 @@ window.fileUpload = {
         const url = await attachRef.getDownloadURL();
         cleaned[fieldName + 'URL'] = url;
         console.log(`✅ [${fieldName}] Uploaded:`, url);
+        return buildResult({ url });
       } catch (err) {
         console.error('❌ خطأ في رفع المرفق:', fieldName, err);
         try {
           const fallbackUrl = await toDataUrl(file);
           cleaned[fieldName + 'URL'] = fallbackUrl;
           console.warn(`⚠️ [${fieldName}] using local preview fallback instead of Firebase URL`);
+          return buildResult({
+            url: fallbackUrl,
+            status: 'upload_failed',
+            message: 'فشل رفع الملف وتم استخدام نسخة محلية مؤقتة'
+          });
         } catch (fallbackError) {
           console.error('❌ تعذر تجهيز fallback للمرفق:', fieldName, fallbackError);
           cleaned[fieldName + 'URL'] = '';
+          return buildResult({
+            status: 'upload_failed',
+            message: 'فشل رفع الملف'
+          });
         }
       }
     }
+    return undefined;
   },
   getAttachmentUrl: function(file, formName) {
     // يبحث عن رابط التحميل في cleaned
