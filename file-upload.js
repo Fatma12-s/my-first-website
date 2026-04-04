@@ -4,6 +4,17 @@
 window.fileUpload = {
   uploadAttachment: async function(file, fieldName, cleaned) {
     if (file && file instanceof File) {
+      const toDataUrl = (fileValue) => new Promise((resolve, reject) => {
+        try {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result || ''));
+          reader.onerror = () => reject(reader.error || new Error('file read failed'));
+          reader.readAsDataURL(fileValue);
+        } catch (error) {
+          reject(error);
+        }
+      });
+
       try {
         const ok = await window.ensureFirebaseReady?.();
         if (!ok) throw new Error('Firebase not initialized');
@@ -34,7 +45,14 @@ window.fileUpload = {
         console.log(`✅ [${fieldName}] Uploaded:`, url);
       } catch (err) {
         console.error('❌ خطأ في رفع المرفق:', fieldName, err);
-        cleaned[fieldName + 'URL'] = '';
+        try {
+          const fallbackUrl = await toDataUrl(file);
+          cleaned[fieldName + 'URL'] = fallbackUrl;
+          console.warn(`⚠️ [${fieldName}] using local preview fallback instead of Firebase URL`);
+        } catch (fallbackError) {
+          console.error('❌ تعذر تجهيز fallback للمرفق:', fieldName, fallbackError);
+          cleaned[fieldName + 'URL'] = '';
+        }
       }
     }
   },

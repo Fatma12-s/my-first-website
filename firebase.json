@@ -37,6 +37,7 @@
 		"ignore": [
 			"firebase.json",
 			"deploy.log",
+			"__tmp_*",
 			".git/**",
 			"**/.*",
 			"**/node_modules/**"
