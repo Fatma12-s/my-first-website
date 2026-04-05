@@ -3,6 +3,7 @@
 	if (!form) return;
 
 	const attachmentFields = ['applicantPhoto', 'cvFile', 'idCardCopy', 'universityLetter', 'otherAttachments', 'receipt'];
+	const isRemoteAttachmentUrl = (value) => /^https:\/\//i.test(String(value || '').trim());
 	const withLocalTimeout = (promise, timeoutMs, timeoutMessage) => Promise.race([
 		promise,
 		new Promise((_, reject) => {
@@ -97,7 +98,6 @@
 		cleaned.formType = formName;
 		delete cleaned.applicantPhotoDataUrl;
 
-		const previewAttachmentUrls = {};
 		await Promise.all(attachmentFields.map(async (field) => {
 			if (!(formData[field] && formData[field] instanceof File)) return;
 			const file = formData[field];
@@ -119,19 +119,13 @@
 			}
 		}));
 
-		for (const field of attachmentFields) {
-			const attachmentValue = cleaned[field];
-			if (!attachmentValue || typeof attachmentValue !== 'object') continue;
-			const attachmentUrl = String(attachmentValue.url || '').trim();
-			if (!/^data:/i.test(attachmentUrl)) continue;
-			previewAttachmentUrls[field] = attachmentUrl;
-			if (field === 'applicantPhoto' && !cleaned.__applicantPhotoDataUrl) {
-				cleaned.__applicantPhotoDataUrl = attachmentUrl;
-			}
-			delete attachmentValue.url;
-			attachmentValue.source = 'upload-result';
-			attachmentValue.status = attachmentValue.status || 'upload_failed';
-			attachmentValue.message = attachmentValue.message || 'فشل رفع الملف وتم استخدام نسخة محلية مؤقتة للمعاينة';
+		const requiredRemoteAttachments = ['cvFile', 'idCardCopy', 'universityLetter'];
+		const missingRequiredAttachments = requiredRemoteAttachments.filter((field) => {
+			const attachment = cleaned[field];
+			return !(attachment && typeof attachment === 'object' && isRemoteAttachmentUrl(attachment.url));
+		});
+		if (missingRequiredAttachments.length) {
+			throw new Error('تعذر رفع المرفقات المطلوبة إلى Firebase Storage. تأكد من تهيئة Storage ثم أعد المحاولة.');
 		}
 
 		if (formName === 'graduates') {
@@ -175,16 +169,6 @@
 		}
 
 		const resultData = clonePlainData(persistableCleaned) || {};
-		if (Object.keys(previewAttachmentUrls).length) {
-			resultData.__attachmentPreviewUrls = previewAttachmentUrls;
-			for (const [field, url] of Object.entries(previewAttachmentUrls)) {
-				if (!resultData[field] || typeof resultData[field] !== 'object') {
-					resultData[field] = { url };
-				} else if (!resultData[field].url) {
-					resultData[field].url = url;
-				}
-			}
-		}
 		if (cleaned.__applicantPhotoDataUrl) {
 			resultData.__applicantPhotoDataUrl = String(cleaned.__applicantPhotoDataUrl);
 		}

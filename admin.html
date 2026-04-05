@@ -94,6 +94,51 @@
             color: #8a5a00;
         }
 
+        .source-note.error {
+            background: #fff1f2;
+            border-color: #f3b8c0;
+            color: #9f1239;
+        }
+
+        .fatal-error-panel {
+            display: none;
+            background: #fff1f2;
+            border: 1px solid #f3b8c0;
+            color: #881337;
+            padding: 16px;
+            border-radius: 10px;
+            margin-bottom: var(--space-lg);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+        }
+
+        .fatal-error-panel.visible {
+            display: block;
+        }
+
+        .fatal-error-panel h3 {
+            margin-bottom: 8px;
+        }
+
+        .fatal-error-panel p {
+            margin-bottom: 8px;
+            line-height: 1.7;
+        }
+
+        .fatal-error-panel pre {
+            margin: 0;
+            background: rgba(255,255,255,0.8);
+            border: 1px solid #f7cdd3;
+            border-radius: 8px;
+            padding: 10px;
+            overflow: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+            direction: ltr;
+            text-align: left;
+            font-family: Consolas, "Courier New", monospace;
+            font-size: 12px;
+        }
+
         .filter-group {
             display: flex;
             gap: var(--space-md);
@@ -552,18 +597,172 @@
             <!-- ...existing code... -->
         </div>
 
-        <!-- تم إخفاء رسالة مصدر البيانات الحالي بناءً على طلب المستخدم -->
+        <div id="fatalErrorPanel" class="fatal-error-panel" role="alert" aria-live="assertive"></div>
+        <div id="dataSourceNotice" class="source-note" style="display: none;"></div>
 
         <div id="submissionsContainer" class="submissions">
             <!-- سيتم ملؤها بـ JavaScript -->
         </div>
     </div>
 
-    <script type="module" src="firebase-config.js?v=1.2"></script>
-    <script src="admin-auth.js"></script>
+    <script src="firebase-config.js?v=1.2"></script>
+    <script src="admin-auth.js?v=20260405-admin-login-fix"></script>
     <script src="email-config.js"></script>
     <script>
     let db = null;
+    const ADMIN_BOOT_TIMEOUT_MS = 12000;
+    const ADMIN_SCRIPT_URLS = {
+        firebaseConfig: 'firebase-config.js?v=1.2',
+        adminAuth: 'admin-auth.js?v=20260405-admin-login-fix'
+    };
+
+    function revealAdminPage() {
+        document.documentElement.style.visibility = 'visible';
+    }
+
+    function getAbsoluteScriptUrl(src) {
+        try {
+            return new URL(src, window.location.href).href;
+        } catch (err) {
+            return src;
+        }
+    }
+
+    function loadPageScriptOnce(src) {
+        const absoluteSrc = getAbsoluteScriptUrl(src);
+        return new Promise((resolve, reject) => {
+            const existing = Array.from(document.scripts).find((script) => script.src === absoluteSrc);
+            if (existing) {
+                if (existing.dataset.loaded === 'true') {
+                    resolve();
+                    return;
+                }
+                existing.addEventListener('load', () => {
+                    existing.dataset.loaded = 'true';
+                    resolve();
+                }, { once: true });
+                existing.addEventListener('error', () => reject(new Error(`Failed to load script: ${src}`)), { once: true });
+                return;
+            }
+
+            const script = document.createElement('script');
+            script.src = absoluteSrc;
+            script.async = true;
+            script.onload = () => {
+                script.dataset.loaded = 'true';
+                resolve();
+            };
+            script.onerror = () => reject(new Error(`Failed to load script: ${src}`));
+            document.head.appendChild(script);
+        });
+    }
+
+    function timeoutAfter(timeoutMs, message) {
+        return new Promise((_, reject) => {
+            setTimeout(() => reject(new Error(message)), timeoutMs);
+        });
+    }
+
+    function formatErrorDetails(error) {
+        if (!error) return 'Unknown error';
+        if (error instanceof Error) {
+            return error.stack || `${error.name}: ${error.message}`;
+        }
+        if (typeof error === 'object') {
+            try {
+                return JSON.stringify(error, null, 2);
+            } catch (jsonError) {
+                return String(error);
+            }
+        }
+        return String(error);
+    }
+
+    function requireElement(id, label) {
+        const element = document.getElementById(id);
+        if (!element) {
+            throw new Error(`العنصر المطلوب غير موجود: #${id}${label ? ` (${label})` : ''}`);
+        }
+        return element;
+    }
+
+    function getFirebaseRuntimeState() {
+        return {
+            hasEnsureFirebaseReady: typeof window.ensureFirebaseReady === 'function',
+            hasFirebaseNamespace: !!window.firebase,
+            hasAuthInstance: !!window.firebaseAuth,
+            hasFirestoreInstance: !!window.db,
+            hasAdminAuth: !!window.adminAuth,
+            hasRequireAdmin: !!(window.adminAuth && typeof window.adminAuth.requireAdmin === 'function')
+        };
+    }
+
+    function showFatalAdminError(title, error, extraDetails = []) {
+        revealAdminPage();
+
+        const panel = document.getElementById('fatalErrorPanel');
+        const container = document.getElementById('submissionsContainer');
+        const details = [
+            ...extraDetails.filter(Boolean),
+            `Runtime state: ${JSON.stringify(getFirebaseRuntimeState(), null, 2)}`,
+            formatErrorDetails(error)
+        ].join('\n\n');
+
+        if (panel) {
+            panel.classList.add('visible');
+            panel.innerHTML = `
+                <h3>${escapeHtml(title || 'تعذر تهيئة لوحة التحكم')}</h3>
+                <p>تم إظهار السبب الحقيقي أدناه حتى يمكن تشخيص المشكلة بدقة بدل إبقاء الصفحة فارغة.</p>
+                <pre>${escapeHtml(details)}</pre>
+            `;
+        }
+
+        if (container) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">⚠️</div>
+                    <h3>${escapeHtml(title || 'تعذر تهيئة لوحة التحكم')}</h3>
+                    <p>راجع تفاصيل الخطأ الظاهرة أعلى الصفحة.</p>
+                </div>
+            `;
+        }
+    }
+
+    async function ensureAdminBootstrapScripts() {
+        if (typeof window.ensureFirebaseReady !== 'function') {
+            await loadPageScriptOnce(ADMIN_SCRIPT_URLS.firebaseConfig);
+        }
+
+        if (!window.adminAuth || typeof window.adminAuth.requireAdmin !== 'function') {
+            await loadPageScriptOnce(ADMIN_SCRIPT_URLS.adminAuth);
+        }
+    }
+
+    async function ensureAdminDependenciesReady() {
+        await Promise.race([
+            (async () => {
+                await ensureAdminBootstrapScripts();
+
+                if (typeof window.ensureFirebaseReady !== 'function') {
+                    throw new Error('فشل تحميل firebase-config.js أو لم يتم تعريف window.ensureFirebaseReady.');
+                }
+
+                const firebaseReady = await window.ensureFirebaseReady();
+                if (!firebaseReady) {
+                    throw new Error('فشل تهيئة Firebase. window.db أو window.firebase أو auth غير معرف بشكل صحيح.');
+                }
+
+                if (!window.adminAuth || typeof window.adminAuth.requireAdmin !== 'function') {
+                    throw new Error('فشل تحميل admin-auth.js أو لم يتم تعريف window.adminAuth.requireAdmin.');
+                }
+            })(),
+            timeoutAfter(ADMIN_BOOT_TIMEOUT_MS, 'انتهت مهلة تهيئة لوحة التحكم قبل اكتمال تحميل Firebase/Auth.')
+        ]);
+    }
+
+    function resolveFirestoreDb() {
+        return window.db || (window.firebase && window.firebase.firestore && window.firebase.firestore()) || null;
+    }
 
     function redirectToAdminLogin() {
         sessionStorage.setItem('redirectTo', 'admin.html');
@@ -904,11 +1103,12 @@
         const isNonClinical = reqValue.includes('NON-CLINICAL');
         const undertakingAgreed = ['on', 'true', 'yes', '1'].includes(String(effective.undertakingAgree || '').toLowerCase());
         const declarationAgreed = ['on', 'true', 'yes', '1'].includes(String(effective.idCardDeclaration || '').toLowerCase());
-        const isOpenableAsset = (value) => /^(https?:\/\/|data:|blob:|\.\/|\/)/i.test(String(value || '').trim());
+        const isRemoteAttachmentUrl = (value) => /^https:\/\//i.test(String(value || '').trim());
+        const isOpenableAsset = (value) => isRemoteAttachmentUrl(value);
         const getAttachmentSrc = (value) => {
             if (!value) return '';
             if (typeof value === 'object') {
-                const candidate = value.dataUrl || value.url || value.preview || '';
+                const candidate = value.url || '';
                 return isOpenableAsset(candidate) ? String(candidate) : '';
             }
             return isOpenableAsset(value) ? String(value) : '';
@@ -928,10 +1128,10 @@
                 return 'missing';
             }
 
-            if (type.startsWith('image/') || /^data:image\//.test(lowerSrc) || /\.(png|jpe?g|gif|webp|bmp|svg)(\?|#|$)/i.test(lowerSrc) || /\.(png|jpe?g|gif|webp|bmp|svg)(\?|#|$)/i.test(lowerName)) {
+            if (type.startsWith('image/') || /\.(png|jpe?g|gif|webp|bmp|svg)(\?|#|$)/i.test(lowerSrc) || /\.(png|jpe?g|gif|webp|bmp|svg)(\?|#|$)/i.test(lowerName)) {
                 return 'image';
             }
-            if (type === 'application/pdf' || /^data:application\/pdf/.test(lowerSrc) || /\.pdf(\?|#|$)/i.test(lowerSrc) || /\.pdf(\?|#|$)/i.test(lowerName)) {
+            if (type === 'application/pdf' || /\.pdf(\?|#|$)/i.test(lowerSrc) || /\.pdf(\?|#|$)/i.test(lowerName)) {
                 return 'pdf';
             }
             return src ? 'link' : 'missing';
@@ -1389,10 +1589,10 @@
 
     // ===== تحميل وعرض البيانات من Firestore أو localStorage =====
     async function loadSubmissions() {
-        const container = document.getElementById('submissionsContainer');
+        const container = requireElement('submissionsContainer', 'قائمة الطلبات');
         const sourceNotice = document.getElementById('dataSourceNotice');
-        const selectedForm = document.getElementById('formFilter').value;
-        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        const selectedForm = requireElement('formFilter', 'فلتر نوع الطلب').value;
+        const searchTerm = requireElement('searchInput', 'حقل البحث').value.toLowerCase();
         let filteredData = [];
         let firestoreFailed = false;
 
@@ -1426,9 +1626,9 @@
                 });
                 setSourceNotice('مصدر البيانات الحالي: Firebase / Firestore');
             } catch (err) {
-                console.log('خطأ في Firestore، لن يتم عرض البيانات المحلية لتفادي عدم التطابق:', err);
+                console.error('خطأ في قراءة البيانات من Firestore:', err);
                 firestoreFailed = true;
-                setSourceNotice('تعذر تحميل البيانات من Firebase. تم إيقاف الرجوع التلقائي إلى البيانات المحلية لتجنب ظهور سجلات قديمة غير متطابقة.', true);
+                setSourceNotice(`تعذر تحميل البيانات من Firebase / Firestore: ${err && err.message ? err.message : 'Unknown error'}. تم إيقاف الرجوع التلقائي إلى البيانات المحلية لتجنب ظهور سجلات قديمة غير متطابقة.`, true);
             }
         } else {
             const localData = JSON.parse(localStorage.getItem('formSubmissions')) || {};
@@ -1503,13 +1703,13 @@
         }
 
         function renderReviewAttachments(submission) {
-            const isRenderableImage = (value) => /^(data:image\/|blob:|https?:\/\/|\.\/|\/)/i.test(String(value || '').trim()) && /(^data:image\/|\.(png|jpe?g|gif|webp|bmp|svg)(\?|#|$))/i.test(String(value || '').trim());
-            const isOpenableUrl = (value) => /^(https?:\/\/|data:|blob:|\.|\/)/i.test(String(value || '').trim());
+            const isOpenableUrl = (value) => /^https:\/\//i.test(String(value || '').trim());
+            const isRenderableImage = (value) => isOpenableUrl(value) && /\.(png|jpe?g|gif|webp|bmp|svg)(\?|#|$)/i.test(String(value || '').trim());
             const normalized = normalizeSubmissionAssets(submission);
             const getAttachmentSource = (value) => {
                 if (!value) return '';
                 if (typeof value === 'object') {
-                    const candidate = value.url || value.dataUrl || value.preview || '';
+                    const candidate = value.url || '';
                     return isOpenableUrl(candidate) ? String(candidate) : '';
                 }
                 return isOpenableUrl(value) ? String(value) : '';
@@ -1865,23 +2065,45 @@
 
     async function initializeAdminPage() {
         try {
+            await ensureAdminDependenciesReady();
+
+            requireElement('formFilter', 'فلتر نوع الطلب');
+            requireElement('searchInput', 'حقل البحث');
+            requireElement('stats', 'إحصائيات الطلبات');
+            requireElement('submissionsContainer', 'قائمة الطلبات');
+
             const authResult = await window.adminAuth.requireAdmin();
             if (!authResult.ok) {
                 redirectToAdminLogin();
                 return;
             }
 
-            db = window.db || null;
+            db = resolveFirestoreDb();
+            if (!db || typeof db.collection !== 'function') {
+                throw new Error('Firestore غير متاح بعد تهيئة Firebase. window.db أو firebase.firestore غير معرف.');
+            }
+
             bindAdminIdentity(authResult.session || {});
 
-            document.getElementById('formFilter').addEventListener('change', loadSubmissions);
-            document.getElementById('searchInput').addEventListener('input', loadSubmissions);
+            const formFilter = requireElement('formFilter', 'فلتر نوع الطلب');
+            const searchInput = requireElement('searchInput', 'حقل البحث');
+            if (formFilter.dataset.bound !== 'true') {
+                formFilter.addEventListener('change', loadSubmissions);
+                formFilter.dataset.bound = 'true';
+            }
+            if (searchInput.dataset.bound !== 'true') {
+                searchInput.addEventListener('input', loadSubmissions);
+                searchInput.dataset.bound = 'true';
+            }
 
-            document.documentElement.style.visibility = 'visible';
+            revealAdminPage();
             await loadSubmissions();
         } catch (err) {
             console.error('تعذر تهيئة لوحة التحكم:', err);
-            redirectToAdminLogin();
+            showFatalAdminError('تعذر تهيئة لوحة التحكم', err, [
+                'فشل التحميل أو التهيئة في admin.html.',
+                'تحقق من تحميل firebase-config.js و admin-auth.js ووجود عناصر الواجهة الأساسية.'
+            ]);
         }
     }
 

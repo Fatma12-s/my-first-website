@@ -4,6 +4,7 @@
 window.fileUpload = {
   uploadAttachment: async function(file, fieldName, cleaned) {
     if (file && file instanceof File) {
+      const isRemoteStorageUrl = (value) => /^https:\/\//i.test(String(value || '').trim());
       const buildResult = (overrides = {}) => ({
         name: String(overrides.name || file.name || 'attachment'),
         type: String(overrides.type || file.type || 'application/octet-stream'),
@@ -11,17 +12,6 @@ window.fileUpload = {
         ...(overrides.url ? { url: String(overrides.url) } : {}),
         ...(overrides.status ? { status: String(overrides.status) } : {}),
         ...(overrides.message ? { message: String(overrides.message) } : {})
-      });
-
-      const toDataUrl = (fileValue) => new Promise((resolve, reject) => {
-        try {
-          const reader = new FileReader();
-          reader.onload = () => resolve(String(reader.result || ''));
-          reader.onerror = () => reject(reader.error || new Error('file read failed'));
-          reader.readAsDataURL(fileValue);
-        } catch (error) {
-          reject(error);
-        }
       });
 
       try {
@@ -50,28 +40,19 @@ window.fileUpload = {
         ]);
         if (!snapshot) throw new Error('Upload failed');
         const url = await attachRef.getDownloadURL();
+        if (!isRemoteStorageUrl(url)) {
+          throw new Error('Firebase Storage returned a non-remote URL');
+        }
         cleaned[fieldName + 'URL'] = url;
         console.log(`✅ [${fieldName}] Uploaded:`, url);
         return buildResult({ url });
       } catch (err) {
         console.error('❌ خطأ في رفع المرفق:', fieldName, err);
-        try {
-          const fallbackUrl = await toDataUrl(file);
-          cleaned[fieldName + 'URL'] = fallbackUrl;
-          console.warn(`⚠️ [${fieldName}] using local preview fallback instead of Firebase URL`);
-          return buildResult({
-            url: fallbackUrl,
-            status: 'upload_failed',
-            message: 'فشل رفع الملف وتم استخدام نسخة محلية مؤقتة'
-          });
-        } catch (fallbackError) {
-          console.error('❌ تعذر تجهيز fallback للمرفق:', fieldName, fallbackError);
-          cleaned[fieldName + 'URL'] = '';
-          return buildResult({
-            status: 'upload_failed',
-            message: 'فشل رفع الملف'
-          });
-        }
+        cleaned[fieldName + 'URL'] = '';
+        return buildResult({
+          status: 'upload_failed',
+          message: 'فشل رفع الملف إلى Firebase Storage. لم يتم إنشاء رابط تنزيل صالح.'
+        });
       }
     }
     return undefined;

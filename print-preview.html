@@ -99,6 +99,7 @@
       const params = new URLSearchParams(window.location.search);
       const token = params.get('token') || '';
       const key = token ? `printPreviewHtml:${token}` : '';
+      const payloadKey = token ? `printPreviewPayload:${token}` : '';
 
       function showMessage(text) {
         msgEl.style.display = 'block';
@@ -112,6 +113,194 @@
         } catch (err) {
           return '';
         }
+      }
+
+      function getPayloadFromStorage() {
+        if (!payloadKey) return null;
+        try {
+          const raw = sessionStorage.getItem(payloadKey);
+          return raw ? JSON.parse(raw) : null;
+        } catch (err) {
+          console.warn('تعذر قراءة بيانات المعاينة الإضافية:', err);
+          return null;
+        }
+      }
+
+      function getAttachmentDefinitions(formName) {
+        if (formName === 'graduates') {
+          return [
+            { label: 'السيرة الذاتية / CV', keys: ['cv', 'cvFile'], urlKeys: ['cvFileURL'] },
+            { label: 'البطاقة الشخصية / ID Card', keys: ['idCard', 'idCardCopy'], urlKeys: ['idCardCopyURL'] },
+            { label: 'خطاب الجامعة / University Letter', keys: ['universityLetter'], urlKeys: ['universityLetterURL'] },
+            { label: 'مرفقات أخرى / Other Attachments', keys: ['otherAttachment', 'otherAttachments'], urlKeys: ['otherAttachmentsURL'] }
+          ];
+        }
+
+        if (['training-employees', 'training-others', 'internal-employees', 'internal-others'].includes(formName)) {
+          return [
+            { label: 'إيصال الدفع / Payment Receipt', keys: ['receipt'], urlKeys: ['receiptURL'] }
+          ];
+        }
+
+        return [];
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      function isRemoteAttachmentUrl(value) {
+        return /^https:\/\//i.test(String(value || '').trim());
+      }
+
+      function isOpenableAsset(value) {
+        return isRemoteAttachmentUrl(value);
+      }
+
+      function getAttachmentUrl(value) {
+        if (!value) return '';
+        if (typeof value === 'object') {
+          const candidate = String(value.url || value.dataUrl || value.preview || '').trim();
+          return isOpenableAsset(candidate) ? candidate : '';
+        }
+        const candidate = String(value || '').trim();
+        return isOpenableAsset(candidate) ? candidate : '';
+      }
+
+      function getAttachmentName(value, fallbackLabel) {
+        if (!value) return fallbackLabel;
+        if (typeof value === 'object' && value.name) return String(value.name);
+        if (typeof value === 'string' && value.trim() && !isOpenableAsset(value)) return String(value);
+        return fallbackLabel;
+      }
+
+      function getAttachmentType(value, url, name) {
+        const explicitType = value && typeof value === 'object' ? String(value.type || '').trim().toLowerCase() : '';
+        if (explicitType) return explicitType;
+
+        const lowerUrl = String(url || '').toLowerCase();
+        const lowerName = String(name || '').toLowerCase();
+        if (/\.(png|jpe?g|gif|webp|bmp|svg)(\?|#|$)/i.test(lowerUrl) || /\.(png|jpe?g|gif|webp|bmp|svg)(\?|#|$)/i.test(lowerName)) {
+          return 'image/*';
+        }
+        if (/\.pdf(\?|#|$)/i.test(lowerUrl) || /\.pdf(\?|#|$)/i.test(lowerName)) {
+          return 'application/pdf';
+        }
+        return '';
+      }
+
+      function getAttachmentKind(type, url, name) {
+        const normalizedType = String(type || '').toLowerCase();
+        const lowerUrl = String(url || '').toLowerCase();
+        const lowerName = String(name || '').toLowerCase();
+        if (normalizedType.startsWith('image/') || /\.(png|jpe?g|gif|webp|bmp|svg)(\?|#|$)/i.test(lowerUrl) || /\.(png|jpe?g|gif|webp|bmp|svg)(\?|#|$)/i.test(lowerName)) {
+          return 'image';
+        }
+        if (normalizedType === 'application/pdf' || /\.pdf(\?|#|$)/i.test(lowerUrl) || /\.pdf(\?|#|$)/i.test(lowerName)) {
+          return 'pdf';
+        }
+        return url ? 'link' : 'missing';
+      }
+
+      function buildAttachmentsFromPayload(payload) {
+        if (!payload || !payload.data) return [];
+
+        const formName = String(payload.formName || '').trim();
+        const data = payload.data || {};
+
+        return getAttachmentDefinitions(formName).map(function (config, index) {
+          const directValue = config.keys.map(function (keyName) {
+            return data[keyName];
+          }).find(function (value) {
+            return value !== undefined && value !== null && value !== '';
+          });
+
+          const urlValue = config.urlKeys.map(function (keyName) {
+            return String(data[keyName] || '').trim();
+          }).find(Boolean) || '';
+
+          const normalizedValue = directValue && typeof directValue === 'object'
+            ? Object.assign({}, directValue, (urlValue && !directValue.url) ? { url: urlValue } : {})
+            : (urlValue ? { url: urlValue } : directValue);
+
+          const url = getAttachmentUrl(normalizedValue);
+          const fileName = getAttachmentName(normalizedValue, config.label);
+          const fileType = getAttachmentType(normalizedValue, url, fileName) || 'غير محدد';
+          const kind = getAttachmentKind(fileType, url, fileName);
+          const message = normalizedValue && typeof normalizedValue === 'object'
+            ? String(normalizedValue.message || '').trim()
+            : '';
+
+          return {
+            index: index,
+            label: config.label,
+            url: url,
+            fileName: fileName,
+            fileType: fileType,
+            kind: kind,
+            message: message
+          };
+        });
+      }
+
+      function createAttachmentItemHtml(attachment) {
+        var previewHtml = '';
+        if (attachment.kind === 'pdf' && attachment.url) {
+          previewHtml = '<div class="attachment-preview attachment-preview-pdf"><iframe src="' + escapeHtml(attachment.url) + '#toolbar=0&navpanes=0&scrollbar=0" width="100%" height="500" title="' + escapeHtml(attachment.fileName) + '"></iframe></div>';
+        } else if (attachment.kind === 'image' && attachment.url) {
+          previewHtml = '<div class="attachment-preview attachment-preview-image"><img src="' + escapeHtml(attachment.url) + '" alt="' + escapeHtml(attachment.fileName) + '" style="max-width:100%; border:1px solid #ccc;"></div>';
+        } else if (attachment.url) {
+          previewHtml = '<div class="attachment-preview attachment-preview-link"><a href="' + escapeHtml(attachment.url) + '" target="_blank" rel="noopener noreferrer">عرض المرفق</a></div>';
+        } else {
+          previewHtml = '<div class="attachment-preview attachment-preview-empty">' + escapeHtml(attachment.message || 'هذا المرفق محفوظ ولا يحتوي على محتوى قابل للعرض في المعاينة') + '</div>';
+        }
+
+        var actionsHtml = attachment.url
+          ? '<div class="attachment-actions"><a class="attachment-btn" href="' + escapeHtml(attachment.url) + '" target="_blank" rel="noopener noreferrer">عرض</a><a class="attachment-btn secondary" href="' + escapeHtml(attachment.url) + '" download="' + escapeHtml(attachment.fileName) + '">تحميل</a></div>'
+          : '';
+
+        return [
+          '<div class="attachment-item">',
+          '<div class="attachment-item-title">' + escapeHtml(String(attachment.index + 1) + '. ' + attachment.label) + '</div>',
+          '<div class="attachment-meta"><strong>اسم الملف:</strong> ' + escapeHtml(attachment.fileName || 'لا يوجد مرفق') + '</div>',
+          '<div class="attachment-meta"><strong>نوع الملف:</strong> ' + escapeHtml(attachment.fileType || '---') + '</div>',
+          previewHtml,
+          actionsHtml,
+          '</div>'
+        ].join('');
+      }
+
+      function injectAttachmentPreviews(payload) {
+        if (!payload || !payload.data || !frame.contentWindow || !frame.contentWindow.document) {
+          return;
+        }
+
+        var attachments = buildAttachmentsFromPayload(payload).filter(function (attachment) {
+          return attachment.url || attachment.fileName;
+        });
+        if (!attachments.length) {
+          return;
+        }
+
+        var doc = frame.contentWindow.document;
+        var attachmentsSection = doc.querySelector('.attachments-section');
+        if (!attachmentsSection) {
+          return;
+        }
+
+        var attachmentsList = attachmentsSection.querySelector('.attachments-list');
+        if (!attachmentsList) {
+          attachmentsList = doc.createElement('div');
+          attachmentsList.className = 'attachments-list';
+          attachmentsSection.appendChild(attachmentsList);
+        }
+
+        attachmentsList.innerHTML = attachments.map(createAttachmentItemHtml).join('');
       }
 
       function renderPreview() {
@@ -167,7 +356,7 @@
       closeBtn.addEventListener('click', function () { window.close(); });
 
       frame.addEventListener('load', function () {
-        // Keep last preview payload available while this tab remains open.
+        injectAttachmentPreviews(getPayloadFromStorage());
       });
 
       renderPreview();

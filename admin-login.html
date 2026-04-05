@@ -181,13 +181,13 @@
         <form id="loginForm">
             <div class="form-group">
                 <label for="adminEmail">البريد الإلكتروني للمشرف</label>
-                <input type="email" id="adminEmail" name="adminEmail" placeholder="admin@example.com" required autofocus>
+                <input type="email" id="adminEmail" name="adminEmail" placeholder="admin@example.com" autocomplete="username" required autofocus>
                 <div class="help-text">استخدم البريد الإلكتروني نفسه الموجود في Firebase Authentication.</div>
             </div>
 
             <div class="form-group">
                 <label for="password">كلمة المرور</label>
-                <input type="password" id="password" name="password" required>
+                <input type="password" id="password" name="password" autocomplete="current-password" required>
             </div>
 
             <button type="submit" class="btn">دخول</button>
@@ -209,9 +209,11 @@
         </div>
     </div>
 
-    <script type="module" src="firebase-config.js?v=1.2"></script>
-    <script src="admin-auth.js"></script>
+    <script src="firebase-config.js?v=1.2"></script>
+    <script src="admin-auth.js?v=20260405-admin-login-fix"></script>
     <script>
+        const ADMIN_LOGIN_BOOT_TIMEOUT_MS = 10000;
+
         function showStatus(message) {
             const statusMsg = document.getElementById('status');
             if (!statusMsg) return;
@@ -230,6 +232,15 @@
             const errorMsg = document.getElementById('error');
             errorMsg.textContent = '';
             errorMsg.style.display = 'none';
+        }
+
+        function withUiTimeout(promise, timeoutMs, timeoutMessage) {
+            return Promise.race([
+                promise,
+                new Promise((_, reject) => {
+                    setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs);
+                })
+            ]);
         }
 
         function setFormEnabled(enabled) {
@@ -290,12 +301,20 @@
                     throw new Error('admin-auth-unavailable');
                 }
 
-                const isReady = await window.adminAuth.ensureFirebase();
+                const isReady = await withUiTimeout(
+                    window.adminAuth.ensureFirebase(),
+                    ADMIN_LOGIN_BOOT_TIMEOUT_MS,
+                    'admin-login-bootstrap-timeout'
+                );
                 if (!isReady) {
                     throw new Error('firebase-init-failed');
                 }
 
-                const result = await window.adminAuth.requireAdmin();
+                const result = await withUiTimeout(
+                    window.adminAuth.requireAdmin(),
+                    ADMIN_LOGIN_BOOT_TIMEOUT_MS,
+                    'admin-require-admin-timeout'
+                );
                 if (result.ok) {
                     window.location.replace(sessionStorage.getItem('redirectTo') || 'admin.html');
                     return;
@@ -306,6 +325,7 @@
             } catch (err) {
                 console.error('تعذر تهيئة صفحة تسجيل الدخول:', err);
                 showError('تعذر تحميل خدمة تسجيل الدخول. تحقق من الاتصال بالإنترنت وإعدادات Firebase ثم أعد المحاولة.');
+                setFormEnabled(true);
             }
         }
 
@@ -324,33 +344,59 @@
             }
 
             submitBtn.disabled = true;
-            submitBtn.textContent = 'جاري التحقق...';
+            submitBtn.textContent = 'جاري تسجيل الدخول...';
+            showStatus('جاري تسجيل الدخول...');
 
             try {
-                const isReady = await window.adminAuth.ensureFirebase();
+                const isReady = await withUiTimeout(
+                    window.adminAuth.ensureFirebase(),
+                    ADMIN_LOGIN_BOOT_TIMEOUT_MS,
+                    'admin-login-firebase-timeout'
+                );
                 if (!isReady) {
                     throw new Error('firebase-init-failed');
                 }
 
-                await window.adminAuth.signIn(email, password);
+                await withUiTimeout(
+                    window.adminAuth.signIn(email, password),
+                    ADMIN_LOGIN_BOOT_TIMEOUT_MS,
+                    'admin-login-submit-timeout'
+                );
                 const redirectTo = sessionStorage.getItem('redirectTo') || 'admin.html';
                 sessionStorage.removeItem('redirectTo');
-                window.location.href = redirectTo;
+                window.location.replace(redirectTo);
             } catch (err) {
                 console.error(err);
                 showError(getReadableAuthError(err));
                 document.getElementById('password').value = '';
                 document.getElementById('password').focus();
             } finally {
+                showStatus('');
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'دخول';
             }
         }
 
-        window.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('loginForm').addEventListener('submit', handleLogin);
-            document.getElementById('resetPasswordBtn').addEventListener('click', resetAdminAccount);
+        function initializeAdminLoginPage() {
+            const loginForm = document.getElementById('loginForm');
+            const resetBtn = document.getElementById('resetPasswordBtn');
+            if (!loginForm || loginForm.dataset.bound === 'true') {
+                return;
+            }
+
+            loginForm.addEventListener('submit', handleLogin);
+            loginForm.dataset.bound = 'true';
+
+            if (resetBtn && resetBtn.dataset.bound !== 'true') {
+                resetBtn.addEventListener('click', resetAdminAccount);
+                resetBtn.dataset.bound = 'true';
+            }
+
             bootstrapAdminLogin();
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initializeAdminLoginPage();
         });
     </script>
     <footer class="page-footer">
