@@ -1111,73 +1111,120 @@
         const isClinical = reqValue.includes('CLINICAL') && !reqValue.includes('NON-CLINICAL');
         const isNonClinical = reqValue.includes('NON-CLINICAL');
         const undertakingAgreed = ['on', 'true', 'yes', '1'].includes(String(effective.undertakingAgree || '').toLowerCase());
-        const declarationAgreed = ['on', 'true', 'yes', '1'].includes(String(effective.idCardDeclaration || '').toLowerCase());
         const isRemoteAttachmentUrl = (value) => /^https:\/\//i.test(String(value || '').trim());
         const isOpenableAsset = (value) => isRemoteAttachmentUrl(value);
-        const getAttachmentSrc = (value) => {
+        const getAttachmentUrl = (value) => {
             if (!value) return '';
             if (typeof value === 'object') {
-                const candidate = value.url || '';
-                return isOpenableAsset(candidate) ? String(candidate) : '';
+                const candidate = String(value.url || '').trim();
+                return isOpenableAsset(candidate) ? candidate : '';
             }
-            return isOpenableAsset(value) ? String(value) : '';
+            const candidate = String(value || '').trim();
+            return isOpenableAsset(candidate) ? candidate : '';
         };
         const getAttachmentName = (value, fallbackLabel) => {
             if (!value) return fallbackLabel;
             if (typeof value === 'object' && value.name) return String(value.name);
-            if (typeof value === 'string' && !isOpenableAsset(value)) return String(value);
+            if (typeof value === 'string' && value && !isOpenableAsset(value)) return String(value);
             return fallbackLabel;
         };
-        const getAttachmentKind = (value, src, name) => {
-            const type = typeof value === 'object' ? String(value.type || '').toLowerCase() : '';
-            const lowerName = String(name || '').toLowerCase();
-            const lowerSrc = String(src || '').toLowerCase();
-
-            if (!lowerSrc) {
-                return 'missing';
-            }
-
-            if (type.startsWith('image/') || /\.(png|jpe?g|gif|webp|bmp|svg)(\?|#|$)/i.test(lowerSrc) || /\.(png|jpe?g|gif|webp|bmp|svg)(\?|#|$)/i.test(lowerName)) {
-                return 'image';
-            }
-            if (type === 'application/pdf' || /\.pdf(\?|#|$)/i.test(lowerSrc) || /\.pdf(\?|#|$)/i.test(lowerName)) {
-                return 'pdf';
-            }
-            return src ? 'link' : 'missing';
+        const getAttachmentStatus = (value) => {
+            if (!value || typeof value !== 'object') return '';
+            return String(value.status || '').trim();
         };
-        const attachmentFields = isGraduates
+        const getAttachmentMessage = (value) => {
+            if (!value || typeof value !== 'object') return '';
+            return String(value.message || '').trim();
+        };
+        const getAttachmentType = (value, url) => {
+            const explicitType = typeof value === 'object' ? String(value.type || '').trim() : '';
+            if (explicitType) return explicitType;
+            const lowerUrl = String(url || '').toLowerCase();
+            if (/\.(png|jpe?g|gif|webp|bmp|svg)(\?|#|$)/i.test(lowerUrl)) return 'image/*';
+            if (/\.pdf(\?|#|$)/i.test(lowerUrl)) return 'application/pdf';
+            return 'غير محدد';
+        };
+        const getAttachmentKind = (type, url) => {
+            const lowerType = String(type || '').toLowerCase();
+            const lowerUrl = String(url || '').toLowerCase();
+            if (lowerType.startsWith('image/') || /\.(png|jpe?g|gif|webp|bmp|svg)(\?|#|$)/i.test(lowerUrl)) return 'image';
+            if (lowerType === 'application/pdf' || /\.pdf(\?|#|$)/i.test(lowerUrl)) return 'pdf';
+            return url ? 'link' : 'missing';
+        };
+        const attachmentConfigs = isGraduates
             ? [
-                { key: 'idCardCopy', urlKey: 'idCardCopyURL', label: 'ID Card Copy / نسخة البطاقة الشخصية' },
-                { key: 'cvFile', urlKey: 'cvFileURL', label: 'CV / السيرة الذاتية' },
-                { key: 'universityLetter', urlKey: 'universityLetterURL', label: 'University Letter / خطاب الجامعة' },
-                { key: 'otherAttachments', urlKey: 'otherAttachmentsURL', label: 'Other Attachments / مرفقات أخرى' }
+                { label: 'السيرة الذاتية / CV', keys: ['cv', 'cvFile'], urlKeys: ['cvFileURL'] },
+                { label: 'البطاقة الشخصية / ID Card', keys: ['idCard', 'idCardCopy'], urlKeys: ['idCardCopyURL'] },
+                { label: 'خطاب الجامعة / University Letter', keys: ['universityLetter'], urlKeys: ['universityLetterURL'] },
+                { label: 'مرفقات أخرى / Other Attachments', keys: ['otherAttachment', 'otherAttachments'], urlKeys: ['otherAttachmentsURL'] }
             ]
-            : [
-                { key: 'receipt', urlKey: 'receiptURL', label: 'Payment Receipt / إيصال الدفع' }
-            ];
-        const attachmentSectionsHtml = attachmentFields.map(({ key, urlKey, label }) => {
-                const value = effective[urlKey] || effective[key];
-                if (!value) return '';
-                const src = getAttachmentSrc(value);
-                const fileName = getAttachmentName(effective[key] || value, label);
-                const kind = getAttachmentKind(value, src, fileName);
-                const mediaHtml = kind === 'image'
-                    ? `<div class="attachment-media attachment-image"><img src="${escapeHtml(src)}" alt="${escapeHtml(fileName)}"></div>`
-                    : kind === 'pdf'
-                        ? `<div class="attachment-media attachment-pdf"><iframe src="${escapeHtml(src)}#toolbar=0&navpanes=0&scrollbar=0" title="${escapeHtml(fileName)}"></iframe></div>`
-                        : src
-                            ? `<div class="attachment-media attachment-link"><a href="${escapeHtml(src)}" target="_blank" rel="noopener noreferrer">Open Attachment / فتح المرفق</a></div>`
-                            : `<div class="attachment-media attachment-missing">هذا المرفق محفوظ بالاسم فقط ولا يحتوي على محتوى قابل للعرض أو الطباعة.</div>`;
-
-                return `
-                    <div class="attachment-section">
-                        <div class="attachment-head">Attachment / المرفق</div>
-                        <div class="attachment-label">${escapeHtml(label)}</div>
-                        <div class="attachment-file">File Name / اسم الملف: ${escapeHtml(fileName)}</div>
-                        ${mediaHtml}
+            : ['training-employees', 'training-others', 'internal-employees', 'internal-others'].includes(effective.formType)
+                ? [{ label: 'إيصال الدفع / Payment Receipt', keys: ['receipt'], urlKeys: ['receiptURL'] }]
+                : [];
+        const attachments = attachmentConfigs.map((config, index) => {
+            const directValue = config.keys.map((key) => effective[key]).find((value) => value !== undefined && value !== null && value !== '');
+            const urlValue = config.urlKeys.map((key) => String(effective[key] || '').trim()).find(Boolean) || '';
+            const normalizedValue = directValue && typeof directValue === 'object'
+                ? { ...directValue, ...(urlValue && !directValue.url ? { url: urlValue } : {}) }
+                : (urlValue ? { url: urlValue } : directValue);
+            const url = getAttachmentUrl(normalizedValue);
+            const fileName = getAttachmentName(normalizedValue, config.label);
+            const status = getAttachmentStatus(normalizedValue);
+            const message = getAttachmentMessage(normalizedValue);
+            const fileType = getAttachmentType(normalizedValue, url);
+            const kind = getAttachmentKind(fileType, url);
+            return {
+                index,
+                label: config.label,
+                value: normalizedValue,
+                url,
+                fileName,
+                status,
+                message,
+                fileType,
+                kind,
+                hasAttachment: !!url,
+                hasUploadFailure: status === 'upload_failed'
+            };
+        });
+        const attachmentSectionsHtml = attachmentConfigs.length
+            ? `
+                <div class="attachments-section section-block">
+                    <div class="section-head">المرفقات / Attachments</div>
+                    <div class="attachments-list">
+                        ${attachments.map((attachment) => {
+                            const previewHtml = attachment.hasUploadFailure
+                                ? `<div class="attachment-preview attachment-preview-error">${escapeHtml(attachment.message || 'فشل رفع الملف')}</div>`
+                                : attachment.kind === 'image'
+                                    ? `<div class="attachment-preview attachment-preview-image"><img src="${escapeHtml(attachment.url)}" alt="${escapeHtml(attachment.fileName)}"></div>`
+                                    : attachment.kind === 'pdf'
+                                        ? `<div class="attachment-preview attachment-preview-pdf"><iframe src="${escapeHtml(attachment.url)}#toolbar=0&navpanes=0&scrollbar=0" title="${escapeHtml(attachment.fileName)}"></iframe></div>`
+                                        : attachment.hasAttachment
+                                            ? `<div class="attachment-preview attachment-preview-link">المرفق متاح عبر الروابط أدناه.</div>`
+                                            : `<div class="attachment-preview attachment-preview-empty">لا يوجد مرفق</div>`;
+                            const actionsHtml = attachment.hasAttachment && !attachment.hasUploadFailure
+                                ? `
+                                    <div class="attachment-actions">
+                                        <a class="attachment-btn" href="${escapeHtml(attachment.url)}" target="_blank" rel="noopener noreferrer">عرض</a>
+                                        <a class="attachment-btn secondary" href="${escapeHtml(attachment.url)}" download="${escapeHtml(attachment.fileName)}">تحميل</a>
+                                    </div>
+                                `
+                                : '';
+                            return `
+                                <div class="attachment-item">
+                                    <div class="attachment-item-title">${attachment.index + 1}. ${escapeHtml(attachment.label)}</div>
+                                    <div class="attachment-meta"><strong>اسم الملف:</strong> ${escapeHtml((attachment.hasAttachment || attachment.hasUploadFailure) ? attachment.fileName : 'لا يوجد مرفق')}</div>
+                                    <div class="attachment-meta"><strong>نوع الملف:</strong> ${escapeHtml((attachment.hasAttachment || attachment.hasUploadFailure) ? attachment.fileType : '---')}</div>
+                                    ${attachment.hasUploadFailure ? `<div class="attachment-meta attachment-meta-error"><strong>الحالة:</strong> ${escapeHtml(attachment.message || 'فشل رفع الملف')}</div>` : ''}
+                                    ${previewHtml}
+                                    ${actionsHtml}
+                                </div>
+                            `;
+                        }).join('')}
                     </div>
-                `;
-            }).filter(Boolean).join('');
+                </div>
+            `
+            : '';
 
         const graduatesUndertakingHtml = isGraduates
             ? `
@@ -1377,15 +1424,20 @@
                 .undertaking-grid .u-col-ar:not(.u-head)::before,
                 .undertaking-grid .u-col-en:not(.u-head)::before { content: "• "; font-weight: 700; }
                 .undertaking-agree { border-top: 1px solid var(--brand-mid); padding: 6px 8px; font-size: 11.5px; direction: ltr; text-align: left; }
-                .attachment-section { page-break-before: always; break-before: page; border: 1px solid var(--brand-mid); padding: 10px; }
-                .attachment-head { font-size: 16px; font-weight: 800; padding: 0 0 6px; margin-bottom: 8px; border-bottom: 1px solid var(--brand-mid); direction: ltr; text-align: left; }
-                .attachment-label { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
-                .attachment-file { font-size: 11.5px; margin-bottom: 10px; color: #333; direction: ltr; text-align: left; word-break: break-word; }
-                .attachment-media { width: 100%; }
-                .attachment-image img { display: block; width: 100%; max-width: 100%; height: auto; max-height: 248mm; object-fit: contain; border: 1px solid #cbd5d1; background: #fff; }
-                .attachment-pdf iframe { display: block; width: 100%; height: 245mm; border: 1px solid #cbd5d1; background: #fff; }
-                .attachment-link, .attachment-missing { font-size: 12px; line-height: 1.6; padding: 10px; border: 1px dashed #cbd5d1; background: #fafcfc; direction: ltr; text-align: left; }
-                .attachment-link a { color: #0f766e; text-decoration: underline; }
+                .attachments-section { page-break-before: auto; break-before: auto; }
+                .attachments-list { padding: 12px; display: grid; gap: 12px; }
+                .attachment-item { border: 1px solid #cbd5d1; padding: 10px; background: #fff; display: grid; gap: 8px; }
+                .attachment-item-title { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+                .attachment-meta { font-size: 11.5px; direction: rtl; text-align: right; word-break: break-word; }
+                .attachment-preview { border: 1px solid #cbd5d1; background: #fafcfc; padding: 8px; min-height: 44px; display: flex; align-items: center; justify-content: center; }
+                .attachment-preview-image img { display: block; max-width: 100%; max-height: 220px; object-fit: contain; background: #fff; }
+                .attachment-preview-pdf iframe { display: block; width: 100%; height: 260px; border: 0; background: #fff; }
+                .attachment-preview-error { color: #b42318; background: #fff5f5; border-color: #f1b7b7; font-size: 12px; }
+                .attachment-preview-link, .attachment-preview-empty { font-size: 12px; color: #334155; }
+                .attachment-meta-error { color: #b42318; }
+                .attachment-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-start; direction: rtl; }
+                .attachment-btn { display: inline-block; padding: 7px 14px; border: 1px solid #0f766e; background: #0f766e; color: #fff; text-decoration: none; font-size: 12px; font-weight: 700; }
+                .attachment-btn.secondary { background: #fff; color: #0f766e; }
                 @media print {
                     .paper { width: 100%; max-width: 194mm; margin: 0 auto; padding: 0; }
                 }
@@ -1414,14 +1466,24 @@
 
         const previewToken = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
         const previewStorageKey = `printPreviewHtml:${previewToken}`;
+        const previewPayloadKey = `printPreviewPayload:${previewToken}`;
 
         try {
             sessionStorage.setItem(previewStorageKey, html);
+            try {
+                sessionStorage.setItem(previewPayloadKey, JSON.stringify({
+                    formName: effective.formType,
+                    data: effective
+                }));
+            } catch (storageError) {
+                console.warn('تعذر حفظ بيانات المرفقات الخاصة بالمعاينة:', storageError);
+            }
             const previewUrl = `print-preview.html?token=${encodeURIComponent(previewToken)}`;
             const previewWindow = window.open(previewUrl, '_blank');
 
             if (!previewWindow) {
                 sessionStorage.removeItem(previewStorageKey);
+                sessionStorage.removeItem(previewPayloadKey);
                 downloadPrintHtmlFallback(html, effective.id || effective._docId);
             }
         } catch (err) {
