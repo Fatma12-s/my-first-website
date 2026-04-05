@@ -100,6 +100,24 @@ This helper updates both:
 - the Firestore document at `admins/<uid>`
 - the optional custom claim `admin`
 
+Before running the helper locally, Firebase Admin credentials must be available on the machine.
+Use one of these options:
+
+```bash
+cd functions
+# option 1: place serviceAccountKey.json inside this folder
+node set-admin.js <firebase-auth-uid> true <email> <displayName> <employeeId>
+```
+
+```bash
+# option 2: point GOOGLE_APPLICATION_CREDENTIALS to a valid service account json
+$env:GOOGLE_APPLICATION_CREDENTIALS="C:\path\to\serviceAccountKey.json"
+cd functions
+node set-admin.js <firebase-auth-uid> true <email> <displayName> <employeeId>
+```
+
+The script now reads the Firebase project id from `.firebaserc` automatically, so a missing project id error usually means the machine is missing valid Admin SDK credentials, not that the command arguments are wrong.
+
 ## 7. Important note
 Current public forms still create documents in `formSubmissions` without authentication.
 Admin read/update/delete is protected by Firestore rules.

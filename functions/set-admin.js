@@ -4,6 +4,8 @@
 //   node set-admin.js abc123 true fsalim@squ.edu.om "Fatma Admin" EMP001
 //   node set-admin.js abc123 false
 const admin = require("firebase-admin");
+const fs = require("fs");
+const path = require("path");
 
 if (process.argv.length < 4) {
   console.error("usage: node set-admin.js <TARGET_UID> <true|false> [email] [displayName] [employeeId]");
@@ -16,10 +18,40 @@ const emailArg = process.argv[4] || "";
 const displayNameArg = process.argv[5] || "";
 const employeeIdArg = process.argv[6] || "";
 
+function readJsonIfExists(filePath) {
+  try {
+    if (!fs.existsSync(filePath)) return null;
+    return JSON.parse(fs.readFileSync(filePath, "utf8"));
+  } catch (error) {
+    return null;
+  }
+}
+
+function resolveProjectId() {
+  if (process.env.GOOGLE_CLOUD_PROJECT) return process.env.GOOGLE_CLOUD_PROJECT;
+  if (process.env.GCLOUD_PROJECT) return process.env.GCLOUD_PROJECT;
+
+  const firebasercPath = path.resolve(__dirname, "..", ".firebaserc");
+  const firebaserc = readJsonIfExists(firebasercPath);
+  if (firebaserc && firebaserc.projects && firebaserc.projects.default) {
+    return firebaserc.projects.default;
+  }
+
+  return undefined;
+}
+
+function resolveCredential() {
+  const serviceAccountPath = path.resolve(__dirname, "serviceAccountKey.json");
+  if (fs.existsSync(serviceAccountPath)) {
+    return admin.credential.cert(require(serviceAccountPath));
+  }
+
+  return admin.credential.applicationDefault();
+}
+
 admin.initializeApp({
-  credential: admin.credential.applicationDefault()
-  // أو استخدم ملف serviceAccountKey.json:
-  // credential: admin.credential.cert(require("./serviceAccountKey.json"))
+  credential: resolveCredential(),
+  projectId: resolveProjectId()
 });
 
 async function syncClaims(user, isAdmin) {
@@ -86,7 +118,20 @@ async function removeAdminDocument(uid) {
     await syncClaims(user, false);
     console.log(`تم إلغاء تفعيل المستخدم ${targetUid} كمشرف وحذف مستند admins/${targetUid}.`);
   } catch (err) {
-    console.error("خطأ:", err.message);
+    const errorMessage = String(err && err.message ? err.message : err);
+    console.error("خطأ:", errorMessage);
+
+    if (
+      errorMessage.includes("Could not load the default credentials") ||
+      errorMessage.includes("Failed to determine project ID") ||
+      errorMessage.includes("metadata.google.internal")
+    ) {
+      console.error("\nلحل المشكلة على جهازك المحلي، نفذ أحد الخيارين:");
+      console.error("1) ضع ملف serviceAccountKey.json داخل مجلد functions ثم أعد تشغيل الأمر.");
+      console.error("2) أو عرّف GOOGLE_APPLICATION_CREDENTIALS ليشير إلى ملف service account صالح.");
+      console.error("\nاسم المشروع المستخدم:", resolveProjectId() || "غير معروف");
+    }
+
     process.exit(1);
   }
 })();
