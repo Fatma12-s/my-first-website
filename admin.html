@@ -368,6 +368,14 @@
             background: #a33131;
         }
 
+        .delete-btn {
+            background: #7f1d1d;
+        }
+
+        .delete-btn:hover {
+            background: #641818;
+        }
+
         .pdf-btn {
             background: #1f7a8c;
         }
@@ -590,6 +598,7 @@
                 <input type="text" id="searchInput" placeholder="🔍 ابحث عن اسم أو بريد...">
 
                 <button onclick="exportToCSV()">📥 تصدير Excel</button>
+                <button class="clear-btn" onclick="clearOldData()">🗂️ حذف الأقدم من 3 أشهر</button>
                 <button class="clear-btn" onclick="clearAllData()">🗑️ حذف الكل</button>
 
                 <!-- زر حذف الطلبات القديمة -->
@@ -1852,6 +1861,7 @@
                         <button class="pdf-btn" onclick="openSubmissionPdfPreview(${index})">PDF للمراجعة</button>
                         <button class="approve-btn" onclick="updateSubmissionStatus(${index}, 'Approved')">Approve</button>
                         <button class="reject-btn" onclick="updateSubmissionStatus(${index}, 'Rejected')">Reject</button>
+                        <button class="delete-btn" onclick="deleteSubmission(${index})">حذف</button>
                     </div>
                     <div class="record-body">
                         <div class="record-actions">
@@ -1914,15 +1924,124 @@
         }
     }
 
+    function getThreeMonthsAgoDate() {
+        const cutoff = new Date();
+        cutoff.setMonth(cutoff.getMonth() - 3);
+        return cutoff;
+    }
+
+    async function deleteFirestoreSubmissionsByField(fieldName, cutoffIso) {
+        if (!db) return 0;
+
+        const chunkSize = 200;
+        let deletedCount = 0;
+        while (true) {
+            const snap = await db.collection('formSubmissions')
+                .where(fieldName, '<=', cutoffIso)
+                .limit(chunkSize)
+                .get();
+
+            if (snap.empty) break;
+
+            const batch = db.batch();
+            snap.docs.forEach((doc) => batch.delete(doc.ref));
+            await batch.commit();
+            deletedCount += snap.size;
+
+            if (snap.size < chunkSize) break;
+        }
+
+        return deletedCount;
+    }
+
+    function clearLocalSubmissionsOlderThan(cutoffDate) {
+        const localData = JSON.parse(localStorage.getItem('formSubmissions') || '{}');
+        let deletedCount = 0;
+
+        Object.keys(localData).forEach((formType) => {
+            const items = Array.isArray(localData[formType]) ? localData[formType] : [];
+            const keptItems = items.filter((submission) => {
+                const submittedValue = submission.createdAt || submission.submittedAtISO || submission.submittedAt;
+                const submittedTime = parseSubmissionTimestamp(submittedValue);
+                const shouldKeep = !submittedTime || submittedTime > cutoffDate.getTime();
+                if (!shouldKeep) deletedCount += 1;
+                return shouldKeep;
+            });
+
+            if (keptItems.length) {
+                localData[formType] = keptItems;
+            } else {
+                delete localData[formType];
+            }
+        });
+
+        localStorage.setItem('formSubmissions', JSON.stringify(localData));
+        return deletedCount;
+    }
+
+    async function clearOldData() {
+        const cutoffDate = getThreeMonthsAgoDate();
+        const cutoffIso = cutoffDate.toISOString();
+        const confirmed = confirm('سيتم حذف الطلبات الأقدم من 3 أشهر نهائياً مع ملفاتها المرتبطة. هل أنت متأكد؟');
+        if (!confirmed) return;
+
+        try {
+            let firestoreDeleted = 0;
+            if (db) {
+                firestoreDeleted += await deleteFirestoreSubmissionsByField('createdAt', cutoffIso);
+                firestoreDeleted += await deleteFirestoreSubmissionsByField('submittedAtISO', cutoffIso);
+            }
+            const localDeleted = clearLocalSubmissionsOlderThan(cutoffDate);
+            await loadSubmissions();
+            alert(`تم حذف ${firestoreDeleted + localDeleted} طلب/طلبات أقدم من 3 أشهر.`);
+        } catch (err) {
+            console.error(err);
+            alert('تعذر حذف الطلبات القديمة.');
+        }
+    }
+
+    async function deleteSubmission(index) {
+        const submission = (window.__currentSubmissions || [])[index];
+        if (!submission) return;
+
+        const confirmed = confirm('سيتم حذف هذا الطلب نهائياً مع كل المرفقات المرتبطة به. هل أنت متأكد؟');
+        if (!confirmed) return;
+
+        try {
+            if (submission._source === 'firestore' && db && submission._docId) {
+                await db.collection('formSubmissions').doc(submission._docId).delete();
+            } else {
+                const localData = JSON.parse(localStorage.getItem('formSubmissions') || '{}');
+                const arr = localData[submission.formType] || [];
+                const idx = Number(submission._localIndex);
+                if (Array.isArray(arr) && idx >= 0 && idx < arr.length) {
+                    arr.splice(idx, 1);
+                    if (arr.length) {
+                        localData[submission.formType] = arr;
+                    } else {
+                        delete localData[submission.formType];
+                    }
+                    localStorage.setItem('formSubmissions', JSON.stringify(localData));
+                }
+            }
+
+            await loadSubmissions();
+            alert('تم حذف الطلب بنجاح.');
+        } catch (err) {
+            console.error(err);
+            alert('تعذر حذف الطلب.');
+        }
+    }
+
     async function clearAllData() {
-        const confirmed = confirm('سيتم حذف جميع الطلبات نهائياً. هل أنت متأكد؟');
+        const confirmed = confirm('سيتم حذف جميع الطلبات نهائياً مع ملفاتها المرتبطة. هل أنت متأكد؟');
         if (!confirmed) return;
 
         try {
             await clearFirestoreSubmissions();
             localStorage.removeItem('formSubmissions');
             await loadSubmissions();
-            alert('تم حذف جميع الطلبات بنجاح.');
+            alert('تم حذف جميع الطلبات بنجاح، وسيتم تنظيف الملفات المرتبطة بها من Storage تلقائياً.');
         } catch (err) {
             console.error(err);
             alert('تعذر حذف الطلبات.');
