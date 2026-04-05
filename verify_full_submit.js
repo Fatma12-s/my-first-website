@@ -88,7 +88,10 @@ const path = require('path');
     console.log('VALIDATION:', JSON.stringify(validity));
 
     await page.evaluate(() => document.getElementById('graduates-form').requestSubmit());
-    await new Promise(r => setTimeout(r, 8000));
+    await page.waitForFunction(
+      () => !!document.querySelector('.success-modal, .error-modal'),
+      { timeout: 18000 }
+    ).catch(() => null);
 
     const finalResult = await page.evaluate(() => {
       const modal = document.querySelector('.success-modal');
