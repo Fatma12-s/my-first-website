@@ -749,6 +749,8 @@ function getPrintableLabel(key) {
     name: 'الاسم',
     email: 'البريد الإلكتروني',
     phone: 'الهاتف',
+    position: 'المسمى الوظيفي',
+    nationalId: 'رقم الهوية / البطاقة',
     address: 'العنوان',
     cardNo: 'رقم البطاقة',
     institute: 'الجهة',
