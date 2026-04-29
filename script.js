@@ -70,6 +70,7 @@ function getMailConfig() {
     sendgridFromName,
     sendApplicantCopy,
     emailjsServiceId: clean(cfg.emailjsServiceId || cfg.serviceId),
+    emailjsTemplateIdAdmin: clean(cfg.emailjsTemplateIdAdmin || cfg.emailjsTemplateId || cfg.templateId || cfg.emailjsTemplateIdConfirm),
     emailjsTemplateId: clean(cfg.emailjsTemplateId || cfg.templateId || cfg.emailjsTemplateIdConfirm),
     emailjsTemplateIdConfirm: clean(cfg.emailjsTemplateIdConfirm || cfg.emailjsTemplateId || cfg.templateId),
     emailjsTemplateIdApprove: clean(cfg.emailjsTemplateIdApprove || cfg.emailjsTemplateId || cfg.templateId),
@@ -137,10 +138,12 @@ async function sendNotificationEmail(applicantData, responsible, templateType = 
 
     // اختيار قالب البريد حسب النوع
     let templateId;
+    let adminTemplateId = mailConfig.emailjsTemplateIdAdmin || mailConfig.emailjsTemplateId;
     if (templateType === 'confirm') templateId = mailConfig.emailjsTemplateIdConfirm;
     else if (templateType === 'approve') templateId = mailConfig.emailjsTemplateIdApprove;
     else if (templateType === 'reject') templateId = mailConfig.emailjsTemplateIdReject;
     else templateId = mailConfig.emailjsTemplateId;
+    if (!adminTemplateId) adminTemplateId = templateId;
 
     const sendViaSendGrid = async () => {
       if (!mailConfig.sendgridApiKey || !mailConfig.sendgridFromEmail) {
@@ -196,11 +199,11 @@ async function sendNotificationEmail(applicantData, responsible, templateType = 
         return false;
       }
 
-      const sendOne = async (targetEmail, targetName, subjectPrefix) => {
+      const sendOne = async (targetEmail, targetName, subjectPrefix, targetTemplateId) => {
         const finalSubject = `${subjectPrefix} - ${applicantName}`;
         const payload = {
           service_id: mailConfig.emailjsServiceId,
-          template_id: templateId,
+          template_id: targetTemplateId || templateId,
           user_id: mailConfig.emailjsPublicKey,
           template_params: {
             // مفاتيح أساسية
@@ -244,7 +247,7 @@ async function sendNotificationEmail(applicantData, responsible, templateType = 
         }
       };
 
-      await sendOne(responsible.email, responsible.name, '🔔 طلب جديد يحتاج مراجعة');
+      await sendOne(responsible.email, responsible.name, '🔔 طلب جديد يحتاج مراجعة', adminTemplateId);
 
       const normalizedResponsibleEmail = String(responsible.email || '').trim().toLowerCase();
       const normalizedApplicantEmail = String(applicantData.email || '').trim().toLowerCase();
@@ -253,7 +256,7 @@ async function sendNotificationEmail(applicantData, responsible, templateType = 
         normalizedApplicantEmail &&
         normalizedApplicantEmail !== normalizedResponsibleEmail
       ) {
-        await sendOne(applicantData.email, applicantData.name || 'مقدم الطلب', '✅ تم استلام طلبك');
+        await sendOne(applicantData.email, applicantData.name || 'مقدم الطلب', '✅ تم استلام طلبك', templateId);
       }
 
       console.log('✅ تم إرسال البريد عبر EmailJS إلى المسؤول ومقدم الطلب');

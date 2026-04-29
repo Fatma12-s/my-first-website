@@ -34,6 +34,7 @@ Use these exact variable names in your EmailJS template body:
 ## Required values in `email-config.js`
 
 - `emailjsServiceId`
+- `emailjsTemplateIdAdmin` (optional, for admin notifications)
 - `emailjsTemplateId`
 - `emailjsPublicKey`
 
