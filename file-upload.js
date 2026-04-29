@@ -5,6 +5,8 @@ window.fileUpload = {
   uploadAttachment: async function(file, fieldName, cleaned) {
     if (file && file instanceof File) {
       const isRemoteStorageUrl = (value) => /^https:\/\//i.test(String(value || '').trim());
+      const uploadTimeoutMs = 30000;
+      const maxAttempts = 2;
       const buildResult = (overrides = {}) => ({
         name: String(overrides.name || file.name || 'attachment'),
         type: String(overrides.type || file.type || 'application/octet-stream'),
@@ -14,17 +16,22 @@ window.fileUpload = {
         ...(overrides.message ? { message: String(overrides.message) } : {})
       });
 
-      try {
-        const ok = await window.ensureFirebaseReady?.();
-        if (!ok) throw new Error('Firebase not initialized');
+      const shouldRetryUpload = (error) => {
+        const message = String((error && error.message) || '').toLowerCase();
+        return message.includes('timed out')
+          || message.includes('network')
+          || message.includes('storage/retry-limit-exceeded')
+          || message.includes('storage/unknown')
+          || message.includes('storage/canceled');
+      };
 
+      const uploadOnce = async () => {
         const storage = window.firebaseStorage || (window.firebase && window.firebase.storage && window.firebase.storage());
         if (!storage) throw new Error('Firebase Storage غير متوفر');
 
         const safeName = String(file.name || 'attachment').replace(/[^a-zA-Z0-9._-]+/g, '_');
         const attachRef = storage.ref(`attachments/${cleaned.id}_${fieldName}_${Date.now()}_${safeName}`);
         const uploadTask = attachRef.put(file);
-        const timeoutMs = 8000;
         const snapshot = await Promise.race([
           uploadTask,
           new Promise((_, reject) => {
@@ -34,18 +41,46 @@ window.fileUpload = {
                   uploadTask.cancel();
                 } catch (_) {}
               }
-              reject(new Error(`Upload timed out after ${timeoutMs}ms`));
-            }, timeoutMs);
+              reject(new Error(`Upload timed out after ${uploadTimeoutMs}ms`));
+            }, uploadTimeoutMs);
           })
         ]);
+
         if (!snapshot) throw new Error('Upload failed');
         const url = await attachRef.getDownloadURL();
         if (!isRemoteStorageUrl(url)) {
           throw new Error('Firebase Storage returned a non-remote URL');
         }
+
         cleaned[fieldName + 'URL'] = url;
-        console.log(`✅ [${fieldName}] Uploaded:`, url);
-        return buildResult({ url });
+        return url;
+      };
+
+      try {
+        const ok = await window.ensureFirebaseReady?.();
+        if (!ok) throw new Error('Firebase not initialized');
+
+        let uploadedUrl = '';
+        let lastError = null;
+        for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+          try {
+            uploadedUrl = await uploadOnce();
+            break;
+          } catch (error) {
+            lastError = error;
+            if (attempt >= maxAttempts || !shouldRetryUpload(error)) {
+              throw error;
+            }
+            console.warn(`⚠️ إعادة محاولة رفع المرفق ${fieldName} (${attempt}/${maxAttempts}) بسبب:`, error);
+          }
+        }
+
+        if (!uploadedUrl) {
+          throw lastError || new Error('Upload failed');
+        }
+
+        console.log(`✅ [${fieldName}] Uploaded:`, uploadedUrl);
+        return buildResult({ url: uploadedUrl });
       } catch (err) {
         console.error('❌ خطأ في رفع المرفق:', fieldName, err);
         cleaned[fieldName + 'URL'] = '';

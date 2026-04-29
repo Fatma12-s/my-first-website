@@ -119,13 +119,17 @@
 			}
 		}));
 
+		let forceLocalFallback = false;
+		let localFallbackReason = '';
+
 		const requiredRemoteAttachments = ['cvFile', 'idCardCopy', 'universityLetter'];
 		const missingRequiredAttachments = requiredRemoteAttachments.filter((field) => {
 			const attachment = cleaned[field];
 			return !(attachment && typeof attachment === 'object' && isRemoteAttachmentUrl(attachment.url));
 		});
 		if (missingRequiredAttachments.length) {
-			throw new Error('تعذر رفع المرفقات المطلوبة إلى Firebase Storage. تأكد من تهيئة Storage ثم أعد المحاولة.');
+			forceLocalFallback = true;
+			localFallbackReason = 'تعذر رفع بعض المرفقات المطلوبة إلى Firebase Storage، لذلك تم حفظ الطلب محلياً على هذا الجهاز.';
 		}
 
 		if (formName === 'graduates') {
@@ -171,6 +175,15 @@
 		const resultData = clonePlainData(persistableCleaned) || {};
 		if (cleaned.__applicantPhotoDataUrl) {
 			resultData.__applicantPhotoDataUrl = String(cleaned.__applicantPhotoDataUrl);
+		}
+		if (localFallbackReason) {
+			resultData.__localFallbackReason = localFallbackReason;
+		}
+
+		if (forceLocalFallback) {
+			saveToLocalStorage(formName, clonePlainData(persistableCleaned));
+			maybeNotify(persistableCleaned, responsible);
+			return { success: true, data: resultData, local: true, fallback: 'localStorage', reason: localFallbackReason };
 		}
 
 		if (window.db) {
