@@ -617,6 +617,7 @@
     <script src="firebase-config.js?v=1.2"></script>
     <script src="admin-auth.js?v=20260405-admin-login-fix"></script>
     <script src="email-config.js"></script>
+    <script src="script.js?v=20260503-admin-preview-unify"></script>
     <script>
     let db = null;
     const ADMIN_BOOT_TIMEOUT_MS = 12000;
@@ -1057,8 +1058,6 @@
     function openSubmissionPdfPreview(index) {
         const submission = (window.__currentSubmissions || [])[index];
         if (!submission) return;
-        const logoUrl = escapeHtml(getSquhHeaderLogoUrl());
-        const applicantPhotoSrc = getApplicantPhotoSrc(submission);
 
         const managerSection2 = collectManagerSection2(index, submission);
         const effective = { ...submission };
@@ -1069,6 +1068,14 @@
             effective.durationTo = managerSection2.durationTo;
             effective.duration = managerSection2.duration;
         }
+
+        if (typeof window.openSubmissionPrintPreview === 'function') {
+            window.openSubmissionPrintPreview(effective.formType || submission.formType || 'graduates', effective);
+            return;
+        }
+
+        const logoUrl = escapeHtml(getSquhHeaderLogoUrl());
+        const applicantPhotoSrc = getApplicantPhotoSrc(submission);
 
         const excluded = new Set([
             '_source',
@@ -1188,42 +1195,26 @@
             };
         });
         const attachmentSectionsHtml = attachmentConfigs.length
-            ? `
-                <div class="attachments-section section-block">
-                    <div class="section-head">المرفقات / Attachments</div>
-                    <div class="attachments-list">
-                        ${attachments.map((attachment) => {
-                            const previewHtml = attachment.hasUploadFailure
-                                ? `<div class="attachment-preview attachment-preview-error">${escapeHtml(attachment.message || 'فشل رفع الملف')}</div>`
-                                : attachment.kind === 'image'
-                                    ? `<div class="attachment-preview attachment-preview-image"><img src="${escapeHtml(attachment.url)}" alt="${escapeHtml(attachment.fileName)}"></div>`
-                                    : attachment.kind === 'pdf'
-                                        ? `<div class="attachment-preview attachment-preview-pdf"><iframe src="${escapeHtml(attachment.url)}#toolbar=0&navpanes=0&scrollbar=0" title="${escapeHtml(attachment.fileName)}"></iframe></div>`
-                                        : attachment.hasAttachment
-                                            ? `<div class="attachment-preview attachment-preview-link">المرفق متاح عبر الروابط أدناه.</div>`
-                                            : `<div class="attachment-preview attachment-preview-empty">لا يوجد مرفق</div>`;
-                            const actionsHtml = attachment.hasAttachment && !attachment.hasUploadFailure
-                                ? `
-                                    <div class="attachment-actions">
-                                        <a class="attachment-btn" href="${escapeHtml(attachment.url)}" target="_blank" rel="noopener noreferrer">عرض</a>
-                                        <a class="attachment-btn secondary" href="${escapeHtml(attachment.url)}" download="${escapeHtml(attachment.fileName)}">تحميل</a>
-                                    </div>
-                                `
-                                : '';
-                            return `
-                                <div class="attachment-item">
-                                    <div class="attachment-item-title">${attachment.index + 1}. ${escapeHtml(attachment.label)}</div>
-                                    <div class="attachment-meta"><strong>اسم الملف:</strong> ${escapeHtml((attachment.hasAttachment || attachment.hasUploadFailure) ? attachment.fileName : 'لا يوجد مرفق')}</div>
-                                    <div class="attachment-meta"><strong>نوع الملف:</strong> ${escapeHtml((attachment.hasAttachment || attachment.hasUploadFailure) ? attachment.fileType : '---')}</div>
-                                    ${attachment.hasUploadFailure ? `<div class="attachment-meta attachment-meta-error"><strong>الحالة:</strong> ${escapeHtml(attachment.message || 'فشل رفع الملف')}</div>` : ''}
-                                    ${previewHtml}
-                                    ${actionsHtml}
-                                </div>
-                            `;
-                        }).join('')}
+            ? attachments.map((attachment) => {
+                const previewHtml = attachment.hasUploadFailure
+                    ? `<div class="attachment-media attachment-missing">${escapeHtml(attachment.message || 'فشل رفع الملف')}</div>`
+                    : attachment.kind === 'image'
+                        ? `<div class="attachment-media attachment-image"><img src="${escapeHtml(attachment.url)}" alt="${escapeHtml(attachment.fileName)}"></div>`
+                        : attachment.kind === 'pdf'
+                            ? `<div class="attachment-media attachment-pdf"><iframe src="${escapeHtml(attachment.url)}#toolbar=0&navpanes=0&scrollbar=0" title="${escapeHtml(attachment.fileName)}"></iframe></div>`
+                            : attachment.hasAttachment
+                                ? `<div class="attachment-media attachment-link">المرفق محفوظ كرابط ولا يحتوي على معاينة مباشرة داخل الصفحة.</div>`
+                                : `<div class="attachment-media attachment-missing">لا يوجد مرفق</div>`;
+                return `
+                    <div class="attachment-section">
+                        <div class="attachment-head">Attachment / المرفق</div>
+                        <div class="attachment-label">${attachment.index + 1}. ${escapeHtml(attachment.label)}</div>
+                        <div class="attachment-file">File Name / اسم الملف: ${escapeHtml((attachment.hasAttachment || attachment.hasUploadFailure) ? attachment.fileName : 'لا يوجد مرفق')}</div>
+                        <div class="attachment-file">File Type / نوع الملف: ${escapeHtml((attachment.hasAttachment || attachment.hasUploadFailure) ? attachment.fileType : '---')}</div>
+                        ${previewHtml}
                     </div>
-                </div>
-            `
+                `;
+            }).join('')
             : '';
 
         const graduatesUndertakingHtml = isGraduates
@@ -1424,26 +1415,28 @@
                 .undertaking-grid .u-col-ar:not(.u-head)::before,
                 .undertaking-grid .u-col-en:not(.u-head)::before { content: "• "; font-weight: 700; }
                 .undertaking-agree { border-top: 1px solid var(--brand-mid); padding: 6px 8px; font-size: 11.5px; direction: ltr; text-align: left; }
-                .attachments-section { page-break-before: auto; break-before: auto; }
-                .attachments-list { padding: 12px; display: grid; gap: 12px; }
-                .attachment-item { border: 1px solid #cbd5d1; padding: 10px; background: #fff; display: grid; gap: 8px; }
-                .attachment-item-title { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
-                .attachment-meta { font-size: 11.5px; direction: rtl; text-align: right; word-break: break-word; }
-                .attachment-preview { border: 1px solid #cbd5d1; background: #fafcfc; padding: 8px; min-height: 44px; display: flex; align-items: center; justify-content: center; }
-                .attachment-preview-image img { display: block; max-width: 100%; max-height: 220px; object-fit: contain; background: #fff; }
-                .attachment-preview-pdf iframe { display: block; width: 100%; height: 260px; border: 0; background: #fff; }
-                .attachment-preview-error { color: #b42318; background: #fff5f5; border-color: #f1b7b7; font-size: 12px; }
-                .attachment-preview-link, .attachment-preview-empty { font-size: 12px; color: #334155; }
-                .attachment-meta-error { color: #b42318; }
-                .attachment-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-start; direction: rtl; }
-                .attachment-btn { display: inline-block; padding: 7px 14px; border: 1px solid #0f766e; background: #0f766e; color: #fff; text-decoration: none; font-size: 12px; font-weight: 700; }
-                .attachment-btn.secondary { background: #fff; color: #0f766e; }
+                .attachment-section { page-break-before: always; break-before: page; border: 1px solid var(--brand-mid); padding: 10px; }
+                .attachment-head { font-size: 16px; font-weight: 800; padding: 0 0 6px; margin-bottom: 8px; border-bottom: 1px solid var(--brand-mid); direction: ltr; text-align: left; }
+                .attachment-label { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+                .attachment-file { font-size: 11.5px; margin-bottom: 10px; color: #333; direction: ltr; text-align: left; word-break: break-word; }
+                .attachment-media { width: 100%; }
+                .attachment-image img { display: block; width: 100%; max-width: 100%; height: auto; max-height: 248mm; object-fit: contain; border: 1px solid #cbd5d1; background: #fff; }
+                .attachment-pdf iframe { display: block; width: 100%; height: 245mm; border: 1px solid #cbd5d1; background: #fff; }
+                .attachment-link, .attachment-missing { font-size: 12px; line-height: 1.6; padding: 10px; border: 1px dashed #cbd5d1; background: #fafcfc; direction: ltr; text-align: left; }
+                .no-print { margin: 12px auto; width: 194mm; display: flex; justify-content: flex-end; gap: 8px; }
+                .no-print button { padding: 8px 14px; border: 1px solid var(--brand-mid); background: var(--brand-soft-2); color: var(--brand-ink); cursor: pointer; }
                 @media print {
+                    .no-print { display: none !important; }
+                    body { background: #fff; padding: 0; }
                     .paper { width: 100%; max-width: 194mm; margin: 0 auto; padding: 0; }
                 }
             </style>
         </head>
         <body>
+            <div class="no-print">
+                <button onclick="window.print()">حفظ كـ PDF / طباعة</button>
+                <button onclick="window.close()" style="background:#6b7280;">إغلاق</button>
+            </div>
             <div class="paper">
                 <div class="branding">
                     <img class="brand-logo" src="${logoUrl}" alt="شعار المؤسسة">
