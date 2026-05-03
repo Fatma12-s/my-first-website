@@ -1464,26 +1464,11 @@
         </body>
         </html>`;
 
-        const previewToken = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-        const previewStorageKey = `printPreviewHtml:${previewToken}`;
-        const previewPayloadKey = `printPreviewPayload:${previewToken}`;
-
         try {
-            sessionStorage.setItem(previewStorageKey, html);
-            try {
-                sessionStorage.setItem(previewPayloadKey, JSON.stringify({
-                    formName: effective.formType,
-                    data: effective
-                }));
-            } catch (storageError) {
-                console.warn('تعذر حفظ بيانات المرفقات الخاصة بالمعاينة:', storageError);
-            }
-            const previewUrl = `print-preview.html?token=${encodeURIComponent(previewToken)}`;
-            const previewWindow = window.open(previewUrl, '_blank');
-
+            const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+            const blobUrl = URL.createObjectURL(blob);
+            const previewWindow = window.open(blobUrl, '_blank');
             if (!previewWindow) {
-                sessionStorage.removeItem(previewStorageKey);
-                sessionStorage.removeItem(previewPayloadKey);
                 downloadPrintHtmlFallback(html, effective.id || effective._docId);
             }
         } catch (err) {
