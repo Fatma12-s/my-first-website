@@ -977,7 +977,7 @@ function openSubmissionPrintPreview(formName, data) {
           <div class="u-head u-col-ar">إقرار وتعهد</div>
           <div class="u-head u-col-en">Undertaking</div>
 
-          <div class="u-col-ar">الالتزام بلوائح مستشفى السلطان قابوس وجداول التدريب.</div>
+          <div class="u-col-ar">الالتزام بلوائح مستشفى جامعة السلطان قابوس وجداول التدريب.</div>
           <div class="u-col-en">Adhere to SQUH regulations and training schedule.</div>
 
           <div class="u-col-ar">تحمّل المسؤولية الكاملة عن السلوك خلال فترة التدريب.</div>
@@ -995,7 +995,7 @@ function openSubmissionPrintPreview(formName, data) {
           <div class="u-col-ar">إعادة بطاقة التدريب في اليوم الأخير؛ التأخير لأكثر من 5 أيام يؤدي إلى مصادرة الوديعة القابلة للاسترداد.</div>
           <div class="u-col-en">Return training ID card on the last day; delay more than 5 days forfeits refundable deposit.</div>
 
-          <div class="u-col-ar">بطاقة التدريب ملك لمستشفى السلطان قابوس وسوء الاستخدام أو الفقدان قد يؤدي إلى إجراءات قانونية.</div>
+          <div class="u-col-ar">بطاقة التدريب ملك لمستشفى جامعة السلطان قابوس وسوء الاستخدام أو الفقدان قد يؤدي إلى إجراءات قانونية.</div>
           <div class="u-col-en">Training card is property of SQUH and misuse/loss may lead to legal action.</div>
         </div>
         <div class="undertaking-agree">I agree / أوافق على الإقرار والتعهد: <strong>${undertakingAgreed ? 'Yes / نعم' : 'No / لا'}</strong></div>
