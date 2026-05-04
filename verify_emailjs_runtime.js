@@ -27,6 +27,7 @@ const path = require('path');
     await page.type('#grad-email', 'verify@example.com');
     await page.type('#grad-phone', '0599001122');
     await page.type('#address', 'Muscat');
+    await page.type('#nationality', 'Omani');
     await page.type('#cardNo', '12345678');
     await page.type('#institute', 'QA Institute');
 

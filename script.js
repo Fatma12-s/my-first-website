@@ -436,6 +436,7 @@ if (graduatesForm) {
     setValue('address', 'Muscat - Oman (Demo Address)');
     setValue('grad-phone', '92512260');
     setValue('grad-email', 'demo.applicant@squ.edu.om');
+    setValue('nationality', 'Omani');
     setValue('cardNo', '1214422');
     setValue('institute', 'Sultan Qaboos University (Demo)');
     setChecked('clinicalAttachment', true);
