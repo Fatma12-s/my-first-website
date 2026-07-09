@@ -314,7 +314,7 @@ async function saveFormData(formName, formData) {
   cleaned.formType = formName;
 
   // رفع المرفقات إلى Firebase Storage وحفظ الرابط
-  const attachmentFields = ['applicantPhoto', 'cvFile', 'idCardCopy', 'universityLetter', 'otherAttachments', 'receipt'];
+  const attachmentFields = ['applicantPhoto', 'cvFile', 'universityLetter', 'otherAttachments', 'receipt'];
   for (const field of attachmentFields) {
     if (formData[field] && formData[field] instanceof File) {
       await window.fileUpload.uploadAttachment(formData[field], field, cleaned);
@@ -936,7 +936,6 @@ function openSubmissionPrintPreview(formName, data) {
   };
   const attachmentFields = isGraduates
     ? [
-        { key: 'idCardCopy', urlKey: 'idCardCopyURL', label: 'ID Card Copy / نسخة البطاقة الشخصية' },
         { key: 'cvFile', urlKey: 'cvFileURL', label: 'CV / السيرة الذاتية' },
         { key: 'universityLetter', urlKey: 'universityLetterURL', label: 'University Letter / خطاب الجامعة' },
         { key: 'otherAttachments', urlKey: 'otherAttachmentsURL', label: 'Other Attachments / مرفقات أخرى' }
