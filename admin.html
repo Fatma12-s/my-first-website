@@ -1144,18 +1144,20 @@
             return String(value.message || '').trim();
         };
         const getAttachmentType = (value, url) => {
-            const explicitType = typeof value === 'object' ? String(value.type || '').trim() : '';
+            const explicitType = typeof value === 'object' ? String(value.type || '').trim().toLowerCase() : '';
             if (explicitType) return explicitType;
             const lowerUrl = String(url || '').toLowerCase();
-            if (/\.(png|jpe?g|gif|webp|bmp|svg)(\?|#|$)/i.test(lowerUrl)) return 'image/*';
-            if (/\.pdf(\?|#|$)/i.test(lowerUrl)) return 'application/pdf';
-            return 'غير محدد';
+            const lowerName = String(getAttachmentName(value, '') || '').toLowerCase();
+            if (/\.(png|jpe?g|gif|webp|bmp|svg)(\?|#|$)/i.test(lowerUrl) || /\.(png|jpe?g|gif|webp|bmp|svg)(\?|#|$)/i.test(lowerName)) return 'image/*';
+            if (/\.pdf(\?|#|$)/i.test(lowerUrl) || /\.pdf(\?|#|$)/i.test(lowerName)) return 'application/pdf';
+            return '';
         };
-        const getAttachmentKind = (type, url) => {
+        const getAttachmentKind = (type, url, name) => {
             const lowerType = String(type || '').toLowerCase();
             const lowerUrl = String(url || '').toLowerCase();
-            if (lowerType.startsWith('image/') || /\.(png|jpe?g|gif|webp|bmp|svg)(\?|#|$)/i.test(lowerUrl)) return 'image';
-            if (lowerType === 'application/pdf' || /\.pdf(\?|#|$)/i.test(lowerUrl)) return 'pdf';
+            const lowerName = String(name || '').toLowerCase();
+            if (lowerType.startsWith('image/') || /\.(png|jpe?g|gif|webp|bmp|svg)(\?|#|$)/i.test(lowerUrl) || /\.(png|jpe?g|gif|webp|bmp|svg)(\?|#|$)/i.test(lowerName)) return 'image';
+            if (lowerType === 'application/pdf' || /\.pdf(\?|#|$)/i.test(lowerUrl) || /\.pdf(\?|#|$)/i.test(lowerName)) return 'pdf';
             return url ? 'link' : 'missing';
         };
         const attachmentConfigs = isGraduates
@@ -1178,8 +1180,8 @@
             const fileName = getAttachmentName(normalizedValue, config.label);
             const status = getAttachmentStatus(normalizedValue);
             const message = getAttachmentMessage(normalizedValue);
-            const fileType = getAttachmentType(normalizedValue, url);
-            const kind = getAttachmentKind(fileType, url);
+            const fileType = getAttachmentType(normalizedValue, url) || 'غير محدد';
+            const kind = getAttachmentKind(fileType, url, fileName);
             return {
                 index,
                 label: config.label,
