@@ -1205,7 +1205,7 @@
                         : attachment.kind === 'pdf'
                             ? `<div class="attachment-media attachment-pdf"><iframe src="${escapeHtml(attachment.url)}#toolbar=0&navpanes=0&scrollbar=0" title="${escapeHtml(attachment.fileName)}"></iframe></div>`
                             : attachment.hasAttachment
-                                ? `<div class="attachment-media attachment-link">المرفق محفوظ كرابط ولا يحتوي على معاينة مباشرة داخل الصفحة.</div>`
+                                ? `<div class="attachment-media attachment-pdf"><iframe src="${escapeHtml(attachment.url)}" title="${escapeHtml(attachment.fileName)}"></iframe></div><div class="attachment-media attachment-link"><a href="${escapeHtml(attachment.url)}" target="_blank" rel="noopener noreferrer">Open Attachment / فتح المرفق</a></div>`
                                 : `<div class="attachment-media attachment-missing">لا يوجد مرفق</div>`;
                 return `
                     <div class="attachment-section">
