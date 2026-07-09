@@ -1636,6 +1636,126 @@
         }
     }
 
+    function getLocalFormSubmissions(selectedForm = '') {
+        let localData = {};
+        try {
+            localData = JSON.parse(localStorage.getItem('formSubmissions')) || {};
+        } catch (err) {
+            localData = {};
+        }
+
+        const submissions = [];
+        Object.entries(localData).forEach(([formType, entries]) => {
+            if (!Array.isArray(entries)) return;
+
+            entries.forEach((entry, localIndex) => {
+                if (!entry || typeof entry !== 'object') return;
+                const effectiveFormType = entry.formType || formType;
+                if (selectedForm && effectiveFormType !== selectedForm) return;
+                submissions.push(normalizeSubmissionAssets({ ...entry, formType: effectiveFormType, _source: 'local', _localIndex: localIndex }));
+            });
+        });
+
+        return submissions;
+    }
+
+    function getSubmissionIdentity(submission) {
+        const formType = String(submission && submission.formType || '').trim();
+        const id = String(submission && (submission.id || submission._docId) || '').trim();
+        const submittedAtIso = String(submission && submission.submittedAtISO || '').trim();
+        const createdAt = String(submission && submission.createdAt || '').trim();
+        const email = String(submission && submission.email || '').trim().toLowerCase();
+        const name = String(submission && (submission.name || submission.fullName) || '').trim().toLowerCase();
+        return [formType, id, submittedAtIso, createdAt, email, name].join('||');
+    }
+
+    function mergeUniqueSubmissions(primary, additional) {
+        const merged = Array.isArray(primary) ? [...primary] : [];
+        const seen = new Set(merged.map((item) => getSubmissionIdentity(item)));
+
+        (Array.isArray(additional) ? additional : []).forEach((item) => {
+            const identity = getSubmissionIdentity(item);
+            if (seen.has(identity)) return;
+            seen.add(identity);
+            merged.push(item);
+        });
+
+        return merged;
+    }
+
+    function toFirestorePersistableSubmission(submission) {
+        const persistable = {};
+        Object.entries(submission || {}).forEach(([key, value]) => {
+            if (String(key).startsWith('_') || String(key).startsWith('__')) return;
+            persistable[key] = value;
+        });
+        return normalizeSubmissionAssets(persistable);
+    }
+
+    async function syncLocalSubmissionsToFirestore() {
+        const localSubmissions = getLocalFormSubmissions('');
+        if (!db || !localSubmissions.length) {
+            return { synced: 0, skipped: 0, failed: 0, remainingLocal: localSubmissions };
+        }
+
+        let localData = {};
+        try {
+            localData = JSON.parse(localStorage.getItem('formSubmissions')) || {};
+        } catch (err) {
+            localData = {};
+        }
+
+        const remoteSnapshot = await db.collection('formSubmissions').get();
+        const remoteKeys = new Set();
+        remoteSnapshot.forEach((doc) => {
+            remoteKeys.add(getSubmissionIdentity({ ...doc.data(), _docId: doc.id }));
+        });
+
+        let synced = 0;
+        let skipped = 0;
+        let failed = 0;
+
+        for (const localSubmission of localSubmissions) {
+            const formType = localSubmission.formType;
+            const localIndex = Number(localSubmission._localIndex);
+            const formEntries = Array.isArray(localData[formType]) ? localData[formType] : null;
+            const identity = getSubmissionIdentity(localSubmission);
+
+            const markRemoved = () => {
+                if (!formEntries || localIndex < 0 || localIndex >= formEntries.length) return;
+                formEntries[localIndex] = null;
+            };
+
+            if (remoteKeys.has(identity)) {
+                skipped += 1;
+                markRemoved();
+                continue;
+            }
+
+            try {
+                const payload = toFirestorePersistableSubmission(localSubmission);
+                await db.collection('formSubmissions').add(payload);
+                remoteKeys.add(identity);
+                synced += 1;
+                markRemoved();
+            } catch (err) {
+                failed += 1;
+                console.error('تعذر مزامنة طلب محلي إلى Firestore:', err, localSubmission);
+            }
+        }
+
+        Object.keys(localData).forEach((formType) => {
+            if (!Array.isArray(localData[formType])) return;
+            localData[formType] = localData[formType].filter(Boolean);
+            if (!localData[formType].length) {
+                delete localData[formType];
+            }
+        });
+        localStorage.setItem('formSubmissions', JSON.stringify(localData));
+
+        return { synced, skipped, failed, remainingLocal: getLocalFormSubmissions('') };
+    }
+
     // ===== تحميل وعرض البيانات من Firestore أو localStorage =====
     async function loadSubmissions() {
         const container = requireElement('submissionsContainer', 'قائمة الطلبات');
@@ -1644,6 +1764,8 @@
         const searchTerm = requireElement('searchInput', 'حقل البحث').value.toLowerCase();
         let filteredData = [];
         let firestoreFailed = false;
+        let localOnlyData = [];
+        let sourceMessage = '';
 
         const setSourceNotice = (message, isWarning = false) => {
             if (!sourceNotice) return;
@@ -1664,6 +1786,8 @@
         // محاولة الجلب من Firestore أولاً
         if (db) {
             try {
+                const syncResult = await syncLocalSubmissionsToFirestore();
+                localOnlyData = syncResult.remainingLocal.filter((entry) => !selectedForm || entry.formType === selectedForm);
                 let query = db.collection('formSubmissions');
                 if (selectedForm) {
                     query = query.where('formType', '==', selectedForm);
@@ -1673,28 +1797,40 @@
                     const data = doc.data();
                     filteredData.push(normalizeSubmissionAssets({ ...data, _source: 'firestore', _docId: doc.id }));
                 });
-                setSourceNotice('مصدر البيانات الحالي: Firebase / Firestore');
+
+                if (localOnlyData.length) {
+                    filteredData = mergeUniqueSubmissions(filteredData, localOnlyData);
+                }
+
+                sourceMessage = 'مصدر البيانات الحالي: Firebase / Firestore';
+                if (syncResult.synced > 0) {
+                    sourceMessage += ` مع مزامنة ${syncResult.synced} طلب/طلبات محلية إلى Firebase.`;
+                }
+                if (localOnlyData.length > 0) {
+                    sourceMessage += ` يتم أيضًا عرض ${localOnlyData.length} طلب/طلبات محفوظة محليًا في هذا المتصفح بانتظار المزامنة أو للمراجعة.`;
+                    setSourceNotice(sourceMessage, true);
+                } else {
+                    setSourceNotice(sourceMessage);
+                }
             } catch (err) {
                 console.error('خطأ في قراءة البيانات من Firestore:', err);
                 firestoreFailed = true;
-                setSourceNotice(`تعذر تحميل البيانات من Firebase / Firestore: ${err && err.message ? err.message : 'Unknown error'}. تم إيقاف الرجوع التلقائي إلى البيانات المحلية لتجنب ظهور سجلات قديمة غير متطابقة.`, true);
+                localOnlyData = getLocalFormSubmissions(selectedForm);
+                const localCount = localOnlyData.length;
+                sourceMessage = `تعذر تحميل البيانات من Firebase / Firestore: ${err && err.message ? err.message : 'Unknown error'}.`;
+                if (localCount > 0) {
+                    sourceMessage += ` يتم عرض ${localCount} طلب/طلبات من البيانات المحلية في هذا المتصفح مؤقتًا.`;
+                    filteredData = mergeUniqueSubmissions(filteredData, localOnlyData);
+                }
+                setSourceNotice(sourceMessage, true);
             }
         } else {
-            const localData = JSON.parse(localStorage.getItem('formSubmissions')) || {};
-            Object.entries(localData).forEach(([formType, submissions]) => {
-                if (Array.isArray(submissions)) {
-                    submissions.forEach((sub, localIndex) => {
-                        if (!selectedForm || formType === selectedForm) {
-                            filteredData.push(normalizeSubmissionAssets({ ...sub, formType, _source: 'local', _localIndex: localIndex }));
-                        }
-                    });
-                }
-            });
+            filteredData = getLocalFormSubmissions(selectedForm);
             setSourceNotice('مصدر البيانات الحالي: البيانات المحلية في هذا المتصفح (localStorage) لأن Firebase غير مهيأ هنا.', true);
         }
 
         if (db && firestoreFailed) {
-            filteredData = [];
+            filteredData = mergeUniqueSubmissions([], localOnlyData);
         }
         // البحث
         if (searchTerm) {
