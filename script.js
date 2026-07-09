@@ -955,7 +955,7 @@ function openSubmissionPrintPreview(formName, data) {
           : kind === 'pdf'
             ? `<div class="attachment-media attachment-pdf"><iframe src="${escapeHtml(src)}#toolbar=0&navpanes=0&scrollbar=0" title="${escapeHtml(fileName)}"></iframe></div>`
             : src
-              ? `<div class="attachment-media attachment-link"><a href="${escapeHtml(src)}" target="_blank" rel="noopener noreferrer">Open Attachment / فتح المرفق</a></div>`
+              ? `<div class="attachment-media attachment-pdf"><iframe src="${escapeHtml(src)}" title="${escapeHtml(fileName)}"></iframe></div><div class="attachment-media attachment-link"><a href="${escapeHtml(src)}" target="_blank" rel="noopener noreferrer">Open Attachment / فتح المرفق</a></div>`
               : `<div class="attachment-media attachment-missing">هذا المرفق محفوظ بالاسم فقط ولا يحتوي على محتوى قابل للعرض أو الطباعة.</div>`;
 
         return `
